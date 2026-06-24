@@ -142,7 +142,9 @@ npx -y @modelcontextprotocol/inspector uv run fourok-mcp
 ```
 
 Expected tools are `search_fourok` and `operator_status`. Use `search_fourok` with the
-same query, `limit`, roles, and optional `config` as the CLI comparison.
+same query, roles, and optional `config` as the CLI comparison. The MCP tool intentionally
+does not expose a caller-facing result limit; it returns an agent-ready evidence pack and
+retrieval notes instead of asking clients to tune candidate counts.
 
 SDK stdio smoke check:
 

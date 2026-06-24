@@ -34,7 +34,7 @@ class FakeContext:
         principal: PrincipalContext | None = None,
     ) -> SearchContextResponse:
         assert query == "refund escalation"
-        assert limit == 2
+        assert limit == 5
         assert principal == PrincipalContext(
             human_id="human-1",
             agent_id="agent-1",
@@ -100,12 +100,12 @@ def test_mcp_tool_schemas_are_discoverable_without_stdio_server() -> None:
     assert tools["search_fourok"]["input_schema"]["required"] == ["query"]
     assert set(tools["search_fourok"]["input_schema"]["properties"]) >= {
         "query",
-        "limit",
         "roles",
         "database_url",
         "state",
         "config",
     }
+    assert "limit" not in tools["search_fourok"]["input_schema"]["properties"]
     assert tools["operator_status"]["input_schema"]["properties"]["database_url"]["type"] == [
         "string",
         "null",
@@ -164,7 +164,6 @@ def test_search_handler_returns_agent_ready_evidence_contract() -> None:
 
     response = mcp_retrieval.search_fourok(
         query="refund escalation",
-        limit=2,
         roles=["support", "operator"],
         human_id="human-1",
         agent_id="agent-1",
@@ -215,7 +214,6 @@ def test_search_handler_loads_optional_runtime_config(tmp_path: Path) -> None:
 
     mcp_retrieval.search_fourok(
         query="refund escalation",
-        limit=2,
         roles=["support", "operator"],
         human_id="human-1",
         agent_id="agent-1",

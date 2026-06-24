@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 from datetime import UTC, datetime
 from typing import Literal
 
-from sqlalchemy import bindparam, select, text
+from sqlalchemy import bindparam, inspect, select, text
 from sqlalchemy.engine import Engine
 
 from fourok.retrieval.reranker import RetrievalReranker, default_rerank_rules
@@ -177,6 +177,7 @@ def retrieve_augmentation(
             limitations.append(f"Searched {searched} candidates.")
             limitations.append("No relevant source excerpts found for the selected retrievers.")
         limitations.append("Results are source excerpts, not a final answer.")
+        limitations.extend(_successful_connector_import_notes(engine))
         response = RetrievalAugmentationResponse(
             status="ok",
             results=results,
@@ -676,6 +677,62 @@ def _metadata_by_source_ref_from_table_name(
 
 def _elapsed_ms(started: float) -> float:
     return round((time.perf_counter() - started) * 1000, 3)
+
+
+def _successful_connector_import_notes(engine: Engine) -> list[str]:
+    try:
+        if not inspect(engine).has_table("connector_job_runs"):
+            return []
+        with engine.connect() as connection:
+            rows = [
+                dict(row)
+                for row in connection.execute(
+                    text(
+                        """
+                        SELECT connector_name, status, finished_at
+                        FROM connector_job_runs
+                        WHERE status = 'succeeded' AND finished_at IS NOT NULL AND finished_at != ''
+                        ORDER BY finished_at DESC, connector_name
+                        """
+                    )
+                ).mappings()
+            ]
+    except Exception:
+        return []
+    latest_by_source: dict[str, str] = {}
+    for row in rows:
+        source = str(row.get("connector_name") or "").removesuffix("-live")
+        finished_at = str(row.get("finished_at") or "")
+        if source and source not in latest_by_source:
+            latest_by_source[source] = finished_at
+    if not latest_by_source:
+        return []
+    now = datetime.now(UTC)
+    parts = [
+        f"{source} succeeded {_relative_age(finished_at, now)}"
+        for source, finished_at in sorted(latest_by_source.items())
+    ]
+    return ["Connector imports: " + "; ".join(parts) + "."]
+
+
+def _relative_age(finished_at: str, now: datetime) -> str:
+    try:
+        finished = datetime.fromisoformat(finished_at)
+    except ValueError:
+        return "at unknown time"
+    if finished.tzinfo is None:
+        finished = finished.replace(tzinfo=UTC)
+    seconds = max(0, int((now - finished).total_seconds()))
+    if seconds < 60:
+        return "just now"
+    minutes = seconds // 60
+    if minutes < 60:
+        return f"{minutes} min ago"
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours} h ago"
+    days = hours // 24
+    return f"{days} d ago"
 
 
 def _record_retrieval_query_event(

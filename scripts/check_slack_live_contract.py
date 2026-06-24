@@ -249,13 +249,11 @@ def _mcp_permission_gate_probe(
     try:
         denied = mcp_retrieval.search_fourok(
             query=query,
-            limit=5,
             roles=["operator"],
             database_url=database_url,
         )
         allowed = mcp_retrieval.search_fourok(
             query=query,
-            limit=5,
             roles=["operator", *permission_refs],
             database_url=database_url,
         )

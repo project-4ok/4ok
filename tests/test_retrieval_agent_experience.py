@@ -1,5 +1,12 @@
 from __future__ import annotations
 
+from datetime import UTC, datetime
+from pathlib import Path
+
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.etl.extract.sync_jobs import complete_connector_job, start_connector_job
+from fourok.governance import GovernedContext
+from fourok.governance.state import create_governed_context_state
 from fourok.retrieval.augmentation import (
     RetrievalAugmentationResponse,
     RetrievalCandidate,
@@ -58,6 +65,53 @@ def test_empty_retrieval_block_guides_user_to_onboard_and_status() -> None:
     assert "fourok status" in block
     assert "fourok onboard" in block
     assert "fourok onboard connectors" not in block
+
+
+def test_retrieval_notes_summarize_successful_connector_import_age(
+    tmp_path: Path,
+) -> None:
+    state_path = tmp_path / "fourok.sqlite"
+    context = GovernedContext(state_path)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="slack:message:1",
+                source_system="slack",
+                source_id="1",
+                record_type="message",
+                title="Slack renewal",
+                body="Alpha renewal needs follow-up.",
+            )
+        ]
+    )
+    state = create_governed_context_state(
+        state_path=state_path,
+        database_url=None,
+        raw_store_path=None,
+    )
+    started = start_connector_job(
+        state.engine,
+        job_runs=state.connector_job_runs,
+        connector_states=state.connector_states,
+        connector_name="slack-live",
+        job_id="job-slack-1",
+        now=datetime(2026, 6, 24, 10, 0, tzinfo=UTC),
+    )
+    complete_connector_job(
+        state.engine,
+        job_runs=state.connector_job_runs,
+        connector_states=state.connector_states,
+        job_id=started.job_id,
+        connector_name="slack-live",
+        output_state={"freshness_status": "fresh"},
+        raw_output_ref=".local/recurring-live-ingestion/slack",
+        now=datetime.now(UTC),
+    )
+
+    block = context.retrieve_augmentation("Alpha renewal").context_block
+
+    assert "Connector imports:" in block
+    assert "slack succeeded just now" in block
 
 
 def test_default_reranker_demotes_tool_noise_and_boosts_current_work_items() -> None:

@@ -12,7 +12,6 @@ ContextFactory = Callable[..., GovernedContext]
 def search_fourok(
     query: str,
     *,
-    limit: int = 5,
     roles: Sequence[str] | None = None,
     human_id: str = "local-human",
     agent_id: str = "local-agent",
@@ -28,10 +27,10 @@ def search_fourok(
         context_factory=context_factory,
     )
     if roles is None:
-        return api.retrieve_augmentation(query, candidate_limit=limit)
+        return api.retrieve_augmentation(query)
     return api.search_evidence(
         query,
-        limit=limit,
+        limit=5,
         roles=roles,
         human_id=human_id,
         agent_id=agent_id,

@@ -27,12 +27,6 @@ def tool_schemas() -> list[dict[str, object]]:
                         "type": "string",
                         "description": "Search query to run against governed retrieval units.",
                     },
-                    "limit": {
-                        "type": "integer",
-                        "minimum": 1,
-                        "default": 5,
-                        "description": "Maximum number of retrieval results.",
-                    },
                     "roles": {
                         "type": ["array", "null"],
                         "items": {"type": "string"},
@@ -102,7 +96,6 @@ def tool_schemas() -> list[dict[str, object]]:
 def search_fourok(
     query: str,
     *,
-    limit: int = 5,
     roles: Sequence[str] | None = None,
     human_id: str = "local-human",
     agent_id: str = "local-agent",
@@ -119,18 +112,14 @@ def search_fourok(
         normalized_query = query.strip()
         if not normalized_query:
             raise ValueError("query is required")
-        if limit < 1:
-            raise ValueError("limit must be greater than zero")
         set_safe_span_attributes(
             span,
             {
-                "fourok.search.limit": limit,
                 "fourok.search.query_length": len(normalized_query),
             },
         )
         response = mcp_client.search_fourok(
             normalized_query,
-            limit=limit,
             roles=roles,
             human_id=human_id,
             agent_id=agent_id,
@@ -192,7 +181,6 @@ def build_mcp_server(
     @mcp.tool(name="search_fourok")
     def search_fourok_tool(
         query: str,
-        limit: int = 5,
         roles: list[str] | None = None,
         human_id: str = "local-human",
         agent_id: str = "local-agent",
@@ -203,7 +191,6 @@ def build_mcp_server(
         """Search governed fourok state and return evidence-pack fields for agents."""
         return search_fourok(
             query=query,
-            limit=limit,
             roles=roles,
             human_id=human_id,
             agent_id=agent_id,
