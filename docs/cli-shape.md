@@ -87,7 +87,6 @@ Example:
 fourok onboard
 fourok onboard --check
 fourok onboard --demo
-fourok onboard connectors
 ```
 
 Responsibilities:
@@ -100,7 +99,7 @@ Responsibilities:
 - run or suggest one demo `fourok retrieve` query
 - never ask for or write secrets by default
 
-Connector setup decision: connector onboarding should live at `fourok onboard connectors`. It may guide the user, but should not silently collect or store secrets.
+Connector setup decision: connector onboarding should live inside `fourok onboard`. It may guide the user, but should not silently collect or store secrets.
 
 Installer decision: `install.sh` stays as the one-command bootstrap, but should end by telling the user to run `fourok onboard` next.
 
@@ -183,7 +182,7 @@ Current visible commands should be mapped, not deleted blindly.
 | `search`, `search-state`, `ask` | hidden compatibility or `fourok admin ...` |
 | `health`, `operator-status` | `fourok status` internals / `fourok admin health` |
 | `stage1-acceptance`, `acceptance-proof`, `internal-prod-readiness` | `fourok admin ...` or `fourok-dev` |
-| import/connectors commands | `fourok admin ...`; guided setup starts at `fourok onboard connectors` |
+| import/connectors commands | `fourok admin ...`; guided setup starts at `fourok onboard` |
 | audit/retention/backup | `fourok admin ...` |
 | webhooks | `fourok admin ...` |
 | runtime monitor/services | `fourok admin ...` |
@@ -194,7 +193,7 @@ Current visible commands should be mapped, not deleted blindly.
 1. Make `fourok --help` show only `retrieve`, `status`, `onboard`, and `admin`.
 2. Keep old top-level commands as hidden compatibility while moving docs/examples to `fourok admin ...`.
 3. Add `fourok status` as the friendly wrapper around current health/operator checks.
-4. Add `fourok onboard` and `fourok onboard connectors` as safe guidance commands.
+4. Add `fourok onboard` as the safe guidance command.
 5. Update `install.sh` and README to point users to:
 
 ```bash

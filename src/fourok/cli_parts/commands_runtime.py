@@ -234,6 +234,9 @@ _DEMO_SOURCE_SYSTEMS = frozenset({"local_email", "context-fixture", "fixture"})
 
 def _client_status_report(state, report: dict) -> dict:
     source_counts = _source_system_counts(state)
+    checks = report.get("checks", [])
+    counts = {check.get("name"): check.get("count") for check in checks if isinstance(check, dict)}
+    source_count = counts.get("source_records")
     live_source_count = sum(
         count
         for source_system, count in source_counts.items()
@@ -242,7 +245,10 @@ def _client_status_report(state, report: dict) -> dict:
     client_status = dict(report)
     client_status["source_system_counts"] = source_counts
     client_status["live_source_records"] = live_source_count
-    if source_counts and live_source_count == 0:
+    if source_count is not None and int(source_count) == 0:
+        client_status["status"] = "needs_onboarding"
+        client_status["detail"] = "no connector data has been imported yet"
+    elif source_counts and live_source_count == 0:
         client_status["status"] = "needs_onboarding"
         client_status["detail"] = "only demo context is present"
     return client_status
@@ -268,16 +274,21 @@ def _format_client_status(report: dict) -> str:
     source_count = counts.get("source_records") or 0
     retrieval_count = counts.get("retrieval_records") or 0
     if report.get("status") == "needs_onboarding":
+        detail = str(report.get("detail") or "")
+        data_line = (
+            "Only demo context is present; no connector data has been imported yet."
+            if detail == "only demo context is present"
+            else "No connector data has been imported yet."
+        )
         return "\n".join(
             [
                 "fourok needs onboarding",
                 "",
                 f"Context: {source_count} source records, {retrieval_count} retrieval units",
-                "Only demo context is present; no connector data has been imported yet.",
+                data_line,
                 "",
                 "Next:",
                 "  fourok onboard",
-                "  fourok onboard connectors",
             ]
         )
     ready_line = "fourok is ready" if report.get("status") == "ok" else "fourok needs attention"
@@ -307,26 +318,6 @@ _MANUAL_BACKFILL_COMMAND = "fourok admin run-live-ingestion --source all --verif
 
 
 def _onboard_message(args: argparse.Namespace) -> str:
-    if args.onboard_step == "connectors":
-        secret_report = _connector_secret_report()
-        return "\n".join(
-            [
-                "Connector onboarding",
-                "",
-                "This command does not collect or store secrets.",
-                "Add connector credentials to .env, then recreate dagster-code",
-                "so imports can use them.",
-                "",
-                *_connector_lines(secret_report),
-                "",
-                "Next:",
-                "  docker compose up -d --build dagster-code",
-                f"  {_MANUAL_BACKFILL_COMMAND}",
-                "  fourok status",
-                "  fourok admin connector-jobs",
-            ]
-        )
-
     status_report = _safe_client_status_report()
     secret_report = _connector_secret_report()
     dagster_secret_presence = _dagster_code_secret_presence()
@@ -342,9 +333,13 @@ def _onboard_message(args: argparse.Namespace) -> str:
         f"  context: {source_count} source records, {retrieval_count} retrieval units",
     ]
     if status_report.get("status") == "needs_onboarding":
-        lines.append(
+        detail = str(status_report.get("detail") or "")
+        data_line = (
             "  data: only demo context is present; no connector data has been imported yet"
+            if detail == "only demo context is present"
+            else "  data: no connector data has been imported yet"
         )
+        lines.append(data_line)
     lines.extend(["", "Connector credentials:", *_connector_lines(secret_report)])
     if dagster_secret_presence.get("status") == "missing":
         lines.extend(
@@ -361,8 +356,8 @@ def _onboard_message(args: argparse.Namespace) -> str:
             "",
             "Next:",
             "  fourok status",
-            "  fourok onboard connectors",
             f"  {_MANUAL_BACKFILL_COMMAND}",
+            "  fourok admin connector-jobs",
         ]
     )
     if status_report.get("status") == "ok":

@@ -209,7 +209,6 @@ def render_augmentation_block(response: RetrievalAugmentationResponse) -> str:
                 "Next:",
                 "  fourok status",
                 "  fourok onboard",
-                "  fourok onboard connectors",
                 "",
             ]
         )

@@ -57,7 +57,7 @@ def test_empty_retrieval_block_guides_user_to_onboard_and_status() -> None:
     assert "This usually means fourok has no imported context yet" in block
     assert "fourok status" in block
     assert "fourok onboard" in block
-    assert "fourok onboard connectors" in block
+    assert "fourok onboard connectors" not in block
 
 
 def test_default_reranker_demotes_tool_noise_and_boosts_current_work_items() -> None:
