@@ -243,7 +243,10 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
     assert "only demo context is present" in output
     assert "fourok works best when you connect your whole workspace" in output
     assert "These connectors are already implemented" in output
-    assert "Add their secrets to .env, then run:" in output
+    assert "Add their secrets to .env, then refresh fourok:" in output
+    assert "1. fourok onboard initial-run" in output
+    assert "2. fourok status" in output
+    assert "3. fourok retrieve \"What changed this week?\"" in output
     assert "google_drive: missing GOOGLE_WORKSPACE_DRIVE_IDS" in output
     assert "Need another connector?" in output
     assert "gh issue create --repo project-4ok/4ok" in output
