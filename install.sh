@@ -44,7 +44,7 @@ require_runtime() {
 }
 
 checkout_repo() {
-  if [ -f "pyproject.toml" ] && [ -d "src/gcb" ]; then
+  if [ -z "${GCB_INSTALL_DIR:-}" ] && [ -f "pyproject.toml" ] && [ -d "src/gcb" ]; then
     log "Using current 4ok checkout: $(pwd)"
     return 0
   fi
