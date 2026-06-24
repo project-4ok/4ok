@@ -332,8 +332,8 @@ def test_cli_postgres_backup_and_restore_use_explicit_commands(
             "confirm_destructive_restore": confirm_destructive_restore,
         }
 
-    monkeypatch.setattr("fourok.cli_parts.commands_backup.backup_postgres", fake_backup_postgres)
-    monkeypatch.setattr("fourok.cli_parts.commands_backup.restore_postgres", fake_restore_postgres)
+    monkeypatch.setattr("fourok.storage.cli.backup_postgres", fake_backup_postgres)
+    monkeypatch.setattr("fourok.storage.cli.restore_postgres", fake_restore_postgres)
     backup = tmp_path / "fourok.dump"
 
     monkeypatch.setattr(
@@ -397,7 +397,7 @@ def test_cli_postgres_restore_drill_runs_non_destructive_drill(
         }
 
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_backup.postgres_restore_drill",
+        "fourok.storage.cli.postgres_restore_drill",
         fake_restore_drill_postgres,
     )
     backup = tmp_path / "fourok.dump"

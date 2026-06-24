@@ -180,7 +180,7 @@ def test_cli_webhook_process_uses_configured_processing_controls(
         return {"claimed": 0, "failed": 0, "invalid": 0, "succeeded": 0}
 
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_webhooks.process_pending_webhook_events",
+        "fourok.runtime.webhooks_cli.process_pending_webhook_events",
         fake_process_pending_webhook_events,
     )
     config_path.write_text(
@@ -231,7 +231,7 @@ def test_cli_webhook_process_flags_override_configured_processing_controls(
         return {"claimed": 0, "failed": 0, "invalid": 0, "succeeded": 0}
 
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_webhooks.process_pending_webhook_events",
+        "fourok.runtime.webhooks_cli.process_pending_webhook_events",
         fake_process_pending_webhook_events,
     )
     config_path.write_text(

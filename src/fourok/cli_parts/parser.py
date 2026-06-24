@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import argparse
 
-from fourok.cli_parts.parser_audit import add_audit_commands
-from fourok.cli_parts.parser_backup import add_backup_commands
 from fourok.cli_parts.parser_honcho import add_honcho_commands
 from fourok.cli_parts.parser_imports import add_import_commands
-from fourok.cli_parts.parser_retention import add_retention_commands
 from fourok.cli_parts.parser_runtime import add_runtime_commands
-from fourok.cli_parts.parser_webhooks import add_webhook_commands
 from fourok.cli_parts.shared import _hide_subparser
+from fourok.governance.cli import add_audit_commands, add_retention_commands
 from fourok.retrieval.cli import add_search_commands
+from fourok.runtime.webhooks_cli import add_webhook_commands
+from fourok.storage.cli import add_backup_commands
 
 PUBLIC_COMMANDS = {"retrieve", "status", "onboard", "admin"}
 PUBLIC_COMMAND_HINT = "retrieve, status, onboard, admin"
