@@ -208,7 +208,7 @@ def host_operator_database_url(
     explicit_database_url: str | None,
 ) -> str | None:
     if explicit_database_url:
-        return host_database_url(explicit_database_url)
+        return explicit_database_url
     if state_explicit or state != DEFAULT_STATE:
         return None
     if app_database_url := _running_app_database_url():

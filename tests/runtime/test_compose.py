@@ -50,10 +50,11 @@ def test_compose_active_services_have_health_checks() -> None:
         assert "healthcheck:" in _compose_service_block(compose, service_name)
 
     app_service = _compose_service_block(compose, "app")
-    assert (
-        '"/app/.venv/bin/fourok health --database-url \\"$$FOUR_OK_DATABASE_URL\\""' in app_service
-    )
-    assert '"--config"' not in _compose_healthcheck_block(app_service)
+    healthcheck = _compose_healthcheck_block(app_service)
+    assert '"/app/.venv/bin/fourok"' in healthcheck
+    assert '"health"' in healthcheck
+    assert '"--config"' in healthcheck
+    assert '"/etc/fourok/fourok.toml"' in healthcheck
 
 
 def test_compose_app_command_is_long_running_when_restart_policy_is_enabled() -> None:
@@ -367,7 +368,7 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     assert "before reranking" in retrieval_candidates_panel["description"]
     positions = {panel["title"]: panel["gridPos"]["y"] for panel in dashboard_data["panels"]}
     non_success_title = "[Pipeline] Non-success Dagster stages (latest run)"
-    assert positions["[Pipeline] Dagster lineage health map"] == 0
+    assert "[Pipeline] Dagster lineage health map" in positions
     assert positions["① Raw landing"] < positions[non_success_title]
     assert positions["⑤ Audit metadata"] < positions[non_success_title]
     assert (

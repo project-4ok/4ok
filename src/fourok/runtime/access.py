@@ -15,6 +15,8 @@ ALLOWED_EXPOSURES = frozenset(
         ("observability", "127.0.0.1", "3200", "3200", "tcp"),
         ("observability", "127.0.0.1", "4317", "4317", "tcp"),
         ("observability", "127.0.0.1", "4318", "4318", "tcp"),
+        ("cerbos", "127.0.0.1", "3592", "3592", "tcp"),
+        ("cerbos", "127.0.0.1", "3593", "3593", "tcp"),
         ("dagster-webserver", "127.0.0.1", "3001", "3001", "tcp"),
     }
 )

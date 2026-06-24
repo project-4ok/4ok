@@ -102,6 +102,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "fast",
         "full",
         "compose-config",
+        "core-up",
         "app-up",
         "observability-up",
         "pipeline-up",
@@ -369,6 +370,11 @@ def _app_up() -> DevStep:
     )
 
 
+def _core_up() -> DevStep:
+    app_step = _app_up()
+    return DevStep("core-up", app_step.command, env=app_step.env)
+
+
 def _observability_up() -> DevStep:
     return DevStep(
         "observability-up",
@@ -463,6 +469,7 @@ def _compose_local_env() -> dict[str, str]:
     env = _dotenv_values(Path(".env"))
     env.setdefault("DAGSTER_POSTGRES_PASSWORD", "local-check")
     env.setdefault("POSTGRES_PASSWORD", "local-check")
+    env["COMPOSE_PROJECT_NAME"] = "fourok"
     env.setdefault("FOUR_OK_IMAGE_TAG", _git_short_head(default="local-check"))
     env.setdefault(
         "FOUR_OK_DATABASE_URL",
@@ -482,6 +489,7 @@ def compose_env_report(*, redact: bool = True) -> dict[str, object]:
         "env": rendered,
         "usage": {
             "compose_config": "uv run fourok-dev compose-config",
+            "core_up": "uv run fourok-dev core-up",
             "app_up": "uv run fourok-dev app-up",
             "observability_up": "uv run fourok-dev observability-up",
             "pipeline_up": "uv run fourok-dev pipeline-up",

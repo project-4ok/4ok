@@ -82,6 +82,7 @@ def test_compose_config_plan_uses_safe_required_env_defaults(monkeypatch, tmp_pa
 
     assert len(plan) == 1
     assert plan[0].env == {
+        "COMPOSE_PROJECT_NAME": "fourok",
         "DAGSTER_POSTGRES_PASSWORD": "local-check",
         "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:local-check@postgres:5432/fourok",
         "FOUR_OK_IMAGE_TAG": "local-check",
@@ -106,12 +107,12 @@ def test_compose_env_report_redacts_runtime_env_and_keeps_non_secret_values(
     assert report["env"]["POSTGRES_PASSWORD"] == "[REDACTED]"
     assert report["env"]["FOUR_OK_DATABASE_URL"] == "[REDACTED]"
     assert report["env"]["FOUR_OK_IMAGE_TAG"] == "abc1234"
-    assert report["env"]["LINEAR_API_KEY"] == "linear-token"
+    assert report["env"]["LINEAR_API_KEY"] == "[REDACTED]"
     assert report["usage"]["pipeline_ps"] == "uv run fourok-dev pipeline-ps"
     assert report["usage"]["app_up"] == "uv run fourok-dev app-up"
     assert report["usage"]["core_up"] == "uv run fourok-dev core-up"
     assert report["usage"]["observability_up"] == "uv run fourok-dev observability-up"
-    assert report["usage"]["stack_up"] == "uv run fourok-dev stack-up  # core only"
+    assert report["usage"]["stack_up"] == "uv run fourok-dev stack-up"
 
 
 def test_connector_secret_report_flags_missing_required_live_connector_keys() -> None:

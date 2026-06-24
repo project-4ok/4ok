@@ -112,7 +112,7 @@ def test_dev_step_dry_run_redacts_secret_env_values() -> None:
 
     assert data["env"] == {
         "FOUR_OK_DATABASE_URL": "[REDACTED]",
-        "LINEAR_API_KEY": "client-id",
+        "LINEAR_API_KEY": "[REDACTED]",
         "SLACK_BOT_TOKEN": "[REDACTED]",
         "POSTGRES_PASSWORD": "[REDACTED]",
     }

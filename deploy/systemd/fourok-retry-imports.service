@@ -6,7 +6,7 @@ After=docker.service
 [Service]
 Type=oneshot
 WorkingDirectory=/opt/fourok
-Environment=GCB_IMAGE_TAG=replace-with-commit-hash
-Environment=GCB_CONFIG_PATH=/opt/fourok/.local/fourok.toml
+Environment=FOUR_OK_IMAGE_TAG=replace-with-commit-hash
+Environment=FOUR_OK_CONFIG_PATH=/opt/fourok/.local/fourok.toml
 EnvironmentFile=/etc/fourok/fourok.env
-ExecStart=/usr/bin/docker compose run --rm app run-imports --connector gmail-singer --singer-file /var/lib/fourok/raw/gmail/tap-gmail-output.jsonl --database-url ${GCB_DATABASE_URL} --config /etc/fourok/fourok.toml --retry-failed --retry-base-delay-seconds 300
+ExecStart=/usr/bin/docker compose run --rm app run-imports --connector gmail-singer --singer-file /var/lib/fourok/raw/gmail/tap-gmail-output.jsonl --database-url ${FOUR_OK_DATABASE_URL} --config /etc/fourok/fourok.toml --retry-failed --retry-base-delay-seconds 300
