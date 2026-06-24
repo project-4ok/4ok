@@ -137,7 +137,7 @@ def test_installer_defaults_repo_url_to_4ok_repository() -> None:
 def test_installer_fails_early_when_docker_daemon_is_unreachable() -> None:
     installer = Path("install.sh").read_text(encoding="utf-8")
 
-    assert "docker info >/dev/null 2>&1" in installer
+    assert '[ "$START_STACK" != "0" ] && ! docker info >/dev/null 2>&1' in installer
     assert "Docker daemon is not reachable" in installer
 
 

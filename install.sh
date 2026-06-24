@@ -101,7 +101,7 @@ require_runtime() {
     printf 'Docker Compose v2 is required. Install the docker compose plugin and rerun this installer.\n' >&2
     exit 1
   fi
-  if ! docker info >/dev/null 2>&1; then
+  if [ "$START_STACK" != "0" ] && ! docker info >/dev/null 2>&1; then
     printf 'Docker is installed, but the Docker daemon is not reachable. Start Docker and rerun this installer.\n' >&2
     exit 1
   fi
