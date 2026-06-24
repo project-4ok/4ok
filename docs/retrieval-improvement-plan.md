@@ -73,7 +73,7 @@ query
 
 ### Stage 2 — Better evidence rendering
 
-**Status:** Partly implemented: larger snippets, duplicate title-prefix reduction, compact metadata, and relative date labels are in place.
+**Status:** Complete: larger snippets, duplicate source/title-prefix reduction, compact metadata, paragraph-preserving evidence blocks, and relative date labels are in place.
 
 **Objective:** Make each selected card contain useful answerable context.
 

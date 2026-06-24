@@ -331,6 +331,88 @@ def test_retrieve_vector_snippet_does_not_repeat_title(capsys, monkeypatch, tmp_
     assert "evidence: fourok-385 Jespers booking link" in output
 
 
+def test_retrieve_removes_source_id_and_title_prefix_from_evidence(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:issue:4OK-385",
+                source_system="linear",
+                source_id="4OK-385",
+                record_type="work_item",
+                title="LinkedIn outreach draft",
+                body=(
+                    "4OK-385 LinkedIn outreach draft "
+                    "Jespers booking link and ICP outreach instructions."
+                ),
+                occurred_at="2026-05-11T09:12:49.085Z",
+            )
+        ]
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "booking link ICP outreach",
+            "--state",
+            str(state),
+            "--retrievers",
+            "keyword",
+        ],
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "evidence: Jespers booking link and ICP outreach instructions." in output
+    assert "evidence: 4OK-385 LinkedIn outreach draft" not in output
+
+
+def test_retrieve_preserves_evidence_paragraph_boundaries(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="slack:message:paragraph-context",
+                source_system="slack-live",
+                source_id="paragraph-context",
+                record_type="message",
+                title="Launch note",
+                body=(
+                    "First paragraph says retrieval paragraph context is important.\n\n"
+                    "Second paragraph keeps the concrete next action separate."
+                ),
+                occurred_at="2026-06-24T09:00:00+00:00",
+            )
+        ]
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "retrieval paragraph context",
+            "--state",
+            str(state),
+            "--retrievers",
+            "keyword",
+        ],
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "evidence:\nFirst paragraph says retrieval paragraph context is important." in output
+    assert "\n\nSecond paragraph keeps the concrete next action separate." in output
+
+
 def test_retrieve_centers_evidence_snippet_on_query_terms(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:

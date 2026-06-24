@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -11,7 +12,7 @@ from sqlalchemy import bindparam, select, text
 from sqlalchemy.engine import Engine
 
 from fourok.retrieval.reranker import RetrievalReranker, default_rerank_rules
-from fourok.retrieval.search import snippet_for, source_record_search_rows
+from fourok.retrieval.search import source_record_search_rows
 from fourok.retrieval.vector_search import ChunkVectorIndex
 
 RetrieverName = Literal["keyword", "vector"]
@@ -270,6 +271,9 @@ def _merge_ranked_rows(
         key = (source_ref, unit_index)
         metadata = metadata_by_ref.get(source_ref, {})
         title = str(row.get("subject", metadata.get("title", "")))
+        body_text = str(
+            metadata.get("retrieval_text") or row.get("body", row.get("snippet", ""))
+        )
         candidate = candidates_by_key.setdefault(
             key,
             {
@@ -280,7 +284,10 @@ def _merge_ranked_rows(
                 "occurred_at": str(row.get("date", metadata.get("occurred_at", ""))),
                 "permission_refs": _object_string_tuple(metadata.get("permission_refs", ())),
                 "snippet": _evidence_snippet(
-                    str(row.get("body", row.get("snippet", ""))), title, query
+                    body_text,
+                    title,
+                    query,
+                    source_ref,
                 ),
                 "score": 0.0,
                 "retrievers": set(),
@@ -493,14 +500,14 @@ def _candidate_for_source_ref(
     if row is None:
         return None
     title = str(row["title"])
-    text_value = str(row["prepared_text"] or row["retrieval_text"] or "")
+    text_value = str(row["retrieval_text"] or row["prepared_text"] or "")
     return RetrievalCandidate(
         source_ref=str(row["source_ref"]),
         source_system=str(row["source_system"]),
         record_type=str(row["record_type"]),
         title=title,
         occurred_at=str(row["occurred_at"]),
-        snippet=_evidence_snippet(text_value, title, query),
+        snippet=_evidence_snippet(text_value, title, query, source_ref),
         score=round(max(linked_from.score * 0.5, 0.000001), 6),
         retrievers=("direct-context",),
         permission_refs=_json_string_tuple(str(row["permission_refs"])),
@@ -540,9 +547,15 @@ def _result_card_lines(index: int, result: RetrievalCandidate) -> list[str]:
         f"source_ref: {result.source_ref}",
         f"why_relevant: {why_relevant}",
         f"date: {_source_date_label(result.occurred_at)}",
-        f"evidence: {result.snippet}",
+        *_evidence_card_lines(result.snippet),
         "",
     ]
+
+
+def _evidence_card_lines(snippet: str) -> list[str]:
+    if "\n" not in snippet:
+        return [f"evidence: {snippet}"]
+    return ["evidence:", *snippet.splitlines()]
 
 
 def _source_date_label(value: str, *, now: datetime | None = None) -> str:
@@ -596,6 +609,7 @@ def _metadata_by_source_ref(
         source_records.c.source_system,
         source_records.c.record_type,
         source_records.c.title,
+        source_records.c.retrieval_text,
         source_records.c.occurred_at,
         source_records.c.permission_refs,
     ).where(source_records.c.source_ref.in_(bindparam("source_refs", expanding=True)))
@@ -605,6 +619,7 @@ def _metadata_by_source_ref(
                 "source_system": str(row["source_system"]),
                 "record_type": str(row["record_type"]),
                 "title": str(row["title"]),
+                "retrieval_text": str(row["retrieval_text"]),
                 "occurred_at": str(row["occurred_at"]),
                 "permission_refs": _json_string_tuple(str(row["permission_refs"])),
             }
@@ -733,20 +748,72 @@ def _record_retrieval_query_event(
         return
 
 
-def _snippet_without_title_prefix(text_value: str, title: str) -> str:
-    compacted = " ".join(text_value.split())
-    normalized_title = " ".join(title.split())
-    if not normalized_title:
-        return compacted
-    prefix = f"{normalized_title} "
-    while compacted.casefold().startswith(prefix.casefold()):
-        compacted = compacted[len(prefix) :].lstrip()
-    return compacted
+def _snippet_without_title_prefix(text_value: str, title: str, source_ref: str = "") -> str:
+    evidence = text_value.strip()
+    identifier = source_ref.rsplit(":", 1)[-1] if source_ref else ""
+    prefixes = [
+        " ".join(part.split())
+        for part in [
+            f"{identifier} {title}" if identifier and title else "",
+            title,
+            identifier,
+        ]
+        if part and part.strip()
+    ]
+    changed = True
+    while changed:
+        changed = False
+        for prefix in prefixes:
+            pattern = r"^\s*" + r"\s+".join(re.escape(part) for part in prefix.split())
+            match = re.match(pattern + r"(?:\s+|$)", evidence, flags=re.IGNORECASE)
+            if match:
+                evidence = evidence[match.end() :].lstrip()
+                changed = True
+    return evidence
 
 
-def _evidence_snippet(text_value: str, title: str, query: str) -> str:
-    evidence_text = _snippet_without_title_prefix(text_value, title)
-    return _compact(snippet_for(evidence_text, query, window=900), limit=1200)
+def _evidence_snippet(text_value: str, title: str, query: str, source_ref: str = "") -> str:
+    evidence_text = _snippet_without_title_prefix(text_value, title, source_ref)
+    return _compact_preserving_paragraphs(
+        _paragraph_snippet_for(evidence_text, query, window=900), limit=1200
+    )
+
+
+def _paragraph_snippet_for(text_value: str, query: str, *, window: int) -> str:
+    normalized_text = _normalize_evidence_text(text_value)
+    if not normalized_text:
+        return ""
+    lower_text = normalized_text.casefold()
+    terms = [term.strip().casefold().strip('"') for term in query.split() if term.strip()]
+    first_index = min(
+        (index for term in terms if (index := lower_text.find(term)) >= 0),
+        default=0,
+    )
+    start = max(first_index - window // 2, 0)
+    end = min(start + window, len(normalized_text))
+    snippet = normalized_text[start:end].strip()
+    if start > 0:
+        snippet = f"... {snippet}"
+    if end < len(normalized_text):
+        snippet = f"{snippet} ..."
+    return snippet
+
+
+def _normalize_evidence_text(text_value: str) -> str:
+    lines = [" ".join(line.split()) for line in text_value.replace("\r\n", "\n").split("\n")]
+    normalized: list[str] = []
+    previous_blank = True
+    for line in lines:
+        if not line:
+            if not previous_blank:
+                normalized.append("")
+            previous_blank = True
+            continue
+        normalized.append(line)
+        previous_blank = False
+    while normalized and not normalized[-1]:
+        normalized.pop()
+    return "\n".join(normalized)
 
 
 def _agent_result_label(result: RetrievalCandidate) -> str:
@@ -767,6 +834,13 @@ def _object_string_tuple(value: object) -> tuple[str, ...]:
     if not isinstance(value, list | tuple):
         return ()
     return tuple(item for item in value if isinstance(item, str) and item.strip())
+
+
+def _compact_preserving_paragraphs(text_value: str, *, limit: int = 420) -> str:
+    compacted = _normalize_evidence_text(text_value)
+    if len(compacted) <= limit:
+        return compacted
+    return compacted[: limit - 1].rstrip() + "…"
 
 
 def _compact(text_value: str, *, limit: int = 420) -> str:
