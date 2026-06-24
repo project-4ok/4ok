@@ -200,6 +200,7 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
         return True
 
     if args.command == "retrieve":
+        database_url = _retrieval_database_url(args, database_url)
         retrievers = tuple(item.strip() for item in str(args.retrievers).split(",") if item.strip())
         try:
             if args.format == "json":
@@ -266,3 +267,17 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
             raise SystemExit(1)
         return True
     return False
+
+
+def _retrieval_database_url(args: argparse.Namespace, database_url: str | None) -> str | None:
+    if not database_url:
+        return None
+    if _running_in_container():
+        return database_url
+    if getattr(args, "state", DEFAULT_STATE) != DEFAULT_STATE:
+        return database_url
+    return host_database_url(database_url)
+
+
+def _running_in_container() -> bool:
+    return Path("/.dockerenv").exists() or bool(os.environ.get("KUBERNETES_SERVICE_HOST"))

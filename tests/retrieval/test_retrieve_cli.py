@@ -107,6 +107,31 @@ def test_retrieve_prints_llm_ready_augmentation_block(capsys, monkeypatch, tmp_p
     assert "Results are source excerpts, not a final answer." in output
 
 
+def test_retrieve_rewrites_container_database_url_for_host_cli(capsys, monkeypatch) -> None:
+    captured: dict[str, str | None] = {}
+
+    def fake_retrieve_block(*_args, **kwargs):
+        captured["database_url"] = kwargs["database_url"]
+        return "ok\n"
+
+    monkeypatch.setenv(
+        "FOUROK_DATABASE_URL",
+        "postgresql+psycopg://fourok:local-check@postgres:5432/fourok",
+    )
+    monkeypatch.setattr("fourok.retrieval.cli._running_in_container", lambda: False)
+    monkeypatch.setattr(
+        "fourok.retrieval.clients.cli.retrieve_block", fake_retrieve_block
+    )
+    monkeypatch.setattr("sys.argv", ["fourok", "retrieve", "refund"])
+
+    main()
+
+    assert capsys.readouterr().out == "ok\n"
+    assert captured["database_url"] == (
+        "postgresql+psycopg://fourok:local-check@127.0.0.1:5432/fourok"
+    )
+
+
 def test_retrieve_json_returns_stable_machine_shape_without_echoing_query(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
