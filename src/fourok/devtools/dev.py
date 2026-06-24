@@ -388,7 +388,7 @@ set -euo pipefail
 projects=$(
   docker ps -a --format '{{.Label "com.docker.compose.project"}}' \
     | sort -u \
-    | grep -E '^smoke-(fourok|fourok)' \
+    | grep -E '^smoke-fourok' \
     || true
 )
 for project in $projects; do

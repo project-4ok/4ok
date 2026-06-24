@@ -5,7 +5,7 @@ import os
 import shutil
 import subprocess
 from pathlib import Path
-from typing import Any
+from typing import Any, cast
 
 from dagster import (
     AssetSelection,
@@ -56,7 +56,7 @@ def meltano_slack_live_raw_landing(
     raw_landing: RawLandingResource,
     meltano_project: MeltanoProjectResource,
     connector_env: ConnectorEnvResource,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     return _run_meltano_raw_landing(
         job_name="slack-live-to-raw",
         landing_dir=raw_landing.root / "slack_live",
@@ -70,7 +70,7 @@ def meltano_twenty_live_raw_landing(
     raw_landing: RawLandingResource,
     meltano_project: MeltanoProjectResource,
     connector_env: ConnectorEnvResource,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     return _run_meltano_raw_landing(
         job_name="twenty-live-to-raw",
         landing_dir=raw_landing.root / "twenty_live",
@@ -84,7 +84,7 @@ def meltano_linear_live_raw_landing(
     raw_landing: RawLandingResource,
     meltano_project: MeltanoProjectResource,
     connector_env: ConnectorEnvResource,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     return _run_meltano_raw_landing(
         job_name="linear-live-to-raw",
         landing_dir=raw_landing.root / "linear_live",
@@ -98,7 +98,7 @@ def meltano_google_drive_live_raw_landing(
     raw_landing: RawLandingResource,
     meltano_project: MeltanoProjectResource,
     connector_env: ConnectorEnvResource,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     return _run_meltano_raw_landing(
         job_name="google-drive-live-to-raw",
         landing_dir=raw_landing.root / "google_drive_live",
@@ -109,7 +109,7 @@ def meltano_google_drive_live_raw_landing(
 
 def _run_meltano_raw_landing(
     *, job_name: str, landing_dir: Path, project_root: Path, secret_env: dict[str, str]
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     with critical_span(
         _meltano_asset_span_name(job_name),
         attributes={
@@ -180,7 +180,7 @@ def fourok_slack_live_source_records_from_raw_landing(
     context,
     raw_landing: RawLandingResource,
     fourok_runtime: FourokRuntimeResource,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     connector_name = "slack-live"
     asset_name = "fourok_slack_live_source_records_from_raw_landing"
     with critical_span(
@@ -219,7 +219,7 @@ def fourok_twenty_live_source_records_from_raw_landing(
     context,
     raw_landing: RawLandingResource,
     fourok_runtime: FourokRuntimeResource,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     return _import_live_landed_source_records(
         context=context,
         landing_dir=raw_landing.root / "twenty_live",
@@ -234,7 +234,7 @@ def fourok_linear_live_source_records_from_raw_landing(
     context,
     raw_landing: RawLandingResource,
     fourok_runtime: FourokRuntimeResource,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     return _import_live_landed_source_records(
         context=context,
         landing_dir=raw_landing.root / "linear_live",
@@ -249,7 +249,7 @@ def fourok_google_drive_live_source_records_from_raw_landing(
     context,
     raw_landing: RawLandingResource,
     fourok_runtime: FourokRuntimeResource,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     return _import_live_landed_source_records(
         context=context,
         landing_dir=raw_landing.root / "google_drive_live",
@@ -264,7 +264,7 @@ def fourok_openviking_live_source_records_from_sessions(
     context,
     raw_landing: RawLandingResource,
     fourok_runtime: FourokRuntimeResource,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     connector_name = "openviking-live"
     sessions_dir = Path(os.environ.get("OPENVIKING_SESSIONS_DIR", "/var/lib/openclaw/sessions"))
     landing_dir = raw_landing.root / "openviking_live"
@@ -307,7 +307,7 @@ _LIVE_RAW_LANDING_ASSETS = [
 
 
 @asset
-def fourok_webhook_backlog(fourok_runtime: FourokRuntimeResource) -> MaterializeResult:
+def fourok_webhook_backlog(fourok_runtime: FourokRuntimeResource) -> MaterializeResult[Any]:
     with critical_span(
         "fourok_webhook_backlog", attributes={"fourok.dagster.asset": "fourok_webhook_backlog"}
     ):
@@ -318,10 +318,10 @@ def fourok_webhook_backlog(fourok_runtime: FourokRuntimeResource) -> Materialize
 
         return MaterializeResult(
             metadata={
-                "claimed": process_report["claimed"],
-                "succeeded": process_report["succeeded"],
-                "failed": process_report["failed"],
-                "invalid": process_report["invalid"],
+                "claimed": cast(int, process_report["claimed"]),
+                "succeeded": cast(int, process_report["succeeded"]),
+                "failed": cast(int, process_report["failed"]),
+                "invalid": cast(int, process_report["invalid"]),
                 "webhook_event_count": sum(status_counts.values()),
                 "webhook_statuses": MetadataValue.json(status_counts),
             }
@@ -331,7 +331,7 @@ def fourok_webhook_backlog(fourok_runtime: FourokRuntimeResource) -> Materialize
 @asset(deps=[fourok_webhook_backlog])
 def fourok_canonical_objects_and_entity_links(
     fourok_runtime: FourokRuntimeResource,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     with critical_span(
         "fourok_canonical_objects_and_entity_links",
         attributes={"fourok.dagster.asset": "fourok_canonical_objects_and_entity_links"},
@@ -368,7 +368,7 @@ def fourok_canonical_objects_and_entity_links(
 
 
 @asset(deps=[fourok_webhook_backlog])
-def fourok_retrieval_records(fourok_runtime: FourokRuntimeResource) -> MaterializeResult:
+def fourok_retrieval_records(fourok_runtime: FourokRuntimeResource) -> MaterializeResult[Any]:
     with critical_span(
         "fourok_retrieval_records", attributes={"fourok.dagster.asset": "fourok_retrieval_records"}
     ):
@@ -393,7 +393,7 @@ def fourok_retrieval_records(fourok_runtime: FourokRuntimeResource) -> Materiali
 
 
 @asset(deps=[fourok_retrieval_records])
-def fourok_operator_dashboard(fourok_runtime: FourokRuntimeResource) -> MaterializeResult:
+def fourok_operator_dashboard(fourok_runtime: FourokRuntimeResource) -> MaterializeResult[Any]:
     with critical_span(
         "fourok_operator_dashboard",
         attributes={"fourok.dagster.asset": "fourok_operator_dashboard"},
@@ -414,7 +414,7 @@ def fourok_operator_dashboard(fourok_runtime: FourokRuntimeResource) -> Material
 
 
 @asset(deps=[fourok_operator_dashboard])
-def fourok_audit_metadata(fourok_runtime: FourokRuntimeResource) -> MaterializeResult:
+def fourok_audit_metadata(fourok_runtime: FourokRuntimeResource) -> MaterializeResult[Any]:
     with critical_span(
         "fourok_audit_metadata", attributes={"fourok.dagster.asset": "fourok_audit_metadata"}
     ):
@@ -422,10 +422,10 @@ def fourok_audit_metadata(fourok_runtime: FourokRuntimeResource) -> MaterializeR
 
         return MaterializeResult(
             metadata={
-                "audit_event_count": audit["total_events"],
-                "audit_event_types": MetadataValue.json(audit["event_types"]),
-                "audit_decisions": MetadataValue.json(audit["decisions"]),
-                "audit_humans": MetadataValue.json(audit["humans"]),
+                "audit_event_count": cast(int, audit["total_events"]),
+                "audit_event_types": MetadataValue.json(cast(dict[str, Any], audit["event_types"])),
+                "audit_decisions": MetadataValue.json(cast(dict[str, Any], audit["decisions"])),
+                "audit_humans": MetadataValue.json(cast(dict[str, Any], audit["humans"])),
             }
         )
 
@@ -436,7 +436,7 @@ def _import_landed_source_records(
     fourok_runtime: FourokRuntimeResource,
     stream: str | None = None,
     streams: tuple[str, ...] = (),
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     stream_names = streams or ((stream,) if stream is not None else ())
     records = [
         record
@@ -455,7 +455,7 @@ def _import_live_landed_source_records(
     connector_name: str,
     stream: str | None = None,
     streams: tuple[str, ...] = (),
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     asset_name = _source_records_asset_span_name(connector_name)
     with critical_span(
         asset_name,
@@ -494,7 +494,7 @@ def _import_live_landed_source_records(
 
 def _import_source_records(
     *, records: list[Any], fourok_runtime: FourokRuntimeResource
-) -> tuple[MaterializeResult, SourceRecordImportReport]:
+) -> tuple[MaterializeResult[Any], SourceRecordImportReport]:
     context = GovernedContext(
         fourok_runtime.state,
         database_url=fourok_runtime.database_url or None,
@@ -507,7 +507,7 @@ def _import_source_records(
 def _source_record_materialization(
     report: SourceRecordImportReport,
     metadata: dict[str, Any] | None = None,
-) -> MaterializeResult:
+) -> MaterializeResult[Any]:
     result_metadata = {
         "record_count": report.record_count,
         "source_refs": MetadataValue.json(list(report.source_refs)),

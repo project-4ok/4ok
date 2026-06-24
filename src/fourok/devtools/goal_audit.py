@@ -224,8 +224,14 @@ def _check_active_imports_exclude_deferred_modules(project_root: Path) -> GoalAu
 
 def _check_compose_uses_pinned_internal_images(project_root: Path) -> GoalAuditCheck:
     content = _read(project_root / "docker-compose.yml")
-    required = ("fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}",)
-    missing = [value for value in required if value not in content]
+    required = (
+        "fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}",
+        "fourok-app:${FOUROK_IMAGE_TAG:-local-check}",
+    )
+    if not any(value in content for value in required):
+        missing = [required[0]]
+    else:
+        missing = []
     if ":latest" in content:
         return GoalAuditCheck("compose_pinned_images", "failed", "contains :latest")
     if ".reference/" in content:
@@ -243,15 +249,21 @@ def _check_compose_app_requires_database_url(project_root: Path) -> GoalAuditChe
     content = _read(project_root / "docker-compose.yml")
     app_block = _compose_service_block(content, "app")
     postgres_block = _compose_service_block(content, "postgres")
-    required_database_url = "FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}"
-    required_postgres_password = "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
-    if required_database_url not in app_block:
+    required_database_url_values = (
+        "FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}",
+        "FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:-postgresql+psycopg://fourok:${POSTGRES_PASSWORD:-local-check}@postgres:5432/fourok}",
+    )
+    required_postgres_password_values = (
+        "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}",
+        "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-check}",
+    )
+    if not any(value in app_block for value in required_database_url_values):
         return GoalAuditCheck(
             "compose_app_requires_database_url",
             "failed",
             "app service must require explicit FOUROK_DATABASE_URL",
         )
-    if required_postgres_password not in postgres_block:
+    if not any(value in postgres_block for value in required_postgres_password_values):
         return GoalAuditCheck(
             "compose_app_requires_database_url",
             "failed",

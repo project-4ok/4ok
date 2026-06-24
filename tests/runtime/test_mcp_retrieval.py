@@ -112,6 +112,44 @@ def test_mcp_tool_schemas_are_discoverable_without_stdio_server() -> None:
     ]
 
 
+def test_mcp_main_can_run_streamable_http_transport(monkeypatch: pytest.MonkeyPatch) -> None:
+    captured: dict[str, object] = {}
+
+    class FakeServer:
+        def run(self, *, transport: str, mount_path: str | None = None) -> None:
+            captured["transport"] = transport
+            captured["mount_path"] = mount_path
+
+    def fake_build_mcp_server(**kwargs):
+        captured.update(kwargs)
+        return FakeServer()
+
+    monkeypatch.setattr(mcp_retrieval, "build_mcp_server", fake_build_mcp_server)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok-mcp",
+            "--transport",
+            "streamable-http",
+            "--host",
+            "0.0.0.0",
+            "--port",
+            "8010",
+            "--mount-path",
+            "/mcp",
+        ],
+    )
+
+    mcp_retrieval.main()
+
+    assert captured == {
+        "host": "0.0.0.0",
+        "port": 8010,
+        "transport": "streamable-http",
+        "mount_path": "/mcp",
+    }
+
+
 @pytest.mark.anyio
 async def test_fastmcp_server_registers_public_tool_names() -> None:
     server = mcp_retrieval.build_mcp_server()

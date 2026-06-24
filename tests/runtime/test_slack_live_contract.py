@@ -12,7 +12,8 @@ assert _SPEC.loader is not None
 _SPEC.loader.exec_module(slack_live_contract)
 
 
-def test_slack_env_defaults_to_readable_channel_types(monkeypatch) -> None:
+def test_slack_env_defaults_to_readable_channel_types(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("TAP_SLACK_CHANNEL_TYPES", raising=False)
     monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test")
 
@@ -22,7 +23,8 @@ def test_slack_env_defaults_to_readable_channel_types(monkeypatch) -> None:
     assert env["TAP_SLACK_INCLUDE_ADMIN_STREAMS"] == "false"
 
 
-def test_slack_env_uses_exported_token(monkeypatch) -> None:
+def test_slack_env_uses_exported_token(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test")
 
     env = slack_live_contract._slack_env()
@@ -30,7 +32,8 @@ def test_slack_env_uses_exported_token(monkeypatch) -> None:
     assert env["TAP_SLACK_API_KEY"] == "xoxb-test"
 
 
-def test_slack_env_preserves_explicit_channel_types(monkeypatch) -> None:
+def test_slack_env_preserves_explicit_channel_types(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("TAP_SLACK_CHANNEL_TYPES", '["private_channel"]')
     monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test")
 
@@ -43,6 +46,7 @@ def test_live_checker_reports_missing_credentials_as_blocker(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
+    monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("SLACK_BOT_TOKEN", raising=False)
     monkeypatch.delenv("TAP_SLACK_API_KEY", raising=False)
 
@@ -52,7 +56,7 @@ def test_live_checker_reports_missing_credentials_as_blocker(
     assert report["stage"] == "credentials"
     assert report["credential_inputs"] == {
         "has_slack_token": False,
-        "has_dotenv": Path(".env").exists(),
+        "has_dotenv": False,
     }
     assert report["runtime_database"] == {
         "status": "skipped",

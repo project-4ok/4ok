@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import sys
 from collections.abc import Callable, Sequence
 from pathlib import Path
@@ -168,7 +169,11 @@ def operator_status(
     )
 
 
-def build_mcp_server():
+def build_mcp_server(
+    *,
+    host: str = "127.0.0.1",
+    port: int = 8000,
+):
     try:
         from mcp.server.fastmcp import FastMCP
     except ImportError as exc:  # pragma: no cover - exercised only without optional runtime dep.
@@ -177,7 +182,12 @@ def build_mcp_server():
             'Install project dependencies or run `uv add "mcp>=1.0"`.'
         ) from exc
 
-    mcp = FastMCP("fourok Retrieval")
+    mcp = FastMCP(
+        "fourok Retrieval",
+        host=host,
+        port=port,
+        streamable_http_path="/mcp",
+    )
 
     @mcp.tool(name="search_fourok")
     def search_fourok_tool(
@@ -215,8 +225,23 @@ def build_mcp_server():
 
 
 def main() -> None:
+    parser = argparse.ArgumentParser(prog="fourok-mcp")
+    parser.add_argument(
+        "--transport",
+        choices=["stdio", "sse", "streamable-http"],
+        default="stdio",
+        help="MCP transport. Use streamable-http for Docker/HTTP clients.",
+    )
+    parser.add_argument("--host", default="127.0.0.1")
+    parser.add_argument("--port", type=int, default=8000)
+    parser.add_argument("--mount-path", default="/mcp")
+    args = parser.parse_args()
+
     try:
-        build_mcp_server().run()
+        build_mcp_server(host=args.host, port=args.port).run(
+            transport=args.transport,
+            mount_path=args.mount_path,
+        )
     except RuntimeError as exc:
         print(str(exc), file=sys.stderr)
         raise SystemExit(2) from exc

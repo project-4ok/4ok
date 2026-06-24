@@ -25,12 +25,23 @@ from fourok.storage.config import RetrievalConfig
 
 
 class RebuildState(Protocol):
-    engine: Engine
-    source_records: Table
-    source_identities: Table
-    canonical_objects: Table
-    entity_links: Table
-    retrieval_records: Table
+    @property
+    def engine(self) -> Engine: ...
+
+    @property
+    def source_records(self) -> Table: ...
+
+    @property
+    def source_identities(self) -> Table: ...
+
+    @property
+    def canonical_objects(self) -> Table: ...
+
+    @property
+    def entity_links(self) -> Table: ...
+
+    @property
+    def retrieval_records(self) -> Table: ...
 
 
 def rebuild_context_objects(state: RebuildState) -> dict[str, int | str]:

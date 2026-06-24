@@ -1,8 +1,8 @@
 # fourok MCP Retrieval Server
 
-fourok exposes a local stdio MCP server for agents that need to test retrieval
-against governed state. The server wraps the same `GovernedContext.search_context`
-path used by `fourok search-state`.
+fourok exposes a local stdio MCP server for agents and a Docker-started
+streamable HTTP MCP server for clients that connect over HTTP. Both paths wrap
+the retrieval API boundary in `fourok.retrieval.api.RetrievalAPI`.
 
 ## Tools
 
@@ -22,9 +22,35 @@ configured raw-store and retrieval settings.
 
 ## Run
 
+Stdio mode for local agent clients:
+
 ```bash
 uv run fourok-mcp
 ```
+
+Streamable HTTP mode for HTTP MCP clients:
+
+```bash
+uv run fourok-mcp --transport streamable-http --host 0.0.0.0 --port 8010 --mount-path /mcp
+```
+
+Docker Compose starts the HTTP MCP server by default alongside Postgres and the
+runtime app:
+
+```bash
+docker compose up -d --build
+```
+
+Default local endpoint:
+
+```text
+http://127.0.0.1:8010/mcp
+```
+
+Override the host port with `FOUROK_MCP_PORT=...`. The compose service binds to
+loopback only by default. If a hosted client such as ChatGPT web needs to reach
+it from outside this machine, put an HTTPS tunnel/reverse proxy in front of this
+local endpoint and keep database credentials out of the client config.
 
 Hermes can connect to the stdio server with this native MCP config shape. Set
 `cwd` to the repository checkout that contains this `pyproject.toml`:

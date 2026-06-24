@@ -61,6 +61,7 @@ def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkey
         "app",
     )
     assert cleanup_step.name == "cleanup-smoke-projects"
+    assert "^smoke-fourok" in cleanup_step.command[2]
     assert core_step.command == app_step.command
     assert app_step.env["FOUROK_IMAGE_TAG"] == "abc1234"
     assert app_step.env["POSTGRES_PASSWORD"] == "local-check"

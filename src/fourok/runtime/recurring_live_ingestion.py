@@ -1,10 +1,12 @@
 from __future__ import annotations
 
 import subprocess
-from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any
+from typing import Any, Protocol
+
+from sqlalchemy.engine import Engine
+from sqlalchemy.sql.schema import Table
 
 from fourok.etl.extract.sync_jobs import (
     complete_connector_job,
@@ -16,11 +18,15 @@ from fourok.etl.extract.sync_jobs import (
 LIVE_INGESTION_SOURCES = ("twenty", "slack", "linear", "google_drive")
 
 
-@dataclass(frozen=True)
-class LiveIngestionState:
-    engine: Any
-    connector_states: Any
-    connector_job_runs: Any
+class LiveIngestionState(Protocol):
+    @property
+    def engine(self) -> Engine: ...
+
+    @property
+    def connector_states(self) -> Table: ...
+
+    @property
+    def connector_job_runs(self) -> Table: ...
 
 
 def run_live_ingestion_backfill(

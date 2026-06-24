@@ -34,12 +34,13 @@ def test_operator_status_default_resolves_compose_database_url_from_env_file(
 
 
 def test_operator_status_default_prefers_compose_env_over_stale_shell_env(
-    monkeypatch,
+    monkeypatch, tmp_path: Path
 ) -> None:
     monkeypatch.setenv(
         "FOUROK_DATABASE_URL",
         "postgresql+psycopg://fourok:stale@127.0.0.1:5432/fourok",
     )
+    monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
     monkeypatch.setattr(
         "fourok.cli_parts.commands_runtime.operator_environment",
@@ -205,7 +206,7 @@ def test_operator_status_explicit_state_without_database_url_uses_state_file(
     assert database_url is None
 
 
-def test_cli_health_defaults_to_host_runtime_database(capsys, monkeypatch) -> None:
+def test_cli_health_defaults_to_host_runtime_database(capsys, monkeypatch, tmp_path: Path) -> None:
     calls: list[dict[str, object]] = []
 
     def fake_create_state(**kwargs):
@@ -228,6 +229,7 @@ def test_cli_health_defaults_to_host_runtime_database(capsys, monkeypatch) -> No
         lambda _state: {"status": "ok", "checks": []},
     )
     monkeypatch.setattr("sys.argv", ["fourok", "health"])
+    monkeypatch.chdir(tmp_path)
 
     main()
 

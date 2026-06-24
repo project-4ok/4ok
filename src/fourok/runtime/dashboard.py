@@ -12,20 +12,42 @@ from sqlalchemy.sql.schema import Table
 from fourok.etl.extract.sync_jobs import connector_job_runs, connector_retry_plan
 from fourok.governance.audit import audit_summary
 from fourok.runtime.recurring_live_ingestion import live_ingestion_status
+from fourok.storage.raw_store import FileRawSourceStore
 
 
 class DashboardState(Protocol):
-    engine: Engine
-    source_records: Table
-    canonical_objects: Table
-    entity_links: Table
-    retrieval_records: Table
-    source_lifecycle: Table
-    connector_states: Table
-    connector_job_runs: Table
-    webhook_events: Table
-    audit_events: Table
-    raw_store: object | None
+    @property
+    def engine(self) -> Engine: ...
+
+    @property
+    def source_records(self) -> Table: ...
+
+    @property
+    def canonical_objects(self) -> Table: ...
+
+    @property
+    def entity_links(self) -> Table: ...
+
+    @property
+    def retrieval_records(self) -> Table: ...
+
+    @property
+    def source_lifecycle(self) -> Table: ...
+
+    @property
+    def connector_states(self) -> Table: ...
+
+    @property
+    def connector_job_runs(self) -> Table: ...
+
+    @property
+    def webhook_events(self) -> Table: ...
+
+    @property
+    def audit_events(self) -> Table: ...
+
+    @property
+    def raw_store(self) -> FileRawSourceStore | None: ...
 
 
 def operator_dashboard(

@@ -155,7 +155,7 @@ def test_goal_alignment_audit_catches_compose_app_database_url_default(
                 "  app:",
                 "    image: fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}",
                 "    environment:",
-                "      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:-postgresql+psycopg://fourok:fourok_dev_password@postgres:5432/fourok}",
+                "      FOUROK_DATABASE_URL: postgresql+psycopg://fourok:fourok_dev_password@postgres:5432/fourok",
             ]
         ),
         encoding="utf-8",

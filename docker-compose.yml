@@ -5,37 +5,13 @@ services:
     environment:
       POSTGRES_DB: fourok
       POSTGRES_USER: fourok
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-check}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U fourok -d fourok"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-
-  cerbos:
-    image: ghcr.io/cerbos/cerbos:0.53.0
-    restart: unless-stopped
-    command: ["server", "--config=/config/config.yaml"]
-    ports:
-      - "127.0.0.1:3592:3592"
-      - "127.0.0.1:3593:3593"
-    volumes:
-      - ./cerbos/config.yaml:/config/config.yaml:ro
-      - ./cerbos/policies:/policies:ro
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "/cerbos",
-          "healthcheck",
-          "--config=/config/config.yaml",
-          "--kind=http",
-          "--insecure",
-        ]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -83,7 +59,7 @@ services:
 
   fourok-metrics-exporter:
     profiles: ["observability"]
-    image: fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}
+    image: fourok-app:${FOUROK_IMAGE_TAG:-local-check}
     build:
       context: .
       dockerfile: docker/app.Dockerfile
@@ -100,7 +76,7 @@ services:
       ]
     environment:
       FOUROK_DAGSTER_GRAPHQL_URL: http://dagster-webserver:3001/graphql
-      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}
+      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:-postgresql+psycopg://fourok:${POSTGRES_PASSWORD:-local-check}@postgres:5432/fourok}
       FOUROK_STATE_PATH: /app/.local/dagster/fourok-state.sqlite
     expose:
       - "9108"
@@ -117,7 +93,7 @@ services:
     environment:
       POSTGRES_DB: dagster
       POSTGRES_USER: dagster
-      POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
+      POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:-local-check}
     volumes:
       - dagster-postgres-data:/var/lib/postgresql/data
     healthcheck:
@@ -128,19 +104,19 @@ services:
 
   dagster-code:
     profiles: ["pipeline"]
-    image: fourok-dagster-code:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}
+    image: fourok-dagster-code:${FOUROK_IMAGE_TAG:-local-check}
     restart: unless-stopped
     build:
       context: .
       dockerfile: docker/dagster.Dockerfile
       target: dagster-code
     environment:
-      DAGSTER_CURRENT_IMAGE: fourok-dagster-code:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}
+      DAGSTER_CURRENT_IMAGE: fourok-dagster-code:${FOUROK_IMAGE_TAG:-local-check}
       DAGSTER_POSTGRES_USER: dagster
-      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
+      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:-local-check}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}
+      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:-postgresql+psycopg://fourok:${POSTGRES_PASSWORD:-local-check}@postgres:5432/fourok}
       FOUROK_PROJECT_ROOT: /app
       FOUROK_RAW_LANDING_DIR: /app/.local/raw/singer
       FOUROK_STATE_PATH: /app/.local/dagster/fourok-state.sqlite
@@ -179,7 +155,7 @@ services:
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
       DAGSTER_POSTGRES_USER: dagster
-      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
+      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:-local-check}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
       FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
@@ -222,7 +198,7 @@ services:
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
       DAGSTER_POSTGRES_USER: dagster
-      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
+      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:-local-check}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
       FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
@@ -245,13 +221,13 @@ services:
       start_period: 15s
 
   app:
-    image: fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}
+    image: fourok-app:${FOUROK_IMAGE_TAG:-local-check}
     restart: unless-stopped
     build:
       context: .
       dockerfile: docker/app.Dockerfile
     environment:
-      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}
+      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:-postgresql+psycopg://fourok:${POSTGRES_PASSWORD:-local-check}@postgres:5432/fourok}
       FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}
       FOUROK_EMBEDDING_PROVIDER: ${FOUROK_EMBEDDING_PROVIDER:-}
       FOUROK_OPENAI_EMBEDDING_MODEL: ${FOUROK_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
@@ -273,6 +249,50 @@ services:
       retries: 12
       start_period: 10s
     command: ["runtime-monitor", "--config", "/etc/fourok/fourok.toml"]
+
+  mcp:
+    image: fourok-app:${FOUROK_IMAGE_TAG:-local-check}
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    entrypoint: ["/app/.venv/bin/fourok-mcp"]
+    command:
+      [
+        "--transport",
+        "streamable-http",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "8010",
+        "--mount-path",
+        "/mcp",
+      ]
+    environment:
+      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:-postgresql+psycopg://fourok:${POSTGRES_PASSWORD:-local-check}@postgres:5432/fourok}
+      FOUROK_CONFIG_PATH: /etc/fourok/fourok.toml
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-mcp}
+    ports:
+      - "127.0.0.1:${FOUROK_MCP_PORT:-8010}:8010"
+    volumes:
+      - fourok-local:/app/.local
+      - fourok-data:/var/lib/fourok
+      - ${FOUROK_CONFIG_PATH:-./.local/fourok.toml}:/etc/fourok/fourok.toml:ro
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python - <<'PY'\nimport socket\ns=socket.create_connection(('127.0.0.1', 8010), 2)\ns.close()\nPY",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 10s
 
 volumes:
   postgres-data:

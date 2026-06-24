@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 from dataclasses import dataclass
 from datetime import UTC, datetime, timedelta
-from typing import Any, Protocol
+from typing import Any, Protocol, cast
 
 from sqlalchemy import insert, select, update
 from sqlalchemy.engine import Engine
@@ -16,9 +16,14 @@ from fourok.storage.raw_store import FileRawSourceStore
 
 
 class WebhookState(Protocol):
-    engine: Engine
-    webhook_events: Table
-    raw_store: FileRawSourceStore | None
+    @property
+    def engine(self) -> Engine: ...
+
+    @property
+    def webhook_events(self) -> Table: ...
+
+    @property
+    def raw_store(self) -> FileRawSourceStore | None: ...
 
 
 class WebhookPayloadError(ValueError):
@@ -163,7 +168,7 @@ def _claim_pending_events(
             ).mappings()
         ]
         for row in rows:
-            row["attempt_count"] = int(row["attempt_count"]) + 1
+            row["attempt_count"] = int(cast(int | str, row["attempt_count"])) + 1
             connection.execute(
                 update(state.webhook_events)
                 .where(state.webhook_events.c.event_id == row["event_id"])
@@ -262,7 +267,7 @@ def _mark_failed(
     max_attempts: int,
     retry_delay_seconds: int,
 ) -> None:
-    attempt_count = int(event["attempt_count"])
+    attempt_count = int(cast(int | str, event["attempt_count"]))
     should_retry = attempt_count < max(1, max_attempts)
     current_time = now or datetime.now(UTC)
     values = {

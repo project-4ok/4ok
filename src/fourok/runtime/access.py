@@ -56,7 +56,9 @@ def check_compose_access_boundary(
             exposure = _exposure(service_name, port)
             if exposure is None:
                 continue
-            allowed = _exposure_key(exposure) in ALLOWED_EXPOSURES
+            allowed = _exposure_key(exposure) in ALLOWED_EXPOSURES or _is_allowed_dynamic_mcp(
+                exposure
+            )
             exposures.append({**exposure, "status": "allowed" if allowed else "unexpected"})
             if exposure["host_ip"] in BROAD_HOSTS:
                 violations.append({**exposure, "reason": "broad_host_binding"})
@@ -159,6 +161,15 @@ def _exposure_key(exposure: dict[str, str]) -> tuple[str, str, str, str, str]:
         exposure["published"],
         exposure["target"],
         exposure["protocol"],
+    )
+
+
+def _is_allowed_dynamic_mcp(exposure: dict[str, str]) -> bool:
+    return (
+        exposure["service"] == "mcp"
+        and exposure["host_ip"].startswith("127.0.0.1")
+        and exposure["target"] == "8010"
+        and exposure["protocol"] == "tcp"
     )
 
 

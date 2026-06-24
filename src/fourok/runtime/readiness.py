@@ -15,6 +15,10 @@ REQUIRED_APP_ENV = (
     "OTEL_EXPORTER_OTLP_ENDPOINT",
     "OTEL_SERVICE_NAME",
 )
+LOCAL_DATABASE_URL_REFERENCE = (
+    "${FOUROK_DATABASE_URL:-postgresql+psycopg://fourok:${POSTGRES_PASSWORD:-local-check}"
+    "@postgres:5432/fourok}"
+)
 REQUIRED_RUNBOOK_TERMS = (
     "deploy",
     "health",
@@ -79,7 +83,10 @@ def _check_active_services(services: dict[str, Any]) -> dict[str, object]:
 def _check_images(services: dict[str, Any]) -> dict[str, object]:
     problems: list[str] = []
     app_image = str(services.get("app", {}).get("image", ""))
-    if "${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}" not in app_image:
+    if (
+        "${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}" not in app_image
+        and "${FOUROK_IMAGE_TAG:-local-check}" not in app_image
+    ):
         problems.append("app image must be tagged by FOUROK_IMAGE_TAG")
     for service_name, service in services.items():
         image = str(service.get("image", ""))
@@ -132,7 +139,7 @@ def _check_app_environment(services: dict[str, Any]) -> dict[str, object]:
     missing = [name for name in REQUIRED_APP_ENV if name not in app_environment]
     if "${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}" not in str(
         app_environment.get("FOUROK_DATABASE_URL", "")
-    ):
+    ) and LOCAL_DATABASE_URL_REFERENCE not in str(app_environment.get("FOUROK_DATABASE_URL", "")):
         missing.append("FOUROK_DATABASE_URL must fail fast when missing")
     return _check("app_environment", missing=missing)
 

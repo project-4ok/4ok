@@ -26,11 +26,12 @@ def test_internal_prod_readiness_report_passes_for_current_compose() -> None:
 
 def test_internal_prod_readiness_report_catches_latest_app_tag(tmp_path: Path) -> None:
     compose_file = tmp_path / "docker-compose.yml"
+    compose_content = Path("docker-compose.yml").read_text(encoding="utf-8")
     compose_file.write_text(
-        Path("docker-compose.yml")
-        .read_text(encoding="utf-8")
-        .replace(
-            "fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}",
+        compose_content.replace(
+            "fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}", "fourok-app:latest"
+        ).replace(
+            "fourok-app:${FOUROK_IMAGE_TAG:-local-check}",
             "fourok-app:latest",
         ),
         encoding="utf-8",
