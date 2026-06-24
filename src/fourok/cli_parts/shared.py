@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import argparse
-import os
 from pathlib import Path
 
 from fourok.governance.policy import PrincipalContext
@@ -26,36 +25,4 @@ def _principal_from_args(args: argparse.Namespace) -> PrincipalContext:
         human_id=args.human_id,
         agent_id=args.agent_id,
         roles=tuple(args.role),
-    )
-
-
-def _int_env(name: str, default: int) -> int:
-    value = os.environ.get(name)
-    if value is None:
-        return default
-    try:
-        return int(value)
-    except ValueError as exc:
-        raise SystemExit(f"{name} must be an integer") from exc
-
-
-def _add_source_snapshot_args(parser: argparse.ArgumentParser) -> None:
-    parser.add_argument(
-        "--source-limit",
-        type=int,
-        default=_int_env("HONCHO_SOURCE_LIMIT", 20),
-    )
-    parser.add_argument(
-        "--catalog-limit",
-        type=int,
-        default=_int_env("HONCHO_CATALOG_LIMIT", 100),
-    )
-    parser.add_argument(
-        "--sources",
-        default=os.environ.get("HONCHO_SYNC_SOURCES", "linear,twenty,slack"),
-    )
-    parser.add_argument(
-        "--checkpoint-overlap-minutes",
-        type=int,
-        default=_int_env("HONCHO_CHECKPOINT_OVERLAP_MINUTES", 5),
     )

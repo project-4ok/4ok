@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from fourok.cli_parts.core_commands import dispatch_core
-from fourok.cli_parts.honcho_commands import dispatch_honcho
 from fourok.cli_parts.parser import build_parser
 
 
@@ -13,8 +12,6 @@ def main() -> None:
     if args.command == "admin":
         args.command = args.admin_command
     if dispatch_core(args):
-        return
-    if dispatch_honcho(args):
         return
 
 

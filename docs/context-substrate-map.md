@@ -90,7 +90,7 @@ contribute to identity merging when the evidence type is strong enough.
 | Neo4j | Explicit entity graph, graph traversal, custom modeling, relationship queries | We build extraction, linking, indexing, governance, and retrieval orchestration ourselves | Good if we need maximum control |
 | LlamaIndex | Parsing, source nodes, retriever composition, citation-oriented synthesis, property graph helpers | Not a governed context substrate alone; entity resolution and permissions are custom | Useful orchestration/retrieval library |
 | LangGraph | Agent/workflow orchestration and stateful tool flows | Not source/evidence storage or entity linking | Useful for agent-side query workflow later |
-| Honcho | User/agent/participant memory, peer representations, conversation continuity | Peer/session scoping fights company-wide evidence discovery; no native entity discovery; source provenance is not the main abstraction | Keep as OpenClaw/user memory experiment, not primary company brain |
+| Honcho | User/agent/participant memory, peer representations, conversation continuity | Peer/session scoping fights company-wide evidence discovery; no native entity discovery; source provenance is not the main abstraction | Future retrieval-fusion sidecar for agent long-term memory, not primary company brain |
 | OpenViking | Resource-centric context filesystem, URIs, hierarchical retrieval | Entity linking and governance still ours; less clearly a temporal entity/fact graph | Optional docs/resource layer to revisit |
 | Microsoft GraphRAG | Batch corpus summarization, themes, communities, broad sensemaking | Less suited to live day-2 enterprise records, permissions, and precise evidence lifecycle | Possible secondary analysis layer |
 | Meltano/Singer | Connector execution, state/checkpoint patterns, existing taps | Source permissions and rich domain semantics often incomplete | Use where connector output is sufficient |
@@ -144,10 +144,11 @@ connectors
 
 For now:
 
-- keep Honcho as a side experiment for OpenClaw/user continuity
 - stop designing company context around Honcho peers
 - compare entity linking, source provenance, and retrieval quality using the
   source-record-first retrieval path
+- keep future Honcho work as a retrieval-fusion feature: a short memory section
+  may be appended to retrieval responses after governed evidence is assembled
 
 Current retrieval evidence:
 
@@ -158,25 +159,7 @@ Current retrieval evidence:
 - categories cover exact employee linking, ambiguous Robin references,
   retrieval/provenance, governance metadata compatibility, chat-acquired
   knowledge, and day-2 lifecycle
-- the hidden `fourok evidence-baseline-eval` command keeps the old custom baseline
-  available as a comparison floor
 
-Retired graph substrate note:
-
-- The Graphiti runner, Dockerfile, CLI dry-run command, and episode-conversion
-  module were removed because source records were carrying the evidence contract.
-- The source-record-first retrieval path is the active comparison floor.
-
-Current Honcho comparison:
-
-- Dockerized app image `fourok-app:47d077b6acd9`
-- fixture sync wrote 7 Honcho messages into a fresh workspace
-- workspace search scored 7/15, with 6/15 top-1 hits and 7/15 top-3 hits
-- passed ambiguous message retrieval and day-2 message cases
-- missed employee catalog, governance metadata, broad project/team retrieval,
-  and one chat-acquired knowledge case
-- keep Honcho as OpenClaw/user continuity memory, not primary company context
-  retrieval
 
 ## Next Experiments
 

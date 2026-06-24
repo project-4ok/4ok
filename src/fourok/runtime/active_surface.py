@@ -56,25 +56,14 @@ ACTIVE_CLI_COMMANDS = frozenset(
     }
 )
 
-HIDDEN_EXPERIMENT_COMMANDS = frozenset(
-    {
-        "evidence-baseline-eval",
-        "honcho-eval",
-        "honcho-preflight",
-        "honcho-receipt",
-        "honcho-smoke",
-        "honcho-sync",
-    }
-)
+HIDDEN_EXPERIMENT_COMMANDS = frozenset()
 
 DEFERRED_MODULE_PREFIXES = frozenset(
     {
         "fourok.governance.deferred_reveal_policy",
         "fourok.governance.reveal",
         "fourok.governance.token_store",
-        "fourok.honcho",
         "fourok.evaluation",
-        "fourok.retrieval.evidence_baseline",
         "fourok.etl.transform.pii",
         "fourok.etl.transform.tokens",
     }

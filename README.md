@@ -117,7 +117,6 @@ src/fourok/retrieval/clients/ thin wrappers for CLI, MCP, and future adapters
 src/fourok/governance/        permissions, lifecycle, retention, reveal policy, audit behavior
 src/fourok/runtime/           MCP, operator status, dashboards, observability, Dagster/runtime checks
 src/fourok/orchestration/     Dagster resource wiring
-src/fourok/honcho/            side experiment for OpenClaw/user-continuity memory
 src/fourok/devtools/          local development gates, diagnostics, Grafana status, and goal audits
 src/fourok/secrets/           environment/secret loading helpers
 fixtures/                    synthetic data for deterministic onboarding and tests

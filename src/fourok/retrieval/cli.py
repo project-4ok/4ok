@@ -5,12 +5,14 @@ import json
 import os
 from pathlib import Path
 
-from fourok.runtime.cli import health_database_url
 from fourok.cli_parts.runtime_helpers import _database_url_from_args
 from fourok.cli_parts.shared import DEFAULT_STATE, _principal_from_args
+from fourok.etl.extract.context_snapshot import load_context_snapshot_source_records
 from fourok.etl.extract.email_parser import load_email_dir_with_report
 from fourok.governance import GovernedContext
 from fourok.retrieval.clients import cli as retrieval_client
+from fourok.retrieval.context_eval import evaluate_governed_context_retrieval
+from fourok.runtime.cli import health_database_url
 from fourok.runtime.operator_live import host_database_url
 
 
@@ -67,6 +69,14 @@ def add_search_commands(subparsers, *, public: bool = False) -> None:
         type=int,
         default=40,
         help=argparse.SUPPRESS if public else None,
+    )
+    retrieve_parser.add_argument(
+        "--token-budget",
+        type=int,
+        default=retrieval_client.DEFAULT_RETRIEVAL_TOKEN_BUDGET,
+        help=argparse.SUPPRESS
+        if public
+        else "Estimated token budget for rendered retrieval context.",
     )
     retrieve_parser.add_argument(
         "--state",
@@ -141,6 +151,23 @@ def add_search_commands(subparsers, *, public: bool = False) -> None:
         default=Path(".local/codex-runs/live-retrieval-case-set/report.md"),
     )
 
+    retrieval_eval_parser = subparsers.add_parser(
+        "eval-retrieval",
+        help="Run the local golden-query retrieval/evidence evaluation.",
+    )
+    retrieval_eval_parser.add_argument(
+        "--cases",
+        type=Path,
+        default=Path("fixtures/context_substrate/evidence_baseline_cases.json"),
+    )
+    retrieval_eval_parser.add_argument(
+        "--fixture",
+        type=Path,
+        default=Path("fixtures/context_substrate/source_snapshot_eval.json"),
+        help="Fixture JSON containing source records and source catalog data.",
+    )
+    retrieval_eval_parser.add_argument("--limit", type=int, default=5)
+
 
 def dispatch_search_commands(args: argparse.Namespace) -> bool:
     database_url = _database_url_from_args(args)
@@ -207,6 +234,7 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
             if args.format == "json":
                 response = retrieval_client.retrieve_augmentation(
                     args.query,
+                    token_budget=args.token_budget,
                     candidate_limit=args.candidate_limit,
                     retrievers=retrievers,
                     state=args.state,
@@ -216,6 +244,7 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
             else:
                 block = retrieval_client.retrieve_block(
                     args.query,
+                    token_budget=args.token_budget,
                     candidate_limit=args.candidate_limit,
                     retrievers=retrievers,
                     state=args.state,
@@ -267,7 +296,36 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
         if report.get("status") == "needs_review":
             raise SystemExit(1)
         return True
+
+    if args.command == "eval-retrieval":
+        try:
+            records = load_context_snapshot_source_records(args.fixture)
+            cases = _load_retrieval_eval_cases(args.cases)
+            report = evaluate_governed_context_retrieval(records, cases, limit=args.limit)
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        print(json.dumps({"substrate": "governed_context", **report}, indent=2))
+        return True
+
     return False
+
+
+def _load_retrieval_eval_cases(path: Path) -> list[dict[str, object]]:
+    try:
+        data = json.loads(path.read_text(encoding="utf-8"))
+    except OSError as exc:
+        raise ValueError(f"could not read retrieval eval cases: {path}") from exc
+    except json.JSONDecodeError as exc:
+        raise ValueError(f"invalid retrieval eval cases JSON: {path}") from exc
+    if not isinstance(data, list):
+        raise ValueError("retrieval eval cases must be a JSON list")
+    cases = [item for item in data if isinstance(item, dict)]
+    if len(cases) != len(data):
+        raise ValueError("retrieval eval cases must contain only objects")
+    for index, case in enumerate(cases, start=1):
+        if not isinstance(case.get("query"), str) or not case.get("query"):
+            raise ValueError(f"retrieval eval case {index} requires query")
+    return cases
 
 
 def _retrieval_database_url(args: argparse.Namespace, database_url: str | None) -> str | None:

@@ -2,12 +2,11 @@ from __future__ import annotations
 
 import argparse
 
-from fourok.cli_parts.parser_honcho import add_honcho_commands
 from fourok.cli_parts.parser_imports import add_import_commands
-from fourok.runtime.parser import add_runtime_commands
 from fourok.cli_parts.shared import _hide_subparser
 from fourok.governance.cli import add_audit_commands, add_retention_commands
 from fourok.retrieval.cli import add_search_commands
+from fourok.runtime.parser import add_runtime_commands
 from fourok.runtime.webhooks_cli import add_webhook_commands
 from fourok.storage.cli import add_backup_commands
 
@@ -37,7 +36,6 @@ def build_parser() -> argparse.ArgumentParser:
     add_runtime_commands(subparsers)
     add_import_commands(subparsers)
     add_webhook_commands(subparsers)
-    add_honcho_commands(subparsers)
     add_onboard_command(subparsers)
     add_admin_command(subparsers)
 
@@ -89,4 +87,3 @@ def add_admin_command(subparsers) -> None:
     add_runtime_commands(admin_subparsers)
     add_import_commands(admin_subparsers)
     add_webhook_commands(admin_subparsers)
-    add_honcho_commands(admin_subparsers)
