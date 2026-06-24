@@ -326,6 +326,7 @@ def test_mcp_search_emits_safe_success_span(monkeypatch) -> None:
 
     response = search_fourok(
         query="Sensitive renewal",
+        roles=["operator"],
         state="private-state.sqlite",
         database_url="postgresql+psycopg://fourok:secret@localhost:5432/fourok",
         context_factory=lambda *args, **kwargs: context,

@@ -21,12 +21,15 @@ def search_fourok(
     config: str | Path | None = None,
     context_factory: ContextFactory = GovernedContext,
 ) -> dict[str, object]:
-    return RetrievalAPI(
+    api = RetrievalAPI(
         state=state,
         database_url=database_url,
         config=config,
         context_factory=context_factory,
-    ).search_evidence(
+    )
+    if roles is None:
+        return api.retrieve_augmentation(query, candidate_limit=limit)
+    return api.search_evidence(
         query,
         limit=limit,
         roles=roles,

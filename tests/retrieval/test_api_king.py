@@ -121,7 +121,15 @@ def test_cli_and_mcp_clients_are_thin_wrappers_over_retrieval_api(monkeypatch) -
         "results": [],
     }
     assert mcp_client.search_fourok("mcp query", state="state.sqlite") == {
-        "query": "mcp query",
+        "status": "ok",
+        "results": [],
+    }
+    assert mcp_client.search_fourok(
+        "mcp scoped query",
+        roles=["operator"],
+        state="state.sqlite",
+    ) == {
+        "query": "mcp scoped query",
         "results": [],
     }
     assert mcp_client.operator_status(state="state.sqlite") == {"status": "ok"}
@@ -129,7 +137,9 @@ def test_cli_and_mcp_clients_are_thin_wrappers_over_retrieval_api(monkeypatch) -
         ("init", "state.sqlite"),
         ("retrieve", "cli query"),
         ("init", "state.sqlite"),
-        ("search", "mcp query"),
+        ("retrieve", "mcp query"),
+        ("init", "state.sqlite"),
+        ("search", "mcp scoped query"),
         ("init", "state.sqlite"),
         ("status", ""),
     ]
