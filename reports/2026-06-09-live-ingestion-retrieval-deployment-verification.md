@@ -35,7 +35,7 @@ b7016cf Add operator live ingestion command
 --- Infra latest commits ---
 9b010dd (HEAD -> main, origin/main, origin/HEAD) Clarify OpenViking read level guidance
 362d53e Preserve prod Slack DM routing on promotion
-f48d5b2 Restore 4ok Jules model fallback
+f48d5b2 Restore fourok Jules model fallback
 d0b7c57 Keep prod Slack DMs out of assistant threads
 ce40e13 Retry external secret manager CLI download in dev deploy workflow
 77e5f3a Mount Codex auth bootstrap helper in gateway runtime
@@ -43,17 +43,17 @@ ce40e13 Retry external secret manager CLI download in dev deploy workflow
 c542a2a Stage Codex bootstrap helper in runtime bundle
 
 --- Relevant Docker containers ---
-4ok-dagster-webserver-1	Up 2 hours (healthy)	127.0.0.1:3001->3001/tcp
-4ok-dagster-daemon-1	Up 2 hours (healthy)
-4ok-dagster-code-1	Up 2 hours (healthy)	4000/tcp
-4ok-dagster-postgres-1	Up 3 hours (healthy)	5432/tcp
-4ok-postgres-1	Up 3 hours (healthy)	127.0.0.1:5432->5432/tcp
-4ok-observability-1	Up 8 hours (healthy)	127.0.0.1:3000->3000/tcp, 127.0.0.1:4317-4318->4317-4318/tcp
-4ok-cerbos-1	Up 8 hours (healthy)	127.0.0.1:3592-3593->3592-3593/tcp
-4ok-honcho-1	Up 8 hours (healthy)	0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
-4ok-honcho-db-1	Up 8 hours (healthy)	5432/tcp
-4ok-graphiti-neo4j-1	Up 8 hours (healthy)	0.0.0.0:7474->7474/tcp, [::]:7474->7474/tcp, 0.0.0.0:7687->7687/tcp, [::]:7687->7687/tcp
-4ok-honcho-redis-1	Up 8 hours (healthy)	6379/tcp
+fourok-dagster-webserver-1	Up 2 hours (healthy)	127.0.0.1:3001->3001/tcp
+fourok-dagster-daemon-1	Up 2 hours (healthy)
+fourok-dagster-code-1	Up 2 hours (healthy)	4000/tcp
+fourok-dagster-postgres-1	Up 3 hours (healthy)	5432/tcp
+fourok-postgres-1	Up 3 hours (healthy)	127.0.0.1:5432->5432/tcp
+fourok-observability-1	Up 8 hours (healthy)	127.0.0.1:3000->3000/tcp, 127.0.0.1:4317-4318->4317-4318/tcp
+fourok-cerbos-1	Up 8 hours (healthy)	127.0.0.1:3592-3593->3592-3593/tcp
+fourok-honcho-1	Up 8 hours (healthy)	0.0.0.0:8000->8000/tcp, [::]:8000->8000/tcp
+fourok-honcho-db-1	Up 8 hours (healthy)	5432/tcp
+fourok-graphiti-neo4j-1	Up 8 hours (healthy)	0.0.0.0:7474->7474/tcp, [::]:7474->7474/tcp, 0.0.0.0:7687->7687/tcp, [::]:7687->7687/tcp
+fourok-honcho-redis-1	Up 8 hours (healthy)	6379/tcp
 
 --- Runtime Postgres DB connectivity ---
 /var/run/postgresql:5432 - accepting connections
@@ -310,8 +310,8 @@ linear:issue:4OK-373	Explore n8n as OpenClaw workflow automation layer	["linear:
 linear:comment:a001cf67-a8ac-4a25-bfec-c3310798247a	Comment on 4OK-405	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	4OK-405 Spike: evaluate Agent Vault for Baby Jules/n8n credential boundary ## Spike result: Agent Vault for Baby Jules / n8n credential boundary  **Verdict: PAR
 -- slack samples
 slack:channel:C0APCSD1118	#general	["slack:channel:C0APCSD1118"]	general This channel won't be used for now. Share announcements and updates about company news, upcoming events, or teammates who deserve some kudos. ⭐
-slack:channel:C0AUGURHABA	#tech-support	["slack:channel:C0AUGURHABA"]	tech-support You can also just add tickets here <https://linear.app/4ok-tech/project/jules-improvements-and-bugs-fd8ae325e94d/issues>
-slack:user:U0ASC2HAV7A	Jesper Morgenstern	["slack:team:T0APCSCJZC2"]	Jesper Morgenstern jesper.morgenstern jesper.morgenstern@4ok.tech
+slack:channel:C0AUGURHABA	#tech-support	["slack:channel:C0AUGURHABA"]	tech-support You can also just add tickets here <https://linear.app/fourok-tech/project/jules-improvements-and-bugs-fd8ae325e94d/issues>
+slack:user:U0ASC2HAV7A	Jesper Morgenstern	["slack:team:T0APCSCJZC2"]	Jesper Morgenstern jesper.morgenstern jesper.morgenstern@fourok.tech
 slack:channel_member:C0APCSD1118:U0APCSGCM98	U0APCSGCM98 in C0APCSD1118	["slack:channel:C0APCSD1118"]	Slack user U0APCSGCM98 is a member of channel C0APCSD1118
 slack:channel_member:C0APCSD1118:U0APRPJ2UGZ	U0APRPJ2UGZ in C0APCSD1118	["slack:channel:C0APCSD1118"]	Slack user U0APRPJ2UGZ is a member of channel C0APCSD1118
 -- google_drive samples
@@ -322,7 +322,7 @@ google_drive:file:1OrzMfZDwv-R_7LKUZLgfETq5FzbDCt0EShsujPMJAyw	Quick Chat (Jiayu
  Attachments Quick Chat (Jiayu Zhou)
  Meeting records Transcri
 google_drive:file:1daVuh0zTiRW5KsfUpjkba177OKleM76v	buena Enterprise Architecture for Property Management Document Intelligence.md	["operator"]	# Enterprise Architecture for Property Management Document Intelligence  ## Executive recommendation  The strongest architecture for this problem is **not** an
-google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM	4ok - Sales Resource	["operator"]	﻿4ok - Sales Resource for First Customer Meetings
+google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM	fourok - Sales Resource	["operator"]	﻿fourok - Sales Resource for First Customer Meetings
  What this document is for
  This document helps internal salespeople explain the Governed C
 google_drive:file:12ZG0MgjYgx3qPiCSJ3ffo0bGYywmHQhiyLEWs-d0TPE	2026-05-23 Buena scalable multi-source memory and retrieval platform	["operator"]	﻿Buena scalable multi-source memory and retrieval platform
@@ -519,7 +519,7 @@ $ uv run fourok search-state 'Codex' --limit 5
       "title": "Codex",
       "snippet": "Codex Codex a4bc02c9-24f5-44c3-a1d1-03a2e3042a99@oauthapp.linear.app employee",
       "timestamp": "2026-04-18T15:28:22.994Z",
-      "source_url": "https://linear.app/4ok-tech/profiles/codex",
+      "source_url": "https://linear.app/fourok-tech/profiles/codex",
       "record_type": "person",
       "source_system": "linear",
       "source_id": "b1a18acc-66e8-4e70-aa86-f35301c4b463",
@@ -530,7 +530,7 @@ $ uv run fourok search-state 'Codex' --limit 5
   "evidence_items": [
     {
       "source_ref": "linear:user:b1a18acc-66e8-4e70-aa86-f35301c4b463",
-      "source_url": "https://linear.app/4ok-tech/profiles/codex",
+      "source_url": "https://linear.app/fourok-tech/profiles/codex",
       "source_type": "Person",
       "record_type": "person",
       "source_system": "linear",
@@ -584,7 +584,7 @@ $ uv run fourok search-state 'employee' --limit 5
   "results": [
     {
       "source_ref": "google_drive:file:1ywgCeaxU4HgJNCKAnFYXjeabvXOYDX7Y9nNdWkKGcJs",
-      "subject": "4ok Service Proposal ",
+      "subject": "fourok Service Proposal ",
       "date": "2026-05-08T07:47:48.596Z",
       "snippet": "... . You're stressed out. And through all of it, you have people depending on you. Employees who have been there for years. Families that rely on the stability you ..."
     },
@@ -617,7 +617,7 @@ $ uv run fourok search-state 'employee' --limit 5
   "result_candidates": [
     {
       "source_ref": "google_drive:file:1ywgCeaxU4HgJNCKAnFYXjeabvXOYDX7Y9nNdWkKGcJs",
-      "title": "4ok Service Proposal ",
+      "title": "fourok Service Proposal ",
       "snippet": "... . You're stressed out. And through all of it, you have people depending on you. Employees who have been there for years. Families that rely on the stability you ...",
       "timestamp": "2026-05-08T07:47:48.596Z",
       "source_url": "https://docs.google.com/document/d/1ywgCeaxU4HgJNCKAnFYXjeabvXOYDX7Y9nNdWkKGcJs/edit?usp=drivesdk",
@@ -685,7 +685,7 @@ $ uv run fourok search-state 'employee' --limit 5
       "source_system": "google_drive",
       "source_id": "1ywgCeaxU4HgJNCKAnFYXjeabvXOYDX7Y9nNdWkKGcJs",
       "canonical_object_type": "Document",
-      "title": "4ok Service Proposal ",
+      "title": "fourok Service Proposal ",
       "snippet": "... . You're stressed out. And through all of it, you have people depending on you. Employees who have been there for years. Families that rely on the stability you ...",
       "timestamp": "2026-05-08T07:47:48.596Z",
       "updated_timestamp": "2026-05-08T07:47:51.827Z",
@@ -769,7 +769,7 @@ $ uv run fourok search-state 'employee' --limit 5
     {
       "object_ref": "google_drive:file:1ywgCeaxU4HgJNCKAnFYXjeabvXOYDX7Y9nNdWkKGcJs",
       "object_type": "Document",
-      "title": "4ok Service Proposal ",
+      "title": "fourok Service Proposal ",
       "source_refs": [
         "google_drive:file:1ywgCeaxU4HgJNCKAnFYXjeabvXOYDX7Y9nNdWkKGcJs"
       ],
@@ -1608,7 +1608,7 @@ slack-denied	PASS=True	expect=deny:slack:channel:C0AU5K1B940	summary=0 evidence 
 slack-allowed-1	PASS=True	expect=find:slack:channel:C0AU5K1B940	summary=1 evidence item	refs=['slack:channel:C0AU5K1B940']	cmd=uv run fourok search-state temp-crm --limit 5 --role slack:channel:C0AU5K1B940
 slack-allowed-2	PASS=True	expect=find:slack:channel:C0APCSD1118	summary=5 evidence items	refs=['slack:channel:C0APCSD1118', 'google_drive:file:1FyvjFIIlXZiKLGn3ce8fypFzn-gDnf8Av-IQdXYfBYE', 'google_drive:file:1npxJYLu8q_lzONlgyKG5GAzCbKQdglDGmpxrqU4iR9M', 'twenty:person:1c4a4495-1afa-41dd-b90f-f887d12c2124', 'twenty:person:2634a346-9f8d-40ed-a6dd-d6f52c8223f5']	cmd=uv run fourok search-state general --limit 5 --role slack:channel:C0APCSD1118
 google-1	PASS=True	expect=find:google_drive:file:	summary=3 evidence items	refs=['google_drive:file:1I0vBv-kBrPt0Gv6CD3cdpw_cZ6L5KEhHvina3OC9HGA', 'google_drive:file:19WDGlrud5NYo2P9MXhFAD0RoZk9ZVlG3HOL4wlQ0kZI', 'google_drive:file:1bqos9wvvKLRbGTyMnQoLeANfxI-tYdtLEVjSqwOctjM']	cmd=uv run fourok search-state 'Buena Architecture Overview' --limit 5
-google-2	PASS=True	expect=find:google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM	summary=3 evidence items	refs=['google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM', 'google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM', 'google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM']	cmd=uv run fourok search-state '4ok Sales Resource' --limit 5
+google-2	PASS=True	expect=find:google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM	summary=3 evidence items	refs=['google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM', 'google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM', 'google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM']	cmd=uv run fourok search-state 'fourok Sales Resource' --limit 5
 ```
 
 ## Gate 3 — Verification tooling proof
@@ -1669,7 +1669,7 @@ infra git status:
 recent infra commits:
 9b010dd (HEAD -> main, origin/main, origin/HEAD) Clarify OpenViking read level guidance
 362d53e Preserve prod Slack DM routing on promotion
-f48d5b2 Restore 4ok Jules model fallback
+f48d5b2 Restore fourok Jules model fallback
 d0b7c57 Keep prod Slack DMs out of assistant threads
 ce40e13 Retry external secret manager CLI download in dev deploy workflow
 77e5f3a Mount Codex auth bootstrap helper in gateway runtime
@@ -1680,36 +1680,36 @@ recent GitHub Actions runs (infra repo):
 completed	skipped	hermes-workflow-failure-notify	hermes-workflow-failure-notify	main	workflow_run	27198125552	1s	2026-06-09T09:51:20Z
 completed	skipped	hermes-workflow-failure-notify	hermes-workflow-failure-notify	main	workflow_run	27197805928	1s	2026-06-09T09:45:16Z
 completed	skipped	hermes-workflow-failure-notify	hermes-workflow-failure-notify	main	workflow_run	27197700295	2s	2026-06-09T09:43:19Z
-completed	success	Clarify OpenViking read level guidance	4ok-openclaw-dev-image	main	push	27197688611	13m51s	2026-06-09T09:43:06Z
-completed	success	Clarify OpenViking read level guidance	dev-customer-gateway-4ok-runtime-deploy	main	push	27197688406	11s	2026-06-09T09:43:06Z
+completed	success	Clarify OpenViking read level guidance	fourok-openclaw-dev-image	main	push	27197688611	13m51s	2026-06-09T09:43:06Z
+completed	success	Clarify OpenViking read level guidance	dev-customer-gateway-fourok-runtime-deploy	main	push	27197688406	11s	2026-06-09T09:43:06Z
 completed	success	Clarify OpenViking read level guidance	devex-validation	main	push	27197688393	22s	2026-06-09T09:43:06Z
-completed	success	Clarify OpenViking read level guidance	prod-customer-gateway-4ok-runtime-validate	main	push	27197688391	2m6s	2026-06-09T09:43:06Z
-completed	success	Clarify OpenViking read level guidance	promote-4ok-dev-to-prod	main	push	27197688389	17s	2026-06-09T09:43:06Z
-completed	success	Clarify OpenViking read level guidance	4ok-openclaw-image	main	push	27197688382	8m8s	2026-06-09T09:43:06Z
+completed	success	Clarify OpenViking read level guidance	prod-customer-gateway-fourok-runtime-validate	main	push	27197688391	2m6s	2026-06-09T09:43:06Z
+completed	success	Clarify OpenViking read level guidance	promote-fourok-dev-to-prod	main	push	27197688389	17s	2026-06-09T09:43:06Z
+completed	success	Clarify OpenViking read level guidance	fourok-openclaw-image	main	push	27197688382	8m8s	2026-06-09T09:43:06Z
 completed	skipped	hermes-workflow-failure-notify	hermes-workflow-failure-notify	main	workflow_run	27132485706	1s	2026-06-08T10:47:01Z
 completed	skipped	hermes-workflow-failure-notify	hermes-workflow-failure-notify	main	workflow_run	27132390337	1s	2026-06-08T10:45:07Z
-completed	success	prod-customer-gateway-4ok-runtime-deploy	prod-customer-gateway-4ok-runtime-deploy	main	workflow_dispatch	27132037285	7m5s	2026-06-08T10:38:00Z
+completed	success	prod-customer-gateway-fourok-runtime-deploy	prod-customer-gateway-fourok-runtime-deploy	main	workflow_dispatch	27132037285	7m5s	2026-06-08T10:38:00Z
 completed	skipped	hermes-workflow-failure-notify	hermes-workflow-failure-notify	main	workflow_run	27132022070	1s	2026-06-08T10:37:40Z
 completed	success	Preserve prod Slack DM routing on promotion	devex-validation	main	push	27132008460	20s	2026-06-08T10:37:24Z
-completed	success	Preserve prod Slack DM routing on promotion	promote-4ok-dev-to-prod	main	push	27132008425	15s	2026-06-08T10:37:24Z
-completed	success	Preserve prod Slack DM routing on promotion	prod-customer-gateway-4ok-runtime-validate	main	push	27132008416	14s	2026-06-08T10:37:24Z
+completed	success	Preserve prod Slack DM routing on promotion	promote-fourok-dev-to-prod	main	push	27132008425	15s	2026-06-08T10:37:24Z
+completed	success	Preserve prod Slack DM routing on promotion	prod-customer-gateway-fourok-runtime-validate	main	push	27132008416	14s	2026-06-08T10:37:24Z
 completed	success	hermes-workflow-failure-notify	hermes-workflow-failure-notify	main	workflow_run	27131912558	10s	2026-06-08T10:35:24Z
-completed	failure	Restore 4ok Jules model fallback	promote-4ok-dev-to-prod	main	push	27131899326	18s	2026-06-08T10:35:09Z
-completed	failure	Restore 4ok Jules model fallback	prod-customer-gateway-4ok-runtime-validate	main	push	27131899308	12s	2026-06-08T10:35:09Z
-completed	success	Restore 4ok Jules model fallback	devex-validation	main	push	27131899243	21s	2026-06-08T10:35:09Z
+completed	failure	Restore fourok Jules model fallback	promote-fourok-dev-to-prod	main	push	27131899326	18s	2026-06-08T10:35:09Z
+completed	failure	Restore fourok Jules model fallback	prod-customer-gateway-fourok-runtime-validate	main	push	27131899308	12s	2026-06-08T10:35:09Z
+completed	success	Restore fourok Jules model fallback	devex-validation	main	push	27131899243	21s	2026-06-08T10:35:09Z
 ```
 
-### 4ok runtime lineage trace
+### fourok runtime lineage trace
 ```text
 timestamp=2026-06-09T19:26:13+02:00
-usage: trace-4ok-runtime-lineage.py [-h] --environment {dev,prod} --repo REPO
+usage: trace-fourok-runtime-lineage.py [-h] --environment {dev,prod} --repo REPO
                                     [--repo-root REPO_ROOT]
                                     [--build-run-id BUILD_RUN_ID]
                                     [--image-digest IMAGE_DIGEST]
                                     [--ssh-live-check] [--ssh-host SSH_HOST]
                                     [--ssh-user SSH_USER]
 
-Trace 4ok runtime source/image/deploy lineage.
+Trace fourok runtime source/image/deploy lineage.
 
 options:
   -h, --help            show this help message and exit
@@ -1725,7 +1725,7 @@ options:
 --- trace prod ---
 ```
 
-### Corrected 4ok runtime lineage trace
+### Corrected fourok runtime lineage trace
 ```text
 timestamp=2026-06-09T19:26:38+02:00
 dev:

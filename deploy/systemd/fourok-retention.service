@@ -1,15 +1,15 @@
 [Unit]
-Description=4ok retention purge
+Description=fourok retention purge
 Requires=docker.service
 After=docker.service
 
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/4ok
+WorkingDirectory=/opt/fourok
 Environment=GCB_IMAGE_TAG=replace-with-commit-hash
-Environment=GCB_CONFIG_PATH=/opt/4ok/.local/4ok.toml
-EnvironmentFile=/etc/4ok/4ok.env
-ExecStart=/usr/bin/docker compose run --rm app purge-raw-retention --database-url ${GCB_DATABASE_URL} --config /etc/4ok/4ok.toml
-ExecStart=/usr/bin/docker compose run --rm app purge-audit-retention --database-url ${GCB_DATABASE_URL} --config /etc/4ok/4ok.toml
-ExecStart=/usr/bin/docker compose run --rm app purge-webhook-retention --database-url ${GCB_DATABASE_URL} --config /etc/4ok/4ok.toml
-ExecStart=/usr/bin/docker compose run --rm app purge-backup-retention --config /etc/4ok/4ok.toml
+Environment=GCB_CONFIG_PATH=/opt/fourok/.local/fourok.toml
+EnvironmentFile=/etc/fourok/fourok.env
+ExecStart=/usr/bin/docker compose run --rm app purge-raw-retention --database-url ${GCB_DATABASE_URL} --config /etc/fourok/fourok.toml
+ExecStart=/usr/bin/docker compose run --rm app purge-audit-retention --database-url ${GCB_DATABASE_URL} --config /etc/fourok/fourok.toml
+ExecStart=/usr/bin/docker compose run --rm app purge-webhook-retention --database-url ${GCB_DATABASE_URL} --config /etc/fourok/fourok.toml
+ExecStart=/usr/bin/docker compose run --rm app purge-backup-retention --config /etc/fourok/fourok.toml

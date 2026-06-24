@@ -33,7 +33,7 @@ Environment overrides:
   NORMALIZED_OUTPUT=/app/.local/openviking-live-normalized.jsonl
 
 Then run:
-  STAGE1_CASES=/app/.local/stage1/live_retrieval_case_set.generated.json scripts/check-4ok-dev-all.sh --json
+  STAGE1_CASES=/app/.local/stage1/live_retrieval_case_set.generated.json scripts/check-fourok-dev-all.sh --json
 EOF
 }
 

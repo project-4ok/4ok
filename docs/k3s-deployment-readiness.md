@@ -1,13 +1,13 @@
 # K3s Deployment Readiness
 
 Purpose: hand off the smallest practical 4OK runtime contract for future K3s
-deployment through the 4ok infrastructure repository. This is recon/prep, not a
+deployment through the fourok infrastructure repository. This is recon/prep, not a
 remote deployment instruction.
 
 Current recommendation: do not add 4OK Kubernetes manifests until the local
 Docker Compose and Dagster runtime is promoted into a pinned image set and an
 infrastructure engineer confirms the target service graph in
-`/home/simon/Projects/project-4ok/4ok-infrastructure-prod`.
+`/home/simon/Projects/project-fourok/fourok-infrastructure-prod`.
 
 ## Chosen Slice
 
@@ -20,11 +20,11 @@ already has:
 
 - Flux reconciliation for customers through
   `clusters/prod/flux-system/prod-customers-kustomization.yaml`
-- customer namespace layout at `clusters/prod/customers/4ok`
+- customer namespace layout at `clusters/prod/customers/fourok`
 - existing customer workload groups under:
-  - `clusters/prod/customers/4ok/etl`
-  - `clusters/prod/customers/4ok/openviking`
-  - `clusters/prod/customers/4ok/n8n`
+  - `clusters/prod/customers/fourok/etl`
+  - `clusters/prod/customers/fourok/openviking`
+  - `clusters/prod/customers/fourok/n8n`
 - external secret manager operator-based secret sync patterns
 
 ## 4OK Runtime Surfaces
@@ -112,7 +112,7 @@ instead.
 - connector checkpoint/state volumes where a source needs local state
 
 The current infra repo has a Google Drive ETL PVC at
-`clusters/prod/customers/4ok/etl/pvc-etl-state-google-drive.yaml`. Treat that
+`clusters/prod/customers/fourok/etl/pvc-etl-state-google-drive.yaml`. Treat that
 as a source-specific precedent, not as a 4OK database or raw-store volume.
 
 ## Network Policy
@@ -129,8 +129,8 @@ Expected first-pass NetworkPolicy posture:
 - private/admin-only ingress for Dagster UI only if explicitly approved
 
 The infra repo already uses `NetworkPolicy` under
-`clusters/prod/customers/4ok/etl`, `clusters/prod/customers/4ok/openviking`,
-and `clusters/prod/customers/4ok/n8n`.
+`clusters/prod/customers/fourok/etl`, `clusters/prod/customers/fourok/openviking`,
+and `clusters/prod/customers/fourok/n8n`.
 
 ## Secrets
 
@@ -140,7 +140,7 @@ Kubernetes Secret values.
 Relevant infra pointers:
 
 - `docs/runbooks/customer-secret-sync-validation.md`
-- `docs/reference/4ok-etl-secret-contract-v1.md`
+- `docs/reference/fourok-etl-secret-contract-v1.md`
 
 Infrastructure engineer checklist:
 
@@ -202,7 +202,7 @@ connector checkpoints needs a separate retention/deletion decision.
 
 - [ ] Confirm the target namespace layout for 4OK in the infra repo.
 - [ ] Decide whether 4OK is a new customer workload group or part of existing
-      `clusters/prod/customers/4ok/etl`.
+      `clusters/prod/customers/fourok/etl`.
 - [ ] Confirm image registry, tag, and digest policy for `docker/app.Dockerfile`.
 - [ ] Confirm whether `docker/dagster.Dockerfile` is deployed in the first K3s
       cut or deferred.

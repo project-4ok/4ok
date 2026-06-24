@@ -44,7 +44,7 @@ class FileRawSourceStore:
         return refs
 
     def path_for(self, source_ref: str) -> Path:
-        digest = blake2b(source_ref.encode(), digest_size=16, person=b"4okrawsrc").hexdigest()
+        digest = blake2b(source_ref.encode(), digest_size=16, person=b"fourokrawsrc").hexdigest()
         return self._root / f"{digest}.json"
 
 

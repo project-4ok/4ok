@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-TARGET="${REPO_ROOT}/scripts/run-4ok-dev-dagster-backfill.sh"
+TARGET="${REPO_ROOT}/scripts/run-fourok-dev-dagster-backfill.sh"
 
 bash -n "${TARGET}"
 help_output="$(${TARGET} --help)"

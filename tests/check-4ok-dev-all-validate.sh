@@ -3,13 +3,13 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-TARGET="${REPO_ROOT}/scripts/check-4ok-dev-all.sh"
+TARGET="${REPO_ROOT}/scripts/check-fourok-dev-all.sh"
 
 bash -n "${TARGET}"
 help_output="$(${TARGET} --help)"
 
 for expected in \
-  "deployment surface check via scripts/check-4ok-dev-deployment.sh --json" \
+  "deployment surface check via scripts/check-fourok-dev-deployment.sh --json" \
   "fourok stage1-acceptance --json on the selected target" \
   "The top-level status is ok only when both gates return status=ok." \
   "CHECK_TARGET=ssh    run target checks on GATEWAY_SSH_TARGET over SSH" \
@@ -40,8 +40,8 @@ for expected in \
   "docker exec" \
   "LOCAL_STAGE1_COMMAND" \
   "stage1-acceptance" \
-  "check-4ok-dev-deployment.sh" \
-  "run-4ok-dev-dagster-backfill.sh" \
+  "check-fourok-dev-deployment.sh" \
+  "run-fourok-dev-dagster-backfill.sh" \
   "REFRESH_DAGSTER_BACKFILL" \
   "dagster_backfill"
 do

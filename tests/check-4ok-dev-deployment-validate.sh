@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-TARGET="${REPO_ROOT}/scripts/check-4ok-dev-deployment.sh"
+TARGET="${REPO_ROOT}/scripts/check-fourok-dev-deployment.sh"
 
 bash -n "${TARGET}"
 help_output="$(${TARGET} --help)"
@@ -26,14 +26,14 @@ done
 
 for expected in \
   "CHECK_TARGET" \
-  "project-4ok/4ok-infrastructure-prod" \
+  "project-fourok/fourok-infrastructure-prod" \
   "check_status" \
   "newest_run_status" \
   "newest_completed_run" \
   "required" \
   "optional_check_status" \
-  "4ok-openclaw-dev-image.yml" \
-  "dev-customer-gateway-4ok-runtime-deploy" \
+  "fourok-openclaw-dev-image.yml" \
+  "dev-customer-gateway-fourok-runtime-deploy" \
   "openclaw-openclaw-gateway-1" \
   "openclaw-fourok-app-1" \
   "FOUR_OK_RETRIEVE_CONTAINER=openclaw-fourok-app-1" \

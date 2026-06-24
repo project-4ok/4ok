@@ -46,7 +46,7 @@ FOUR_OK_IMAGE_TAG=92fd453 docker compose --profile observability up --build --fo
 Manual Dagster run:
 
 ```text
-docker exec 4ok-dagster-webserver-1 dagster job launch -w /opt/dagster/dagster_home/workspace.yaml -j fourok_hourly_live_backfill --tags '{"manual":"hermes-stage1-proof","image":"92fd453"}'
+docker exec fourok-dagster-webserver-1 dagster job launch -w /opt/dagster/dagster_home/workspace.yaml -j fourok_hourly_live_backfill --tags '{"manual":"hermes-stage1-proof","image":"92fd453"}'
 ```
 
 Latest run result from `uv run fourok-dev dagster-status`:

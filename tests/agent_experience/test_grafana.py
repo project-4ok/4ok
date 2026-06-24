@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import json
-
 from typing import Any
 
 from fourok.agent_experience.grafana import grafana_report
@@ -18,8 +17,8 @@ def test_grafana_report_documents_agent_api_access_and_dashboard_state() -> None
             return [
                 {
                     "uid": "fourok-local-runtime-logs",
-                    "title": "4ok dashboard",
-                    "url": "/d/fourok-local-runtime-logs/4ok-dashboard",
+                    "title": "fourok dashboard",
+                    "url": "/d/fourok-local-runtime-logs/fourok-dashboard",
                 }
             ]
         if path == "/api/datasources":
@@ -30,10 +29,17 @@ def test_grafana_report_documents_agent_api_access_and_dashboard_state() -> None
             ]
         if path.endswith("/api/v1/query"):
             metric = (params or {})["query"]
-            result = [] if metric == "fourok_retrieval_requests_total" else [{"metric": {}, "value": [1, "3"]}]
+            result = (
+                []
+                if metric == "fourok_retrieval_requests_total"
+                else [{"metric": {}, "value": [1, "3"]}]
+            )
             return {"status": "success", "data": {"result": result}}
         if path.endswith("/loki/api/v1/query_range"):
-            return {"status": "success", "data": {"result": [{"stream": {}, "values": [["1", "log"]]}]}}
+            return {
+                "status": "success",
+                "data": {"result": [{"stream": {}, "values": [["1", "log"]]}]},
+            }
         raise AssertionError(path)
 
     report = grafana_report(grafana_url="http://grafana.local", http_get=fake_get)
@@ -45,9 +51,9 @@ def test_grafana_report_documents_agent_api_access_and_dashboard_state() -> None
         "dashboard_uid": "fourok-local-runtime-logs",
     }
     assert report["dashboard"] == {
-        "title": "4ok dashboard",
+        "title": "fourok dashboard",
         "uid": "fourok-local-runtime-logs",
-        "url": "http://grafana.local/d/fourok-local-runtime-logs/4ok-dashboard",
+        "url": "http://grafana.local/d/fourok-local-runtime-logs/fourok-dashboard",
     }
     assert report["datasources"] == {
         "prometheus": "present",
@@ -56,7 +62,7 @@ def test_grafana_report_documents_agent_api_access_and_dashboard_state() -> None
     }
     assert report["signals"]["fourok_source_records_total"]["status"] == "present"
     assert report["signals"]["fourok_retrieval_requests_total"]["status"] == "missing"
-    assert report["signals"]["loki_recent_4ok_logs"]["status"] == "present"
+    assert report["signals"]["loki_recent_fourok_logs"]["status"] == "present"
     assert "dashboard_has_gaps" in report["recommendations"]
     assert "/api/health" in calls
 

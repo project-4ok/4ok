@@ -1,150 +1,150 @@
-project_id: 4ok
+project_id: fourok
 default_environment: internal
 
 environments:
-- name: internal
+  - name: internal
 
 plugins:
   extractors:
-  - name: tap-fourok-fixture
-    namespace: tap_fourok_fixture
-    pip_url: -e .
-    executable: tap-fourok-fixture
-    capabilities:
-    - state
-    settings:
-    - name: fixture_path
-      kind: file
-    config:
-      fixture_path: fixtures/connectors/singer_email_messages.jsonl
-  - name: tap-fourok-slack-fixture
-    namespace: tap_fourok_slack_fixture
-    pip_url: -e .
-    executable: tap-fourok-fixture
-    capabilities:
-    - state
-    settings:
-    - name: fixture_path
-      kind: file
-    config:
-      fixture_path: fixtures/connectors/singer_slack_messages.jsonl
-  - name: tap-fourok-twenty-fixture
-    namespace: tap_fourok_twenty_fixture
-    pip_url: -e .
-    executable: tap-fourok-fixture
-    capabilities:
-    - state
-    settings:
-    - name: fixture_path
-      kind: file
-    config:
-      fixture_path: fixtures/connectors/singer_twenty_crm.jsonl
-  - name: tap-fourok-twenty
-    namespace: tap_fourok_twenty
-    pip_url: -e .
-    executable: tap-fourok-twenty
-    capabilities:
-    - state
-    settings:
-    - name: api_key
-      env: TWENTY_API_KEY
-      sensitive: true
-    - name: base_url
-      env: TWENTY_BASE_URL
-    - name: limit
-      env: TWENTY_LIMIT
-  - name: tap-fourok-linear-fixture
-    namespace: tap_fourok_linear_fixture
-    pip_url: -e .
-    executable: tap-fourok-fixture
-    capabilities:
-    - state
-    settings:
-    - name: fixture_path
-      kind: file
-    config:
-      fixture_path: fixtures/connectors/singer_linear_work_items.jsonl
-  - name: tap-fourok-linear
-    namespace: tap_fourok_linear
-    pip_url: -e .
-    executable: tap-fourok-linear
-    capabilities:
-    - state
-    settings:
-    - name: api_key
-      env: LINEAR_API_KEY
-      sensitive: true
-    - name: endpoint
-      env: LINEAR_GRAPHQL_URL
-    - name: limit
-      env: LINEAR_LIMIT
-  - name: tap-fourok-google-drive-fixture
-    namespace: tap_fourok_google_drive_fixture
-    pip_url: -e .
-    executable: tap-fourok-fixture
-    capabilities:
-    - state
-    settings:
-    - name: fixture_path
-      kind: file
-    config:
-      fixture_path: fixtures/connectors/singer_google_drive_docs.jsonl
-  - name: tap-fourok-google-drive
-    namespace: tap_fourok_google_drive
-    pip_url: -e .
-    executable: tap-fourok-google-drive
-    capabilities:
-    - state
-    settings:
-    - name: oauth_client_secret_json
-      env: GOOGLE_WORKSPACE_OAUTH_CLIENT_SECRET_JSON
-      sensitive: true
-    - name: oauth_refresh_token
-      env: GOOGLE_WORKSPACE_OAUTH_REFRESH_TOKEN
-      sensitive: true
-    - name: drive_ids
-      env: GOOGLE_WORKSPACE_DRIVE_IDS
-    - name: limit
-      env: GOOGLE_WORKSPACE_LIMIT
+    - name: tap-fourok-fixture
+      namespace: tap_fourok_fixture
+      pip_url: -e .
+      executable: tap-fourok-fixture
+      capabilities:
+        - state
+      settings:
+        - name: fixture_path
+          kind: file
+      config:
+        fixture_path: fixtures/connectors/singer_email_messages.jsonl
+    - name: tap-fourok-slack-fixture
+      namespace: tap_fourok_slack_fixture
+      pip_url: -e .
+      executable: tap-fourok-fixture
+      capabilities:
+        - state
+      settings:
+        - name: fixture_path
+          kind: file
+      config:
+        fixture_path: fixtures/connectors/singer_slack_messages.jsonl
+    - name: tap-fourok-twenty-fixture
+      namespace: tap_fourok_twenty_fixture
+      pip_url: -e .
+      executable: tap-fourok-fixture
+      capabilities:
+        - state
+      settings:
+        - name: fixture_path
+          kind: file
+      config:
+        fixture_path: fixtures/connectors/singer_twenty_crm.jsonl
+    - name: tap-fourok-twenty
+      namespace: tap_fourok_twenty
+      pip_url: -e .
+      executable: tap-fourok-twenty
+      capabilities:
+        - state
+      settings:
+        - name: api_key
+          env: TWENTY_API_KEY
+          sensitive: true
+        - name: base_url
+          env: TWENTY_BASE_URL
+        - name: limit
+          env: TWENTY_LIMIT
+    - name: tap-fourok-linear-fixture
+      namespace: tap_fourok_linear_fixture
+      pip_url: -e .
+      executable: tap-fourok-fixture
+      capabilities:
+        - state
+      settings:
+        - name: fixture_path
+          kind: file
+      config:
+        fixture_path: fixtures/connectors/singer_linear_work_items.jsonl
+    - name: tap-fourok-linear
+      namespace: tap_fourok_linear
+      pip_url: -e .
+      executable: tap-fourok-linear
+      capabilities:
+        - state
+      settings:
+        - name: api_key
+          env: LINEAR_API_KEY
+          sensitive: true
+        - name: endpoint
+          env: LINEAR_GRAPHQL_URL
+        - name: limit
+          env: LINEAR_LIMIT
+    - name: tap-fourok-google-drive-fixture
+      namespace: tap_fourok_google_drive_fixture
+      pip_url: -e .
+      executable: tap-fourok-fixture
+      capabilities:
+        - state
+      settings:
+        - name: fixture_path
+          kind: file
+      config:
+        fixture_path: fixtures/connectors/singer_google_drive_docs.jsonl
+    - name: tap-fourok-google-drive
+      namespace: tap_fourok_google_drive
+      pip_url: -e .
+      executable: tap-fourok-google-drive
+      capabilities:
+        - state
+      settings:
+        - name: oauth_client_secret_json
+          env: GOOGLE_WORKSPACE_OAUTH_CLIENT_SECRET_JSON
+          sensitive: true
+        - name: oauth_refresh_token
+          env: GOOGLE_WORKSPACE_OAUTH_REFRESH_TOKEN
+          sensitive: true
+        - name: drive_ids
+          env: GOOGLE_WORKSPACE_DRIVE_IDS
+        - name: limit
+          env: GOOGLE_WORKSPACE_LIMIT
 
-  - name: tap-slack
-    variant: meltanolabs
-    pip_url: git+https://github.com/MeltanoLabs/tap-slack.git@v0.4.1
+    - name: tap-slack
+      variant: meltanolabs
+      pip_url: git+https://github.com/MeltanoLabs/tap-slack.git@v0.4.1
   loaders:
-  - name: target-fourok-raw-jsonl
-    namespace: target_fourok_raw_jsonl
-    pip_url: -e .
-    executable: target-fourok-raw-jsonl
-    settings:
-    - name: landing_dir
-    config:
-      landing_dir: .local/raw/singer
+    - name: target-fourok-raw-jsonl
+      namespace: target_fourok_raw_jsonl
+      pip_url: -e .
+      executable: target-fourok-raw-jsonl
+      settings:
+        - name: landing_dir
+      config:
+        landing_dir: .local/raw/singer
 
 jobs:
-- name: singer-fixture-to-raw
-  tasks:
-  - tap-fourok-fixture target-fourok-raw-jsonl
-- name: singer-slack-fixture-to-raw
-  tasks:
-  - tap-fourok-slack-fixture target-fourok-raw-jsonl
-- name: slack-live-to-raw
-  tasks:
-  - tap-slack target-fourok-raw-jsonl
-- name: singer-twenty-fixture-to-raw
-  tasks:
-  - tap-fourok-twenty-fixture target-fourok-raw-jsonl
-- name: twenty-live-to-raw
-  tasks:
-  - tap-fourok-twenty target-fourok-raw-jsonl
-- name: singer-linear-fixture-to-raw
-  tasks:
-  - tap-fourok-linear-fixture target-fourok-raw-jsonl
-- name: linear-live-to-raw
-  tasks:
-  - tap-fourok-linear target-fourok-raw-jsonl
-- name: singer-google-drive-fixture-to-raw
-  tasks:
-  - tap-fourok-google-drive-fixture target-fourok-raw-jsonl
-- name: google-drive-live-to-raw
-  tasks:
-  - tap-fourok-google-drive target-fourok-raw-jsonl
+  - name: singer-fixture-to-raw
+    tasks:
+      - tap-fourok-fixture target-fourok-raw-jsonl
+  - name: singer-slack-fixture-to-raw
+    tasks:
+      - tap-fourok-slack-fixture target-fourok-raw-jsonl
+  - name: slack-live-to-raw
+    tasks:
+      - tap-slack target-fourok-raw-jsonl
+  - name: singer-twenty-fixture-to-raw
+    tasks:
+      - tap-fourok-twenty-fixture target-fourok-raw-jsonl
+  - name: twenty-live-to-raw
+    tasks:
+      - tap-fourok-twenty target-fourok-raw-jsonl
+  - name: singer-linear-fixture-to-raw
+    tasks:
+      - tap-fourok-linear-fixture target-fourok-raw-jsonl
+  - name: linear-live-to-raw
+    tasks:
+      - tap-fourok-linear target-fourok-raw-jsonl
+  - name: singer-google-drive-fixture-to-raw
+    tasks:
+      - tap-fourok-google-drive-fixture target-fourok-raw-jsonl
+  - name: google-drive-live-to-raw
+    tasks:
+      - tap-fourok-google-drive target-fourok-raw-jsonl

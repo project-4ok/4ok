@@ -1,12 +1,12 @@
 [Unit]
-Description=Run 4ok imports every 30 minutes
+Description=Run fourok imports every 30 minutes
 
 [Timer]
 OnBootSec=5min
 OnUnitActiveSec=30min
 AccuracySec=1min
 Persistent=true
-Unit=4ok-run-imports.service
+Unit=fourok-run-imports.service
 
 [Install]
 WantedBy=timers.target

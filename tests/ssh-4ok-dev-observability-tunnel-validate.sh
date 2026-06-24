@@ -3,7 +3,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
-TARGET="${REPO_ROOT}/scripts/ssh-4ok-dev-observability-tunnel.sh"
+TARGET="${REPO_ROOT}/scripts/ssh-fourok-dev-observability-tunnel.sh"
 
 bash -n "${TARGET}"
 urls_output="$(${TARGET} --print-urls)"

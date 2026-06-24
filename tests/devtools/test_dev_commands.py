@@ -96,9 +96,7 @@ def test_compose_env_report_redacts_runtime_env_and_keeps_non_secret_values(
     monkeypatch.chdir(tmp_path)
     monkeypatch.setattr("fourok.devtools.dev._git_short_head", lambda *, default: "abc1234")
     (tmp_path / ".env").write_text(
-        "POSTGRES_PASSWORD=super-secret\n"
-        "LINEAR_API_KEY=linear-token\n"
-        "",
+        "POSTGRES_PASSWORD=super-secret\nLINEAR_API_KEY=linear-token\n",
         encoding="utf-8",
     )
 
@@ -212,7 +210,7 @@ def test_logs_status_report_summarizes_loki_labels_counts_and_queries() -> None:
 
     assert report["status"] == "ok"
     assert report["compose_services"] == ["dagster-code", "dagster-daemon"]
-    assert report["queries"]["all_fourok"] == '{compose_project="4ok"}'
+    assert report["queries"]["all_fourok"] == '{compose_project="fourok"}'
     assert (
         report["queries"]["dagster_failures"]
         == '{compose_service="dagster-code"} |= "STEP_FAILURE"'

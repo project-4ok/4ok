@@ -30,12 +30,12 @@ Freshly inspected state:
   - `a23017b chore: aggregate local docker logs in Loki`
   - `2c9c228 chore: add local runtime dx helpers`
 - Runtime containers currently running/healthy where applicable:
-  - `4ok-dagster-code-1` healthy
-  - `4ok-dagster-webserver-1` healthy
-  - `4ok-dagster-daemon-1` healthy
-  - `4ok-observability-1` healthy
-  - `4ok-promtail-1` running
-  - `4ok-fourok-metrics-exporter-1` running
+  - `fourok-dagster-code-1` healthy
+  - `fourok-dagster-webserver-1` healthy
+  - `fourok-dagster-daemon-1` healthy
+  - `fourok-observability-1` healthy
+  - `fourok-promtail-1` running
+  - `fourok-fourok-metrics-exporter-1` running
 - `uv run fourok-dev dagster-status` reported repository `ok`, schedule `fourok_hourly_live_backfill_schedule=RUNNING`, sensor `fourok_webhook_backlog_sensor=RUNNING`.
 - Latest inspected `fourok_hourly_live_backfill` run:
   - run ID `de36c858-93ec-4e2d-9cbb-fe890b21812b`
@@ -225,7 +225,7 @@ Root cause evidence:
 - Prometheus target evidence showed `fourok-dagster-runtime` was down:
   - target: `fourok-metrics-exporter:9108`
   - error: `server returned HTTP status 500 Internal Server Error`
-- Running the metrics collection inside `4ok-fourok-metrics-exporter-1` showed the exception:
+- Running the metrics collection inside `fourok-fourok-metrics-exporter-1` showed the exception:
   - `ValueError: Invalid isoformat string: '1780063291'`
   - failing path: `_timestamp(str(row["updated_at"]))` while rendering `fourok_source_latest_record_timestamp_seconds`.
 - Cause: at least one live `source_records.updated_at` value is a numeric epoch string rather than an ISO timestamp; the exporter only accepted ISO strings and crashed the whole `/metrics` response.
@@ -359,11 +359,11 @@ Important correction to the earlier extractor-audit note:
 Live rebuild/restart evidence:
 
 - `uv run fourok-dev pipeline-up` rebuilt/recreated the pipeline stack using image tag `5fbca60` and started:
-  - `4ok-postgres-1` healthy
-  - `4ok-dagster-postgres-1` healthy
-  - `4ok-dagster-code-1` healthy
-  - `4ok-dagster-webserver-1` healthy
-  - `4ok-dagster-daemon-1` started
+  - `fourok-postgres-1` healthy
+  - `fourok-dagster-postgres-1` healthy
+  - `fourok-dagster-code-1` healthy
+  - `fourok-dagster-webserver-1` healthy
+  - `fourok-dagster-daemon-1` started
 - Full local runtime/observability stack observed healthy/running afterwards:
   - Dagster webserver/code/daemon/postgres
   - runtime Postgres
@@ -436,8 +436,8 @@ Final Gate 1B verification was repeated after committing the code fix and rebuil
 
 - Final commit after evidence amendment: `015b982 fix: paginate live linear and drive extractors`
 - Verified image tag from the pre-evidence-amend commit:
-  - `4ok-dagster:88cfed3`
-  - `4ok-dagster-code:88cfed3`
+  - `fourok-dagster:88cfed3`
+  - `fourok-dagster-code:88cfed3`
 - Manual verification run launched through Dagster GraphQL:
   - run ID: `97a85b59-caa2-444e-8fa1-aa389defa3b0`
   - reason tag: `fourok/manual_reason=verify-final-commit-88cfed3`
@@ -618,11 +618,11 @@ No code/config changes were needed for this slice. The existing Loki, Tempo, Gra
 
 Runtime containers inspected:
 
-- `4ok-dagster-code-1`: running/healthy.
-- `4ok-dagster-webserver-1`: running/healthy, host port `127.0.0.1:3001`.
-- `4ok-fourok-metrics-exporter-1`: running.
-- `4ok-observability-1`: running/healthy, host ports `3000`, `3100`, `3200`, `4317`, and `4318`.
-- `4ok-promtail-1`: running.
+- `fourok-dagster-code-1`: running/healthy.
+- `fourok-dagster-webserver-1`: running/healthy, host port `127.0.0.1:3001`.
+- `fourok-fourok-metrics-exporter-1`: running.
+- `fourok-observability-1`: running/healthy, host ports `3000`, `3100`, `3200`, `4317`, and `4318`.
+- `fourok-promtail-1`: running.
 
 Loki label discovery:
 
@@ -640,9 +640,9 @@ Loki recent range query proof:
   - `Started Dagster code server for file /app/deploy/dagster/definitions.py in process 9`
   - `Stopping server once all current RPC calls terminate or 60 seconds pass`
 - Endpoint: `GET http://127.0.0.1:3100/loki/api/v1/query_range`
-- Query: `{compose_project="4ok",compose_service="dagster-code"}`
+- Query: `{compose_project="fourok",compose_service="dagster-code"}`
 - Window: last 1 hour at query time.
-- Result summary: `status=success`, `resultType=streams`, `totalEntriesReturned=5`, stream labels include `container_name="4ok-dagster-code-1"`, and recent messages included:
+- Result summary: `status=success`, `resultType=streams`, `totalEntriesReturned=5`, stream labels include `container_name="fourok-dagster-code-1"`, and recent messages included:
   - `RUN_SUCCESS - Finished execution of run for "fourok_hourly_live_backfill".`
   - `STEP_SUCCESS - Finished execution of step "fourok_webhook_backlog"`
 
@@ -668,8 +668,8 @@ Grafana dashboard/API proof:
 - Endpoint: `GET http://127.0.0.1:3000/api/dashboards/uid/fourok-local-runtime-logs`
 - Result summary: dashboard is provisioned, version `4`, refreshes every `10s`, and contains 18 panels plus an Explore link.
 - Operator-usable log surfaces:
-  - Dashboard link `Explore all 4OK logs` uses `/explore` with Loki query `{compose_project="4ok"}` over `now-4h` to `now`.
-  - Panel `All 4ok Docker logs` uses Loki range query `{compose_project="4ok"}`.
+  - Dashboard link `Explore all 4OK logs` uses `/explore` with Loki query `{compose_project="fourok"}` over `now-4h` to `now`.
+  - Panel `All fourok Docker logs` uses Loki range query `{compose_project="fourok"}`.
   - Panel `Dagster code logs` uses Loki range query `{compose_service="dagster-code"}`.
   - Panel `Dagster failures` uses Loki range query `{compose_service="dagster-code"} |= "STEP_FAILURE"`.
 - Operator-usable trace surface:
@@ -684,7 +684,7 @@ Grafana dashboard/API proof:
 Prometheus target and metric proof from inside the observability container:
 
 - Endpoint: `GET http://localhost:9090/api/v1/targets?state=active`
-- Command path: `docker exec 4ok-observability-1 curl -fsS ...`
+- Command path: `docker exec fourok-observability-1 curl -fsS ...`
 - Result summary for scrape target:
   - `job="fourok-dagster-runtime"`
   - `scrapeUrl="http://fourok-metrics-exporter:9108/metrics"`
@@ -732,7 +732,7 @@ Repository/launch documentation:
   - `args`: `["run", "fourok-mcp"]`
   - `cwd`: repository checkout containing `pyproject.toml`
   - `env.FOUR_OK_DATABASE_URL`: runtime DB URL injected from local environment/secrets, never committed.
-- Exact worktree command used for live proof: stdio MCP client launched `uv run fourok-mcp` from `/home/simon/Projects/project-4ok/4ok.worktrees/gate4-mcp-retrieval` with `FOUR_OK_DATABASE_URL` set to the host-mapped runtime Postgres URL.
+- Exact worktree command used for live proof: stdio MCP client launched `uv run fourok-mcp` from `/home/simon/Projects/project-fourok/fourok.worktrees/gate4-mcp-retrieval` with `FOUR_OK_DATABASE_URL` set to the host-mapped runtime Postgres URL.
 
 Test/contract proof:
 
@@ -826,8 +826,8 @@ Gate 5 rebuild/restart proof:
 
 - `uv run fourok-dev pipeline-up` rebuilt/recreated the pipeline stack with image tag `207b7ba`.
 - Verified images:
-  - `4ok-dagster-code:207b7ba`
-  - `4ok-dagster:207b7ba`
+  - `fourok-dagster-code:207b7ba`
+  - `fourok-dagster:207b7ba`
 - `uv run fourok-dev dagster-status` after restart returned:
   - `status=ok`
   - `fourok_hourly_live_backfill_schedule=RUNNING`

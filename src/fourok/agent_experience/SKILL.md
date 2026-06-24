@@ -1,6 +1,6 @@
-# 4ok agent experience tools
+# fourok agent experience tools
 
-This directory is the home for repo-local tools that help AI agents and human operators understand, debug, and maintain the current 4ok/4OK deployment.
+This directory is the home for repo-local tools that help AI agents and human operators understand, debug, and maintain the current fourok/4OK deployment.
 
 Principles:
 

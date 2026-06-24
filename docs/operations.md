@@ -128,10 +128,10 @@ OpenViking captured conversations are imported from a project-local ignored
 `messages.jsonl` export. Never commit the export or print message bodies in
 operator evidence.
 
-Current production 4ok gateway source:
+Current production fourok gateway source:
 
 ```text
-prod-customer-4ok-gateway-01.tail04ba66.ts.net:/srv/openclaw-data/agents/main/sessions/*.jsonl
+prod-customer-fourok-gateway-01.tail04ba66.ts.net:/srv/openclaw-data/agents/main/sessions/*.jsonl
 ```
 
 The export used for the Stage 1 proof normalized non-trajectory OpenClaw session
@@ -155,7 +155,7 @@ uv run fourok operator-status \
 
 uv run fourok search-state OpenClaw \
   --database-url "$FOUR_OK_DATABASE_URL" \
-  --role customer:4ok \
+  --role customer:fourok \
   --limit 10 \
   > .local/openviking/search-openclaw-customer-role-results.json
 ```
@@ -749,7 +749,7 @@ from one command. Top-level proof alerts include the trigger threshold and a
 next-step command for the operator.
 
 Recorded Docker Compose proof on 2026-06-07 used app image
-`4ok-app:772cba5` and ran:
+`fourok-app:772cba5` and ran:
 
 ```bash
 docker compose run --rm app \
@@ -857,7 +857,7 @@ Expected smoke output includes `status: ok`, `exporter: otlp-http`, and
 `sensitive_payload_exported: false`.
 
 Recorded local proof on 2026-06-07 used app image
-`4ok-app:b75b3b9` and ran:
+`fourok-app:b75b3b9` and ran:
 
 ```bash
 FOUR_OK_IMAGE_TAG=b75b3b9 \

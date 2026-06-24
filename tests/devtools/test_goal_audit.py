@@ -153,7 +153,7 @@ def test_goal_alignment_audit_catches_compose_app_database_url_default(
                 "    environment:",
                 "      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}",
                 "  app:",
-                "    image: 4ok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}",
+                "    image: fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}",
                 "    environment:",
                 "      FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:-postgresql+psycopg://fourok:fourok_dev_password@postgres:5432/fourok}",
             ]
@@ -196,7 +196,7 @@ def _write_minimal_repo(root: Path) -> None:
                 "    environment:",
                 "      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}",
                 "  app:",
-                "    image: 4ok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}",
+                "    image: fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}",
                 "    environment:",
                 "      FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}",
             ]

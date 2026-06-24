@@ -91,7 +91,7 @@ try:
 except json.JSONDecodeError:
     secret_presence = {}
 
-containers = shell("docker ps --format '{{.Names}}\\t{{.Status}}' | grep -E 'openclaw-fourok|openclaw-openclaw-gateway|4ok|dagster' | sort", 60)
+containers = shell("docker ps --format '{{.Names}}\\t{{.Status}}' | grep -E 'openclaw-fourok|openclaw-openclaw-gateway|fourok|dagster' | sort", 60)
 container_rows = []
 for line in containers.stdout.splitlines():
     if "\t" in line:

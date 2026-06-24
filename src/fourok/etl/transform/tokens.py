@@ -29,6 +29,6 @@ def deterministic_token(*, token_type: str, normalized_value: str) -> str:
     digest = blake2b(
         f"{token_type}:{normalized_value}".encode(),
         digest_size=8,
-        person=b"4oktoken",
+        person=b"fouroktoken",
     ).hexdigest()
     return f"{TOKEN_PREFIX[token_type]}_{digest.upper()}"

@@ -24,7 +24,7 @@ class MeltanoProjectResource(ConfigurableResource):
         return Path(self.project_root)
 
 
-class 4okRuntimeResource(ConfigurableResource):
+class FourokRuntimeResource(ConfigurableResource):
     state_path: str
     database_url: str
 
@@ -51,7 +51,7 @@ def build_default_resources() -> dict[str, ConfigurableResource]:
         "meltano_project": MeltanoProjectResource(
             project_root=os.environ.get("FOUR_OK_PROJECT_ROOT", ".")
         ),
-        "fourok_runtime": 4okRuntimeResource(
+        "fourok_runtime": FourokRuntimeResource(
             state_path=os.environ.get("FOUR_OK_STATE_PATH", ".local/dagster/fourok-state.sqlite"),
             database_url=os.environ.get("FOUR_OK_DATABASE_URL", ""),
         ),

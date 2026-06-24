@@ -8,7 +8,7 @@ Telegraphic style. Root rules only. Keep this file short, scannable, and project
 - Read relevant docs only; avoid broad context loading.
 - Verify dependency-backed behavior from upstream docs/source/types before relying on it.
 - Never print secrets.
-- Do not use in-repository worktrees. For orchestrated 4OK Codex implementation, use only project-adjacent worktrees such as `../4ok.worktrees/<task-slug>/`.
+- Do not use in-repository worktrees. For orchestrated 4OK Codex implementation, use only project-adjacent worktrees such as `../fourok.worktrees/<task-slug>/`.
 - Do not use `/tmp` for project artifacts, datasets, state, or experiment outputs; use a project-local ignored scratch directory.
 - Use `.reference` only as a local, read-only research shelf for external repositories.
 - Never import code from `.reference`, copy files from it into the product, mount it
@@ -28,7 +28,7 @@ acceptance criterion -> failing test/check -> smallest change -> refactor -> liv
 - Spawn supervised Codex worker processes/sessions for large independent implementation; use Hermes subagents for parallel research/review.
 - Launch Codex workers with explicit model `gpt-5.3-codex-spark`; do not use fast mode/service-tier fast or the Codex default model for 4OK implementation work.
 - Codex worker prompts must include scope, TDD/proof command, commit policy, and a durable `.local/codex-runs/<slug>/` report path.
-- Keep adjacent Codex worktrees tidy: after integrating or rejecting a worker, remove its worktree/branch once evidence is preserved; before launching more than a few workers, run `git worktree list` and prune stale directories under `../4ok.worktrees/`.
+- Keep adjacent Codex worktrees tidy: after integrating or rejecting a worker, remove its worktree/branch once evidence is preserved; before launching more than a few workers, run `git worktree list` and prune stale directories under `../fourok.worktrees/`.
 
 - Treat executable acceptance criteria as the primary prompt for coding agents.
 - Write non-trivial requirements in Given/When/Then or equivalent observable form

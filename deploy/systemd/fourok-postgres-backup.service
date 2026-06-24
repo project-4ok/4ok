@@ -1,12 +1,12 @@
 [Unit]
-Description=4ok PostgreSQL backup
+Description=fourok PostgreSQL backup
 Requires=docker.service
 After=docker.service
 
 [Service]
 Type=oneshot
-WorkingDirectory=/opt/4ok
+WorkingDirectory=/opt/fourok
 Environment=GCB_IMAGE_TAG=replace-with-commit-hash
-Environment=GCB_CONFIG_PATH=/opt/4ok/.local/4ok.toml
-EnvironmentFile=/etc/4ok/4ok.env
-ExecStart=/bin/sh -lc '/usr/bin/docker compose run --rm app postgres-backup --database-url "$GCB_DATABASE_URL" --output "/var/lib/4ok/backups/4ok-$(date +%%Y%%m%%d-%%H%%M%%S).dump"'
+Environment=GCB_CONFIG_PATH=/opt/fourok/.local/fourok.toml
+EnvironmentFile=/etc/fourok/fourok.env
+ExecStart=/bin/sh -lc '/usr/bin/docker compose run --rm app postgres-backup --database-url "$GCB_DATABASE_URL" --output "/var/lib/fourok/backups/fourok-$(date +%%Y%%m%%d-%%H%%M%%S).dump"'

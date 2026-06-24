@@ -29,9 +29,9 @@ Environment overrides:
   REMOTE_DAGSTER_PORT=13001
 
 Examples:
-  scripts/ssh-4ok-dev-observability-tunnel.sh
-  scripts/ssh-4ok-dev-observability-tunnel.sh --print-urls
-  GATEWAY_SSH_TARGET=root@dev-gateway.example scripts/ssh-4ok-dev-observability-tunnel.sh
+  scripts/ssh-fourok-dev-observability-tunnel.sh
+  scripts/ssh-fourok-dev-observability-tunnel.sh --print-urls
+  GATEWAY_SSH_TARGET=root@dev-gateway.example scripts/ssh-fourok-dev-observability-tunnel.sh
 EOF
 }
 

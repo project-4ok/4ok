@@ -20,12 +20,12 @@ def test_publish_runtime_workflow_builds_wheel_and_pinned_images() -> None:
     assert "docker/dagster.Dockerfile" in text
     assert "target: dagster-code" in text
     assert "target: dagster-runtime" not in text
-    assert "4ok-app" in text
-    assert "4ok-dagster-code" in text
-    assert "4ok-dagster-runtime" not in text
+    assert "fourok-app" in text
+    assert "fourok-dagster-code" in text
+    assert "fourok-dagster-runtime" not in text
     assert PUBLIC_DAGSTER_RUNTIME_IMAGE in text
     assert "runtime-manifest.json" in text
-    assert "sha256sum dist/4ok" in text
+    assert "sha256sum dist/fourok" in text
 
 
 def test_pinned_runtime_compose_uses_public_dagster_runtime_image_without_builds() -> None:
@@ -37,7 +37,10 @@ def test_pinned_runtime_compose_uses_public_dagster_runtime_image_without_builds
     assert ":latest" not in compose_text
 
     services = compose["services"]
-    assert services["app"]["image"] == "${FOUR_OK_APP_IMAGE:?set FOUR_OK_APP_IMAGE to a digest image ref}"
+    assert (
+        services["app"]["image"]
+        == "${FOUR_OK_APP_IMAGE:?set FOUR_OK_APP_IMAGE to a digest image ref}"
+    )
     assert services["fourok-metrics-exporter"]["image"] == services["app"]["image"]
     assert services["dagster-code"]["image"] == (
         "${FOUR_OK_DAGSTER_CODE_IMAGE:?set FOUR_OK_DAGSTER_CODE_IMAGE to a digest image ref}"
@@ -81,6 +84,8 @@ def test_runtime_env_example_exposes_pinned_artifact_contract() -> None:
     assert "FOUR_OK_GIT_SHA=" in example
     assert "FOUR_OK_CLI_WHEEL_URL=" in example
     assert "FOUR_OK_CLI_WHEEL_SHA256=" in example
-    assert "FOUR_OK_APP_IMAGE=ghcr.io/project-4ok/4ok-app@sha256:" in example
-    assert "FOUR_OK_DAGSTER_CODE_IMAGE=ghcr.io/project-4ok/4ok-dagster-code@sha256:" in example
+    assert "FOUR_OK_APP_IMAGE=ghcr.io/project-fourok/fourok-app@sha256:" in example
+    assert (
+        "FOUR_OK_DAGSTER_CODE_IMAGE=ghcr.io/project-fourok/fourok-dagster-code@sha256:" in example
+    )
     assert f"FOUR_OK_DAGSTER_RUNTIME_IMAGE={PUBLIC_DAGSTER_RUNTIME_IMAGE}" in example

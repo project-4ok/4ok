@@ -36,8 +36,8 @@ from fourok.observability import (
     set_safe_span_attributes,
 )
 from fourok.orchestration.dagster_resources import (
-    4okRuntimeResource,
     ConnectorEnvResource,
+    FourokRuntimeResource,
     MeltanoProjectResource,
     RawLandingResource,
     build_default_resources,
@@ -179,7 +179,7 @@ def _source_records_asset_span_name(connector_name: str) -> str:
 def fourok_slack_live_source_records_from_raw_landing(
     context,
     raw_landing: RawLandingResource,
-    fourok_runtime: 4okRuntimeResource,
+    fourok_runtime: FourokRuntimeResource,
 ) -> MaterializeResult:
     connector_name = "slack-live"
     asset_name = "fourok_slack_live_source_records_from_raw_landing"
@@ -218,7 +218,7 @@ def fourok_slack_live_source_records_from_raw_landing(
 def fourok_twenty_live_source_records_from_raw_landing(
     context,
     raw_landing: RawLandingResource,
-    fourok_runtime: 4okRuntimeResource,
+    fourok_runtime: FourokRuntimeResource,
 ) -> MaterializeResult:
     return _import_live_landed_source_records(
         context=context,
@@ -233,7 +233,7 @@ def fourok_twenty_live_source_records_from_raw_landing(
 def fourok_linear_live_source_records_from_raw_landing(
     context,
     raw_landing: RawLandingResource,
-    fourok_runtime: 4okRuntimeResource,
+    fourok_runtime: FourokRuntimeResource,
 ) -> MaterializeResult:
     return _import_live_landed_source_records(
         context=context,
@@ -248,7 +248,7 @@ def fourok_linear_live_source_records_from_raw_landing(
 def fourok_google_drive_live_source_records_from_raw_landing(
     context,
     raw_landing: RawLandingResource,
-    fourok_runtime: 4okRuntimeResource,
+    fourok_runtime: FourokRuntimeResource,
 ) -> MaterializeResult:
     return _import_live_landed_source_records(
         context=context,
@@ -263,7 +263,7 @@ def fourok_google_drive_live_source_records_from_raw_landing(
 def fourok_openviking_live_source_records_from_sessions(
     context,
     raw_landing: RawLandingResource,
-    fourok_runtime: 4okRuntimeResource,
+    fourok_runtime: FourokRuntimeResource,
 ) -> MaterializeResult:
     connector_name = "openviking-live"
     sessions_dir = Path(os.environ.get("OPENVIKING_SESSIONS_DIR", "/var/lib/openclaw/sessions"))
@@ -307,7 +307,7 @@ _LIVE_RAW_LANDING_ASSETS = [
 
 
 @asset
-def fourok_webhook_backlog(fourok_runtime: 4okRuntimeResource) -> MaterializeResult:
+def fourok_webhook_backlog(fourok_runtime: FourokRuntimeResource) -> MaterializeResult:
     with critical_span(
         "fourok_webhook_backlog", attributes={"fourok.dagster.asset": "fourok_webhook_backlog"}
     ):
@@ -330,7 +330,7 @@ def fourok_webhook_backlog(fourok_runtime: 4okRuntimeResource) -> MaterializeRes
 
 @asset(deps=[fourok_webhook_backlog])
 def fourok_canonical_objects_and_entity_links(
-    fourok_runtime: 4okRuntimeResource,
+    fourok_runtime: FourokRuntimeResource,
 ) -> MaterializeResult:
     with critical_span(
         "fourok_canonical_objects_and_entity_links",
@@ -368,7 +368,7 @@ def fourok_canonical_objects_and_entity_links(
 
 
 @asset(deps=[fourok_webhook_backlog])
-def fourok_retrieval_records(fourok_runtime: 4okRuntimeResource) -> MaterializeResult:
+def fourok_retrieval_records(fourok_runtime: FourokRuntimeResource) -> MaterializeResult:
     with critical_span(
         "fourok_retrieval_records", attributes={"fourok.dagster.asset": "fourok_retrieval_records"}
     ):
@@ -393,9 +393,10 @@ def fourok_retrieval_records(fourok_runtime: 4okRuntimeResource) -> MaterializeR
 
 
 @asset(deps=[fourok_retrieval_records])
-def fourok_operator_dashboard(fourok_runtime: 4okRuntimeResource) -> MaterializeResult:
+def fourok_operator_dashboard(fourok_runtime: FourokRuntimeResource) -> MaterializeResult:
     with critical_span(
-        "fourok_operator_dashboard", attributes={"fourok.dagster.asset": "fourok_operator_dashboard"}
+        "fourok_operator_dashboard",
+        attributes={"fourok.dagster.asset": "fourok_operator_dashboard"},
     ):
         dashboard = operator_dashboard(_governed_state(fourok_runtime))
 
@@ -413,7 +414,7 @@ def fourok_operator_dashboard(fourok_runtime: 4okRuntimeResource) -> Materialize
 
 
 @asset(deps=[fourok_operator_dashboard])
-def fourok_audit_metadata(fourok_runtime: 4okRuntimeResource) -> MaterializeResult:
+def fourok_audit_metadata(fourok_runtime: FourokRuntimeResource) -> MaterializeResult:
     with critical_span(
         "fourok_audit_metadata", attributes={"fourok.dagster.asset": "fourok_audit_metadata"}
     ):
@@ -432,7 +433,7 @@ def fourok_audit_metadata(fourok_runtime: 4okRuntimeResource) -> MaterializeResu
 def _import_landed_source_records(
     *,
     landing_dir: Path,
-    fourok_runtime: 4okRuntimeResource,
+    fourok_runtime: FourokRuntimeResource,
     stream: str | None = None,
     streams: tuple[str, ...] = (),
 ) -> MaterializeResult:
@@ -450,7 +451,7 @@ def _import_live_landed_source_records(
     *,
     context,
     landing_dir: Path,
-    fourok_runtime: 4okRuntimeResource,
+    fourok_runtime: FourokRuntimeResource,
     connector_name: str,
     stream: str | None = None,
     streams: tuple[str, ...] = (),
@@ -492,7 +493,7 @@ def _import_live_landed_source_records(
 
 
 def _import_source_records(
-    *, records: list[Any], fourok_runtime: 4okRuntimeResource
+    *, records: list[Any], fourok_runtime: FourokRuntimeResource
 ) -> tuple[MaterializeResult, SourceRecordImportReport]:
     context = GovernedContext(
         fourok_runtime.state,
@@ -560,14 +561,14 @@ def _record_live_connector_success(
     )
 
 
-def _governed_context(fourok_runtime: 4okRuntimeResource) -> GovernedContext:
+def _governed_context(fourok_runtime: FourokRuntimeResource) -> GovernedContext:
     return GovernedContext(
         fourok_runtime.state,
         database_url=fourok_runtime.database_url or None,
     )
 
 
-def _governed_state(fourok_runtime: 4okRuntimeResource):
+def _governed_state(fourok_runtime: FourokRuntimeResource):
     return create_governed_context_state(
         state_path=fourok_runtime.state,
         database_url=fourok_runtime.database_url or None,
@@ -609,7 +610,7 @@ fourok_hourly_live_backfill_schedule = ScheduleDefinition(
 @sensor(job=fourok_process_webhook_backlog, minimum_interval_seconds=60)
 def fourok_webhook_backlog_sensor():
     state = _governed_state(
-        4okRuntimeResource(
+        FourokRuntimeResource(
             state_path=os.environ.get("FOUR_OK_STATE_PATH", ".local/dagster/fourok-state.sqlite"),
             database_url=os.environ.get("FOUR_OK_DATABASE_URL", ""),
         )

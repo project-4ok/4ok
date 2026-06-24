@@ -120,7 +120,7 @@ def _schema(stream: str) -> dict[str, Any]:
 
 def _query() -> str:
     return """
-        query 4okLinearTap(
+        query fourokLinearTap(
           $first: Int!,
           $usersAfter: String,
           $issuesAfter: String,

@@ -79,7 +79,7 @@ def vector_literal(vector: list[float]) -> str:
 def _hash_embed_text(text: str, *, dimensions: int) -> list[float]:
     vector = [0.0] * dimensions
     for term in _terms(text):
-        digest = blake2b(term.encode(), digest_size=4, person=b"4okembed").digest()
+        digest = blake2b(term.encode(), digest_size=4, person=b"fourokembed").digest()
         bucket = int.from_bytes(digest[:2], "big") % dimensions
         sign = 1.0 if digest[2] % 2 == 0 else -1.0
         vector[bucket] += sign

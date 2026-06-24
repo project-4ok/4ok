@@ -4,13 +4,13 @@ Use this file as the authoritative implementation prompt for the next Hermes `/g
 
 ## Context
 
-- Main repo: `/home/simon/Projects/project-4ok/4ok`
-- Worktree root for Codex workers: `/home/simon/Projects/project-4ok/4ok.worktrees`
+- Main repo: `/home/simon/Projects/project-fourok/fourok`
+- Worktree root for Codex workers: `/home/simon/Projects/project-fourok/fourok.worktrees`
 - Current relevant commits when this prompt was updated: `9c3ea66 feat: add runtime metrics and trace dashboard`, `a23017b chore: aggregate local docker logs in Loki`, `2c9c228 chore: add local runtime dx helpers`
 - Local source of truth:
-  - Runtime Postgres container: `4ok-postgres-1`
+  - Runtime Postgres container: `fourok-postgres-1`
   - Dagster webserver: `http://127.0.0.1:3001`
-  - Observability container: `4ok-observability-1`
+  - Observability container: `fourok-observability-1`
   - Grafana: `http://127.0.0.1:3000`
   - Loki API: host `http://127.0.0.1:3100`, inside observability container `http://localhost:3100`
   - Tempo API: host `http://127.0.0.1:3200`, inside observability container `http://localhost:3200`
@@ -67,7 +67,7 @@ The previous work found and partially fixed real issues. This file was updated a
 - If a gate is blocked, write `NOT COMPLETE` in the report and final response with the exact blocker.
 - Treat tests as necessary but insufficient. Every live/runtime/dashboard/MCP claim needs real tool-backed evidence.
 - Use project-adjacent Codex worktrees for substantial changes:
-  - `/home/simon/Projects/project-4ok/4ok.worktrees/<task-slug>/`
+  - `/home/simon/Projects/project-fourok/fourok.worktrees/<task-slug>/`
 - Keep changes atomic and commit them with conventional commit messages.
 
 ## Done means ALL gates below are satisfied

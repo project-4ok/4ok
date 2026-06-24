@@ -300,7 +300,7 @@ google_drive:file:1_2jCrzIC7fR2H-VApIxm_y_unb81QW5s
 Latest gate run on 2026-06-10 from the `codex/slack-gate` worktree:
 
 ```bash
-FOUR_OK_DATABASE_URL="$(docker exec 4ok-app-1 printenv FOUR_OK_DATABASE_URL)"
+FOUR_OK_DATABASE_URL="$(docker exec fourok-app-1 printenv FOUR_OK_DATABASE_URL)"
 FOUR_OK_DATABASE_URL="${FOUR_OK_DATABASE_URL/@postgres:/@127.0.0.1:}"
 export FOUR_OK_DATABASE_URL
 uv run --group pipeline python scripts/check_slack_live_contract.py \
@@ -411,13 +411,13 @@ The live OpenViking gate is blocked until a production export is copied to a pro
 Expected production source:
 
 ```text
-prod-customer-4ok-gateway-01.tail04ba66.ts.net:/srv/openclaw-data/agents/main/sessions/*.jsonl
+prod-customer-fourok-gateway-01.tail04ba66.ts.net:/srv/openclaw-data/agents/main/sessions/*.jsonl
 ```
 
 Safe access check:
 
 ```bash
-ssh -o BatchMode=yes -o ConnectTimeout=8 prod-customer-4ok-gateway-01.tail04ba66.ts.net 'find /srv/openclaw-data/agents/main/sessions -maxdepth 1 -type f -name "*.jsonl" -printf "%p %s\n" | sort'
+ssh -o BatchMode=yes -o ConnectTimeout=8 prod-customer-fourok-gateway-01.tail04ba66.ts.net 'find /srv/openclaw-data/agents/main/sessions -maxdepth 1 -type f -name "*.jsonl" -printf "%p %s\n" | sort'
 ```
 
 Result:
@@ -689,9 +689,9 @@ Scope: Stage 1 Grafana-first state review proof for local runtime health/log/met
 - `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=fourok_retrieval_records_total'`
 - `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=fourok_search_requests_total'`
 - `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=fourok_retrieval_prepare_total'`
-- `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/loki/loki/api/v1/query_range' --data-urlencode 'query={compose_project="4ok"}' --data-urlencode 'limit=20'`
-- `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/loki/loki/api/v1/query_range' --data-urlencode 'query={compose_project="4ok"} |= "ERROR"' --data-urlencode 'limit=5'`
-- `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/loki/loki/api/v1/query_range' --data-urlencode 'query=count_over_time({compose_project="4ok"} |= "ERROR" [1h])'`
+- `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/loki/loki/api/v1/query_range' --data-urlencode 'query={compose_project="fourok"}' --data-urlencode 'limit=20'`
+- `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/loki/loki/api/v1/query_range' --data-urlencode 'query={compose_project="fourok"} |= "ERROR"' --data-urlencode 'limit=5'`
+- `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/loki/loki/api/v1/query_range' --data-urlencode 'query=count_over_time({compose_project="fourok"} |= "ERROR" [1h])'`
 - `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/tempo/api/search' --data-urlencode 'q={ resource.service.name = "fourok-local-smoke" }' --data-urlencode 'limit=5'`
 - `uv run fourok observability-smoke`
 - `uv run fourok operator-status --database-url 'postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok' --now '2026-06-10T13:00:00+00:00'`

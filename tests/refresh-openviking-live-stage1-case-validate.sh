@@ -14,7 +14,7 @@ for expected in \
   "CHECK_TARGET=local" \
   "OPENVIKING_SESSIONS_DIR=/var/lib/openclaw/sessions" \
   "STAGE1_CASES=/app/.local/stage1/live_retrieval_case_set.generated.json" \
-  "scripts/check-4ok-dev-all.sh --json"
+  "scripts/check-fourok-dev-all.sh --json"
 do
   if [[ "${help_output}" != *"${expected}"* ]]; then
     echo "missing expected help text: ${expected}" >&2

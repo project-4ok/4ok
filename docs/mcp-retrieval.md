@@ -6,7 +6,7 @@ path used by `four-ok search-state`.
 
 ## Tools
 
-- `search_4ok`: searches governed retrieval units with permission filtering and
+- `search_fourok`: searches governed retrieval units with permission filtering and
   returns `query`, `results`, `summary`, `result_candidates`, `evidence_items`,
   object/entity fields, `limitations`, and `audit_ref`.
 - `operator_status`: returns the same compact runtime operator status as
@@ -32,13 +32,13 @@ Hermes can connect to the stdio server with this native MCP config shape. Set
 ```json
 {
   "mcpServers": {
-    "4ok-retrieval": {
+    "fourok-retrieval": {
       "command": "uv",
       "args": ["run", "four-ok-mcp"],
-      "cwd": "/home/simon/Projects/project-4ok/4ok",
+      "cwd": "/home/simon/Projects/project-fourok/fourok",
       "env": {
-        "FOUR_OK_DATABASE_URL": "postgresql+psycopg://4ok:...@127.0.0.1:5432/4ok",
-        "FOUR_OK_CONFIG_PATH": "/home/simon/Projects/project-4ok/4ok/4ok.toml"
+        "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:...@127.0.0.1:5432/fourok",
+        "FOUR_OK_CONFIG_PATH": "/home/simon/Projects/project-fourok/fourok/fourok.toml"
       }
     }
   }
@@ -87,7 +87,7 @@ Interactive MCP inspection, when the local runtime database is available:
 npx -y @modelcontextprotocol/inspector uv run four-ok-mcp
 ```
 
-Expected tools are `search_4ok` and `operator_status`. Use `search_4ok` with the
+Expected tools are `search_fourok` and `operator_status`. Use `search_fourok` with the
 same query, `limit`, roles, and optional `config` as the CLI comparison.
 
 SDK stdio smoke check:

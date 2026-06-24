@@ -86,7 +86,7 @@ def test_dagster_entrypoint_keeps_resource_definitions_separate() -> None:
 
     assert "class RawLandingResource" not in definitions_source
     assert "class MeltanoProjectResource" not in definitions_source
-    assert "class 4okRuntimeResource" not in definitions_source
+    assert "class FourokRuntimeResource" not in definitions_source
     assert "def build_default_resources" in resources_source
     assert "ConnectorEnvResource" in resources_source
 

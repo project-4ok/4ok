@@ -13,15 +13,15 @@ DAGSTER_GRAPHQL_URL="${DAGSTER_GRAPHQL_URL:-http://fourok-dagster-webserver:3001
 GRAFANA_URL="${GRAFANA_URL:-http://fourok-observability:3000}"
 STAGE1_CASES="${STAGE1_CASES:-}"
 REFRESH_DAGSTER_BACKFILL="${REFRESH_DAGSTER_BACKFILL:-true}"
-DAGSTER_BACKFILL_CHECK="${DAGSTER_BACKFILL_CHECK:-${REPO_ROOT}/scripts/run-4ok-dev-dagster-backfill.sh}"
-DEPLOYMENT_CHECK="${DEPLOYMENT_CHECK:-${REPO_ROOT}/scripts/check-4ok-dev-deployment.sh}"
+DAGSTER_BACKFILL_CHECK="${DAGSTER_BACKFILL_CHECK:-${REPO_ROOT}/scripts/run-fourok-dev-dagster-backfill.sh}"
+DEPLOYMENT_CHECK="${DEPLOYMENT_CHECK:-${REPO_ROOT}/scripts/check-fourok-dev-deployment.sh}"
 
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [--json]
 
 Run two 4OK/OpenClaw gates and combine their JSON results:
-  1. deployment surface check via scripts/check-4ok-dev-deployment.sh --json
+  1. deployment surface check via scripts/check-fourok-dev-deployment.sh --json
   2. fourok stage1-acceptance --json on the selected target
 
 The top-level status is ok only when both gates return status=ok.
@@ -47,8 +47,8 @@ Environment overrides:
   GRAFANA_URL=http://fourok-observability:3000
   STAGE1_CASES=/app/.local/stage1/live_retrieval_case_set.generated.json
   REFRESH_DAGSTER_BACKFILL=true
-  DAGSTER_BACKFILL_CHECK=scripts/run-4ok-dev-dagster-backfill.sh
-  DEPLOYMENT_CHECK=scripts/check-4ok-dev-deployment.sh
+  DAGSTER_BACKFILL_CHECK=scripts/run-fourok-dev-dagster-backfill.sh
+  DEPLOYMENT_CHECK=scripts/check-fourok-dev-deployment.sh
 EOF
 }
 

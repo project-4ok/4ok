@@ -8,12 +8,7 @@ def test_pipeline_up_loads_project_dotenv_and_sets_stable_local_defaults(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".env").write_text(
-        "LINEAR_API_KEY=linear-token\n"
-        ""
-        ""
-        ""
-        ""
-        "SLACK_BOT_TOKEN=secret-value\n",
+        "LINEAR_API_KEY=linear-token\nSLACK_BOT_TOKEN=secret-value\n",
         encoding="utf-8",
     )
 
@@ -36,7 +31,10 @@ def test_pipeline_up_loads_project_dotenv_and_sets_stable_local_defaults(
     )
     assert step.env["POSTGRES_PASSWORD"] == "local-check"
     assert step.env["DAGSTER_POSTGRES_PASSWORD"] == "local-check"
-    assert step.env["FOUR_OK_DATABASE_URL"] == "postgresql+psycopg://fourok:local-check@postgres:5432/fourok"
+    assert (
+        step.env["FOUR_OK_DATABASE_URL"]
+        == "postgresql+psycopg://fourok:local-check@postgres:5432/fourok"
+    )
     assert step.env["LINEAR_API_KEY"] == "linear-token"
     assert step.env["LINEAR_API_KEY"] == "linear-token"
     assert step.env["LINEAR_API_KEY"] == "linear-token"
@@ -65,7 +63,7 @@ def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkey
     assert core_step.command == app_step.command
     assert app_step.env["FOUR_OK_IMAGE_TAG"] == "abc1234"
     assert app_step.env["POSTGRES_PASSWORD"] == "local-check"
-    assert app_step.env["COMPOSE_PROJECT_NAME"] == "4ok"
+    assert app_step.env["COMPOSE_PROJECT_NAME"] == "fourok"
     assert observability_step.command == (
         "docker",
         "compose",
@@ -91,11 +89,11 @@ def test_stack_up_starts_runtime_pipeline_and_observability_in_order(tmp_path, m
 
 def test_compose_env_overrides_stale_smoke_project_name(tmp_path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setenv("COMPOSE_PROJECT_NAME", "smoke-4ok")
+    monkeypatch.setenv("COMPOSE_PROJECT_NAME", "smoke-fourok")
 
     [step] = build_plan("core-up", [])
 
-    assert step.env["COMPOSE_PROJECT_NAME"] == "4ok"
+    assert step.env["COMPOSE_PROJECT_NAME"] == "fourok"
 
 
 def test_dev_step_dry_run_redacts_secret_env_values() -> None:

@@ -191,7 +191,7 @@ Current Graphiti wiring:
 
 Current Honcho comparison:
 
-- Dockerized app image `4ok-app:47d077b6acd9`
+- Dockerized app image `fourok-app:47d077b6acd9`
 - fixture sync wrote 7 Honcho messages into a fresh workspace
 - workspace search scored 7/15, with 6/15 top-1 hits and 7/15 top-3 hits
 - passed ambiguous message retrieval and day-2 message cases

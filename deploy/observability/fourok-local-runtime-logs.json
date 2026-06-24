@@ -16,7 +16,7 @@
       "targetBlank": false,
       "title": "Explore all 4OK logs",
       "type": "link",
-      "url": "/explore?schemaVersion=1&panes=%7B%224ok%22:%7B%22datasource%22:%22loki%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bcompose_project%3D%5C%224ok%5C%22%7D%22%7D%5D,%22range%22:%7B%22from%22:%22now-4h%22,%22to%22:%22now%22%7D%7D%7D&orgId=1"
+      "url": "/explore?schemaVersion=1&panes=%7B%22fourok%22:%7B%22datasource%22:%22loki%22,%22queries%22:%5B%7B%22refId%22:%22A%22,%22expr%22:%22%7Bcompose_project%3D%5C%22fourok%5C%22%7D%22%7D%5D,%22range%22:%7B%22from%22:%22now-4h%22,%22to%22:%22now%22%7D%7D%7D&orgId=1"
     }
   ],
   "liveNow": false,
@@ -41,7 +41,7 @@
       "id": 40,
       "type": "stat",
       "title": "[Agent] Prometheus 4OK metrics present",
-      "description": "At least one core 4OK/4ok Prometheus metric is present. Missing means scraping/exporter/runtime data is absent, so lower metric panels may be empty.",
+      "description": "At least one core 4OK/fourok Prometheus metric is present. Missing means scraping/exporter/runtime data is absent, so lower metric panels may be empty.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -144,7 +144,7 @@
     {
       "id": 41,
       "type": "stat",
-      "title": "[Agent] Recent Loki 4ok log streams",
+      "title": "[Agent] Recent Loki fourok log streams",
       "description": "Recent Docker log streams for the selected compose project. This is log activity, not container health; quiet services can be healthy.",
       "datasource": {
         "type": "loki",
@@ -2768,7 +2768,7 @@
           "refId": "A"
         }
       ],
-      "title": "[Logs] Last 5 4ok Docker logs",
+      "title": "[Logs] Last 5 fourok Docker logs",
       "type": "logs",
       "description": "Tail of all logs for this compose project, limited to 5 rows."
     }
@@ -2783,17 +2783,17 @@
         "name": "compose_project",
         "label": "Compose project",
         "hide": 0,
-        "query": "4ok",
+        "query": "fourok",
         "current": {
           "selected": true,
-          "text": "4ok",
-          "value": "4ok"
+          "text": "fourok",
+          "value": "fourok"
         },
         "options": [
           {
             "selected": true,
-            "text": "4ok",
-            "value": "4ok"
+            "text": "fourok",
+            "value": "fourok"
           }
         ],
         "skipUrlSync": false
@@ -2859,7 +2859,7 @@
     "to": "now"
   },
   "timezone": "browser",
-  "title": "4ok dashboard",
+  "title": "fourok dashboard",
   "uid": "fourok-local-runtime-logs",
   "version": 3,
   "weekStart": ""

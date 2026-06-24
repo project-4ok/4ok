@@ -122,7 +122,9 @@ def main() -> None:
 
 def _load_definitions() -> Any:
     definitions_path = Path("deploy/dagster/definitions.py")
-    spec = importlib.util.spec_from_file_location("fourok_dagster_definitions_check", definitions_path)
+    spec = importlib.util.spec_from_file_location(
+        "fourok_dagster_definitions_check", definitions_path
+    )
     if spec is None or spec.loader is None:
         raise SystemExit(f"Could not load {definitions_path}")
     module = importlib.util.module_from_spec(spec)
@@ -158,7 +160,7 @@ def _materialize_assets(
                 dotenv_path=os.environ.get("FOUR_OK_DOTENV_PATH", ".env"),
                 load_dotenv=load_dotenv,
             ),
-            "fourok_runtime": module.4okRuntimeResource(
+            "fourok_runtime": module.FourokRuntimeResource(
                 state_path=str(state_path),
                 database_url=database_url,
             ),

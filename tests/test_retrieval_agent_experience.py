@@ -63,7 +63,7 @@ def test_default_reranker_demotes_tool_noise_and_boosts_current_work_items() -> 
             "title": "Align with Simon on priorities — what's really important right now",
             "snippet": (
                 "Sit down with Simon and get aligned on the single most important "
-                "thing for 4ok right now."
+                "thing for fourok right now."
             ),
             "occurred_at": "2026-04-13T07:42:10Z",
             "score": 0.03,

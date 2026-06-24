@@ -259,7 +259,7 @@ def _materialize_live_assets(
             resources={
                 "raw_landing": module.RawLandingResource(path=str(raw_landing)),
                 "meltano_project": module.MeltanoProjectResource(project_root=str(project_root)),
-                "fourok_runtime": module.4okRuntimeResource(
+                "fourok_runtime": module.FourokRuntimeResource(
                     state_path=str(state_path),
                     database_url=database_url,
                 ),

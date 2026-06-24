@@ -5,10 +5,10 @@ CHECK_TARGET="${CHECK_TARGET:-ssh}"
 GATEWAY_SSH_TARGET="${GATEWAY_SSH_TARGET:-root@178.105.10.7}"
 QUERY="${FOUR_OK_STATUS_QUERY:-${FOUR_OK_DEV_STATUS_QUERY:-4OK}}"
 INCLUDE_GH="${INCLUDE_GH:-true}"
-GH_REPO="${GH_REPO:-project-4ok/4ok-infrastructure-prod}"
-OPENCLAW_IMAGE_WORKFLOW="${OPENCLAW_IMAGE_WORKFLOW:-4ok-openclaw-dev-image.yml}"
+GH_REPO="${GH_REPO:-project-fourok/fourok-infrastructure-prod}"
+OPENCLAW_IMAGE_WORKFLOW="${OPENCLAW_IMAGE_WORKFLOW:-fourok-openclaw-dev-image.yml}"
 OPENCLAW_IMAGE_WORKFLOW_REQUIRED="${OPENCLAW_IMAGE_WORKFLOW_REQUIRED:-false}"
-RUNTIME_DEPLOY_WORKFLOW="${RUNTIME_DEPLOY_WORKFLOW:-dev-customer-gateway-4ok-runtime-deploy}"
+RUNTIME_DEPLOY_WORKFLOW="${RUNTIME_DEPLOY_WORKFLOW:-dev-customer-gateway-fourok-runtime-deploy}"
 GATEWAY_CONTAINER="${GATEWAY_CONTAINER:-openclaw-openclaw-gateway-1}"
 FOUR_OK_RETRIEVE_CONTAINER="${FOUR_OK_RETRIEVE_CONTAINER:-openclaw-fourok-app-1}"
 FOUR_OK_RETRIEVE_COMMAND="${FOUR_OK_RETRIEVE_COMMAND:-/app/.venv/bin/fourok}"
@@ -31,7 +31,7 @@ Target modes:
 Environment overrides:
   CHECK_TARGET=ssh|local
   GATEWAY_SSH_TARGET=root@178.105.10.7
-  GH_REPO=project-4ok/4ok-infrastructure-prod
+  GH_REPO=project-fourok/fourok-infrastructure-prod
   INCLUDE_GH=true
   OPENCLAW_IMAGE_WORKFLOW_REQUIRED=false
   FOUR_OK_STATUS_QUERY=4OK

@@ -9,7 +9,7 @@ def test_compose_declares_app_context_cli_runtime() -> None:
     app_service = _compose_service_block(compose, "app")
 
     assert "  app:" in compose
-    assert "4ok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in compose
+    assert "fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in compose
     assert "docker/app.Dockerfile" in compose
     assert "FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}" in app_service
     assert (
@@ -50,7 +50,9 @@ def test_compose_active_services_have_health_checks() -> None:
         assert "healthcheck:" in _compose_service_block(compose, service_name)
 
     app_service = _compose_service_block(compose, "app")
-    assert '"/app/.venv/bin/fourok health --database-url \\\"$$FOUR_OK_DATABASE_URL\\\""' in app_service
+    assert (
+        '"/app/.venv/bin/fourok health --database-url \\"$$FOUR_OK_DATABASE_URL\\""' in app_service
+    )
     assert '"--config"' not in _compose_healthcheck_block(app_service)
 
 
@@ -176,7 +178,9 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     dashboard_provider = Path("deploy/observability/grafana-dashboards.yaml").read_text(
         encoding="utf-8"
     )
-    dashboard = Path("deploy/observability/fourok-local-runtime-logs.json").read_text(encoding="utf-8")
+    dashboard = Path("deploy/observability/fourok-local-runtime-logs.json").read_text(
+        encoding="utf-8"
+    )
 
     assert "docker_sd_configs:" in promtail
     assert "__meta_docker_container_label_com_docker_compose_service" in promtail
@@ -191,9 +195,9 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
         if "expr" in target
     ]
 
-    assert "4ok dashboard" in dashboard_provider
+    assert "fourok dashboard" in dashboard_provider
     assert "fourok-local-runtime-logs.json" in dashboard_provider
-    assert dashboard_data["title"] == "4ok dashboard"
+    assert dashboard_data["title"] == "fourok dashboard"
     assert '{compose_project=~"$compose_project"}' in expressions
     assert '{compose_service=~"$compose_service"}' in expressions
     assert '{compose_service=~"$compose_service"} |= "STEP_FAILURE"' in expressions
@@ -230,7 +234,8 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
         for expr in prometheus_exprs
     )
     assert any(
-        'fourok_dagster_latest_run_stage_status{exported_job="$dagster_job",status!="SUCCESS"}' in expr
+        'fourok_dagster_latest_run_stage_status{exported_job="$dagster_job",status!="SUCCESS"}'
+        in expr
         for expr in prometheus_exprs
     )
     non_success_panel = next(
@@ -252,7 +257,9 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     assert any("fourok_retrieval_duration_ms_sum" in expr for expr in prometheus_exprs)
     assert any("otelcol_receiver_accepted_spans_total" in expr for expr in prometheus_exprs)
     panel_titles = {panel["title"] for panel in prometheus_panels}
-    assert "[Logs] Last 5 4ok Docker logs" in {panel["title"] for panel in dashboard_data["panels"]}
+    assert "[Logs] Last 5 fourok Docker logs" in {
+        panel["title"] for panel in dashboard_data["panels"]
+    }
     dashboard_titles = {panel["title"] for panel in dashboard_data["panels"]}
     assert "[Logs] Last 5 Dagster code logs" in dashboard_titles
     assert "[Logs] Last 5 Dagster failures" in dashboard_titles
@@ -273,7 +280,7 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     )
     assert "log activity, not container health" in runtime_activity_panel["description"]
     for panel_title in [
-        "[Logs] Last 5 4ok Docker logs",
+        "[Logs] Last 5 fourok Docker logs",
         "[Logs] Last 5 Dagster code logs",
         "[Logs] Last 5 Dagster failures",
         "[Logs] Latest 5 runtime errors by service",
@@ -410,7 +417,7 @@ def test_compose_declares_fourok_metrics_exporter_for_prometheus() -> None:
     prometheus = Path("deploy/observability/prometheus.yaml").read_text(encoding="utf-8")
 
     assert 'profiles: ["observability"]' in service
-    assert "image: 4ok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in service
+    assert "image: fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in service
     assert 'entrypoint: ["/app/.venv/bin/python"]' in service
     assert '"-m"' in service
     assert '"fourok.runtime.metrics_exporter"' in service
@@ -441,7 +448,7 @@ def test_compose_declares_dagster_pipeline_profile() -> None:
         "sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301"
     )
     assert f"${{FOUR_OK_DAGSTER_RUNTIME_IMAGE:-{public_dagster_runtime_image}}}" in compose
-    assert "4ok-dagster-code:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in compose
+    assert "fourok-dagster-code:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in compose
     assert "docker/dagster.Dockerfile" in compose
     assert "target: dagster-code" in _compose_service_block(compose, "dagster-code")
     assert "target: dagster-runtime" not in _compose_service_block(compose, "dagster-webserver")

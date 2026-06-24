@@ -35,7 +35,7 @@ Owning docs:
    useful reference or dependency. Add graph/semantic machinery only when these
    questions prove it is needed.
 4. Stage 4: deploy internal production off the local workstation.
-   Move the proven local runtime to server-backed Compose, preferably the 4ok
+   Move the proven local runtime to server-backed Compose, preferably the fourok
    gateway. Prove secrets, volumes, backups, image tags, rollback, health, and
    monitored access.
 5. Stage 5: add source-backed relationships that improve answers.

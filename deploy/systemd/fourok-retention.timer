@@ -1,11 +1,11 @@
 [Unit]
-Description=Run 4ok retention purge daily
+Description=Run fourok retention purge daily
 
 [Timer]
 OnCalendar=*-*-* 03:15:00
 AccuracySec=10min
 Persistent=true
-Unit=4ok-retention.service
+Unit=fourok-retention.service
 
 [Install]
 WantedBy=timers.target

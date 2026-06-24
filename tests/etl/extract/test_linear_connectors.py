@@ -106,7 +106,7 @@ def test_linear_tap_emits_users_issues_comments_and_state() -> None:
                             "active": True,
                             "createdAt": "2026-06-01T08:00:00Z",
                             "updatedAt": "2026-06-01T08:05:00Z",
-                            "url": "https://linear.app/4ok/profiles/olivia",
+                            "url": "https://linear.app/fourok/profiles/olivia",
                         }
                     ]
                 },
@@ -117,7 +117,7 @@ def test_linear_tap_emits_users_issues_comments_and_state() -> None:
                             "identifier": "OPS-123",
                             "title": "Prepare Alpha cancellation summary",
                             "description": "Prepare the contract status summary.",
-                            "url": "https://linear.app/4ok/issue/OPS-123",
+                            "url": "https://linear.app/fourok/issue/OPS-123",
                             "createdAt": "2026-06-02T10:00:00Z",
                             "updatedAt": "2026-06-02T11:00:00Z",
                             "creator": {"id": "linear-user-olivia"},
@@ -132,7 +132,7 @@ def test_linear_tap_emits_users_issues_comments_and_state() -> None:
                         {
                             "id": "comment-1",
                             "body": "Finance needs latest evidence.",
-                            "url": "https://linear.app/4ok/issue/OPS-123#comment-1",
+                            "url": "https://linear.app/fourok/issue/OPS-123#comment-1",
                             "createdAt": "2026-06-02T11:15:00Z",
                             "updatedAt": "2026-06-02T11:16:00Z",
                             "user": {"id": "linear-user-olivia"},

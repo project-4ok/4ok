@@ -1,1 +1,1 @@
-"""4ok spike package."""
+"""fourok spike package."""

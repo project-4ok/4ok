@@ -1,5 +1,5 @@
 [project]
-name = "4ok"
+name = "fourok"
 version = "0.1.0"
 description = "Spike prototypes for governed company context retrieval."
 readme = "README.md"

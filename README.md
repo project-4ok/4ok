@@ -1,8 +1,8 @@
-# 4ok
+# fourok
 
 Governed company context retrieval for AI agents.
 
-4ok helps a human-with-agent workflow answer questions from company context with
+fourok helps a human-with-agent workflow answer questions from company context with
 source-backed, permission-filtered evidence. It is not generic agent memory and
 it does not ask the agent to make the business decision. The job is narrower:
 ingest operational sources, preserve traceable source records, retrieve only
@@ -12,7 +12,7 @@ what the current role may see, and leave an audit trail.
 source data -> raw store -> source records -> governed retrieval -> evidence -> audit
 ```
 
-## Why 4ok exists
+## Why fourok exists
 
 Teams are connecting agents to email, CRM, documents, issues, and chat. The hard
 part is not another vector search demo; it is making retrieval safe enough for
@@ -29,10 +29,10 @@ real work:
 Start from a fresh machine with Docker installed:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/project-4ok/4ok/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/project-fourok/fourok/main/install.sh | bash
 ```
 
-The installer clones or updates 4ok, installs `uv` if needed, runs `uv sync`,
+The installer clones or updates fourok, installs `uv` if needed, runs `uv sync`,
 validates Docker Compose, and starts the local runtime, observability, and
 pipeline containers with safe local defaults.
 
@@ -44,8 +44,8 @@ credentials later when you are ready to connect real sources.
 Prerequisites: Python 3.13 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/project-4ok/4ok.git
-cd 4ok
+git clone https://github.com/project-fourok/fourok.git
+cd fourok
 uv sync
 uv run four-ok-dev fast
 ```
@@ -90,7 +90,7 @@ The current internal v0 is a source-record-first retrieval runtime:
 - derived retrieval units with source refs
 - permission/lifecycle-filtered search and retrieval augmentation
 - audit, dashboard, health, retention, backup/restore, and local runtime checks
-- stdio MCP tool surface: `search_4ok(query, limit?)`
+- stdio MCP tool surface: `search_fourok(query, limit?)`
 
 Deferred or intentionally out of scope for the active stage:
 

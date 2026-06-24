@@ -28,7 +28,7 @@ def grafana_report(
     grafana_url: str = DEFAULT_GRAFANA_URL,
     http_get: HttpGet | None = None,
 ) -> dict[str, Any]:
-    """Return an agent-readable summary of the 4ok Grafana dashboard.
+    """Return an agent-readable summary of the fourok Grafana dashboard.
 
     The agent accesses Grafana through its HTTP API: health, dashboard search,
     datasource inventory, Prometheus datasource proxy, and Loki datasource proxy.
@@ -97,7 +97,7 @@ def _record_health(report: dict[str, Any], get: HttpGet) -> None:
 
 def _record_dashboard(report: dict[str, Any], base_url: str, get: HttpGet) -> None:
     try:
-        dashboards = get("/api/search", {"type": "dash-db", "query": "4ok"})
+        dashboards = get("/api/search", {"type": "dash-db", "query": "fourok"})
     except Exception as exc:
         report["dashboard"]["error"] = str(exc)
         report["recommendations"].append("dashboard_search_failed")
@@ -115,7 +115,7 @@ def _record_dashboard(report: dict[str, Any], base_url: str, get: HttpGet) -> No
         "title": dashboard.get("title"),
         "url": f"{base_url}{url}" if isinstance(url, str) else None,
     }
-    if dashboard.get("title") != "4ok dashboard":
+    if dashboard.get("title") != "fourok dashboard":
         report["recommendations"].append("dashboard_title_stale")
 
 
@@ -146,7 +146,7 @@ def _record_prometheus_signals(report: dict[str, Any], get: HttpGet) -> None:
 def _record_loki_signal(report: dict[str, Any], get: HttpGet) -> None:
     path = "/api/datasources/proxy/uid/loki/loki/api/v1/query_range"
     params = {
-        "query": '{compose_project=~"4ok|governed-company-brain|openclaw"}',
+        "query": '{compose_project=~"fourok|governed-company-brain|openclaw"}',
         "limit": "5",
         "direction": "BACKWARD",
     }
@@ -154,11 +154,11 @@ def _record_loki_signal(report: dict[str, Any], get: HttpGet) -> None:
         response = get(path, params)
         result = response.get("data", {}).get("result", [])
     except Exception as exc:
-        report["signals"]["loki_recent_4ok_logs"] = {"status": "error", "error": str(exc)}
+        report["signals"]["loki_recent_fourok_logs"] = {"status": "error", "error": str(exc)}
         report["recommendations"].append("dashboard_has_gaps")
         return
 
-    report["signals"]["loki_recent_4ok_logs"] = {
+    report["signals"]["loki_recent_fourok_logs"] = {
         "status": "present" if result else "missing",
         "series": len(result),
     }

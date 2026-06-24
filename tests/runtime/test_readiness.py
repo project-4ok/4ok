@@ -30,8 +30,8 @@ def test_internal_prod_readiness_report_catches_latest_app_tag(tmp_path: Path) -
         Path("docker-compose.yml")
         .read_text(encoding="utf-8")
         .replace(
-            "4ok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}",
-            "4ok-app:latest",
+            "fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}",
+            "fourok-app:latest",
         ),
         encoding="utf-8",
     )

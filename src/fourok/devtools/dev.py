@@ -144,7 +144,9 @@ def main(argv: Sequence[str] | None = None) -> None:
         help="Dagster webserver health URL.",
     )
     diagnostics_parser.add_argument("--state", type=Path, default=Path(".local/context.sqlite"))
-    diagnostics_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    diagnostics_parser.add_argument(
+        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+    )
     diagnostics_parser.add_argument("--raw-store", type=Path)
     diagnostics_parser.add_argument(
         "--json", action="store_true", help="Accepted for agent clarity."
@@ -530,7 +532,7 @@ def logs_status_report(
 
     loki_call = loki or _loki_get
     queries = {
-        "all_fourok": '{compose_project="4ok"}',
+        "all_fourok": '{compose_project="fourok"}',
         "dagster_code": '{compose_service="dagster-code"}',
         "dagster_failures": '{compose_service="dagster-code"} |= "STEP_FAILURE"',
     }

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${FOUR_OK_REPO_URL:-https://github.com/project-4ok/4ok.git}"
-INSTALL_DIR="${FOUR_OK_INSTALL_DIR:-$HOME/4ok}"
+REPO_URL="${FOUR_OK_REPO_URL:-https://github.com/project-fourok/fourok.git}"
+INSTALL_DIR="${FOUR_OK_INSTALL_DIR:-$HOME/fourok}"
 START_STACK="${FOUR_OK_INSTALL_START_STACK:-1}"
 
 log() {
@@ -34,7 +34,7 @@ require_runtime() {
     exit 1
   fi
   if ! need_command docker; then
-    printf 'Docker is required to start the local 4ok stack. Install Docker and rerun this installer.\n' >&2
+    printf 'Docker is required to start the local fourok stack. Install Docker and rerun this installer.\n' >&2
     exit 1
   fi
   if ! docker compose version >/dev/null 2>&1; then
@@ -45,7 +45,7 @@ require_runtime() {
 
 checkout_repo() {
   if [ -z "${FOUR_OK_INSTALL_DIR:-}" ] && [ -f "pyproject.toml" ] && [ -d "src/fourok" ]; then
-    log "Using current 4ok checkout: $(pwd)"
+    log "Using current fourok checkout: $(pwd)"
     return 0
   fi
 
@@ -56,7 +56,7 @@ checkout_repo() {
     return 0
   fi
 
-  log "Cloning 4ok into $INSTALL_DIR"
+  log "Cloning fourok into $INSTALL_DIR"
   git clone "$REPO_URL" "$INSTALL_DIR"
   cd "$INSTALL_DIR"
 }
@@ -124,7 +124,7 @@ seed_fixture_data() {
 }
 
 main() {
-  log "4ok local onboarding"
+  log "fourok local onboarding"
   require_runtime
   install_uv
   checkout_repo
@@ -145,7 +145,7 @@ main() {
     seed_fixture_data
   fi
 
-  log "4ok is ready"
+  log "fourok is ready"
   printf 'Project: %s\n' "$(pwd)"
   printf 'Status:  uv run fourok-dev pipeline-ps\n'
   printf 'Try:     uv run fourok search "refund cancellation payment"\n'

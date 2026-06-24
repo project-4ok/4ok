@@ -217,7 +217,9 @@ def host_operator_database_url(
     if compose_database_url := dotenv_env.get("FOUR_OK_DATABASE_URL"):
         return host_database_url(compose_database_url)
     if postgres_password := dotenv_env.get("POSTGRES_PASSWORD"):
-        return host_database_url(f"postgresql+psycopg://fourok:{postgres_password}@postgres:5432/fourok")
+        return host_database_url(
+            f"postgresql+psycopg://fourok:{postgres_password}@postgres:5432/fourok"
+        )
     operator_env = operator_environment(Path("."))
     if compose_database_url := operator_env.get("FOUR_OK_DATABASE_URL"):
         return host_database_url(compose_database_url)
@@ -281,7 +283,7 @@ def _labeled_app_container_id() -> str:
                 "docker",
                 "ps",
                 "--filter",
-                "label=com.docker.compose.project=4ok",
+                "label=com.docker.compose.project=fourok",
                 "--filter",
                 "label=com.docker.compose.service=app",
                 "--format",

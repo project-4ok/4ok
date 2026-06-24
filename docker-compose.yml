@@ -83,7 +83,7 @@ services:
 
   fourok-metrics-exporter:
     profiles: ["observability"]
-    image: 4ok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
+    image: fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
     build:
       context: .
       dockerfile: docker/app.Dockerfile
@@ -128,14 +128,14 @@ services:
 
   dagster-code:
     profiles: ["pipeline"]
-    image: 4ok-dagster-code:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
+    image: fourok-dagster-code:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
     restart: unless-stopped
     build:
       context: .
       dockerfile: docker/dagster.Dockerfile
       target: dagster-code
     environment:
-      DAGSTER_CURRENT_IMAGE: 4ok-dagster-code:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
+      DAGSTER_CURRENT_IMAGE: fourok-dagster-code:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
       DAGSTER_POSTGRES_USER: dagster
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
       DAGSTER_POSTGRES_DB: dagster
@@ -200,7 +200,7 @@ services:
       test:
         [
           "CMD-SHELL",
-          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:3001/server_info', timeout=2).read()\"",
+          'python -c "import urllib.request; urllib.request.urlopen(''http://localhost:3001/server_info'', timeout=2).read()"',
         ]
       interval: 10s
       timeout: 5s
@@ -244,7 +244,7 @@ services:
       start_period: 15s
 
   app:
-    image: 4ok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
+    image: fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
     restart: unless-stopped
     build:
       context: .
@@ -268,17 +268,19 @@ services:
       - fourok-data:/var/lib/fourok
       - ${FOUR_OK_CONFIG_PATH:-./.local/fourok.toml}:/etc/fourok/fourok.toml:ro
     healthcheck:
-      test: ["CMD", "/app/.venv/bin/fourok", "health", "--config", "/etc/fourok/fourok.toml"]
+      test:
+        [
+          "CMD",
+          "/app/.venv/bin/fourok",
+          "health",
+          "--config",
+          "/etc/fourok/fourok.toml",
+        ]
       interval: 10s
       timeout: 10s
       retries: 12
       start_period: 10s
-    command:
-      [
-        "runtime-monitor",
-        "--config",
-        "/etc/fourok/fourok.toml",
-      ]
+    command: ["runtime-monitor", "--config", "/etc/fourok/fourok.toml"]
 
 volumes:
   postgres-data:

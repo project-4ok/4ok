@@ -1,6 +1,6 @@
 # Architecture
 
-4ok is a source-record-first context layer for a human using
+fourok is a source-record-first context layer for a human using
 an agent. It is not generic agent memory, and the current internal v0 is not a
 GDPR-complete reveal system.
 

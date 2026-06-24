@@ -44,7 +44,7 @@ def test_compose_does_not_expose_graphiti_runner_experiment_service() -> None:
 
     assert "  graphiti-runner:" not in compose
     assert "  graphiti-neo4j:" not in compose
-    assert "4ok-graphiti-runner" not in compose
+    assert "fourok-graphiti-runner" not in compose
     assert "docker/graphiti-runner.Dockerfile" not in compose
     assert "NEO4J_URI: bolt://graphiti-neo4j:7687" not in compose
 
