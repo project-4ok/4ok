@@ -281,10 +281,22 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
         for expr in prometheus_exprs
     )
     assert any("fourok_dagster_latest_run_stage_status" in expr for expr in prometheus_exprs)
-    assert any(
-        "fourok_dagster_latest_run_stage_status" in expr and "clamp_max" in expr
-        for expr in prometheus_exprs
-    )
+    lineage_titles = {
+        "① Raw landing",
+        "② Source records",
+        "③ Retrieval records",
+        "④ Operator dashboard",
+        "⑤ Audit metadata",
+        "↳ Entity links",
+    }
+    lineage_panels = [panel for panel in prometheus_panels if panel["title"] in lineage_titles]
+    assert lineage_panels
+    for panel in lineage_panels:
+        expr = panel["targets"][0]["expr"]
+        assert "fourok_dagster_latest_run_stage_status" in expr
+        assert "clamp_max" not in expr
+        assert "total number of latest-run non-SUCCESS stages" in panel["description"]
+    assert "1+ failures" not in dashboard
     assert any(
         'fourok_dagster_latest_run_stage_status{exported_job="$dagster_job",status!="SUCCESS"}'
         in expr
