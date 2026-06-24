@@ -175,9 +175,3 @@ def test_cli_honcho_sync_write_reports_connection_errors_without_traceback(
         assert str(exc) == "Honcho write failed: <urlopen error connection refused>"
     else:
         raise AssertionError("expected SystemExit")
-
-
-
-
-
-

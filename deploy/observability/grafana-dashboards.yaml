@@ -1,7 +1,7 @@
 apiVersion: 1
 
 providers:
-  - name: "GCB Local Runtime Logs"
+  - name: "4ok dashboard"
     type: file
     updateIntervalSeconds: 10
     options:

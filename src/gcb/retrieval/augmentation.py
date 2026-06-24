@@ -187,7 +187,7 @@ def retrieve_augmentation(
 
 def render_augmentation_block(response: RetrievalAugmentationResponse) -> str:
     lines = [
-        "GCB RETRIEVAL FOR AGENTS",
+        "4OK RETRIEVAL FOR AGENTS",
         "",
         (
             "How to use this: Answer from these evidence cards only when relevant. "

@@ -30,7 +30,7 @@ def test_default_retrieval_block_is_agent_facing_and_citation_ready() -> None:
 
     block = render_augmentation_block(response)
 
-    assert block.startswith("GCB RETRIEVAL FOR AGENTS\n")
+    assert block.startswith("4OK RETRIEVAL FOR AGENTS\n")
     assert "How to use this:" in block
     assert "Answer from these evidence cards only when relevant" in block
     assert "[1] Slack message — Dev Jules auth E2E marker" in block

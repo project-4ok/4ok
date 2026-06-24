@@ -96,7 +96,7 @@ def test_retrieve_prints_llm_ready_augmentation_block(capsys, monkeypatch, tmp_p
     main()
 
     output = capsys.readouterr().out
-    assert output.startswith("GCB RETRIEVAL FOR AGENTS\n")
+    assert output.startswith("4OK RETRIEVAL FOR AGENTS\n")
     assert "How to use this: Answer from these evidence cards only when relevant." in output
     assert "cancellation invoice follow-up" not in output
     assert "[1] Slack-Live message — #customer-success" in output
@@ -130,7 +130,7 @@ def test_retrieve_json_returns_stable_machine_shape_without_echoing_query(
     output = json.loads(capsys.readouterr().out)
     assert "query" not in output
     assert output["status"] == "ok"
-    assert output["context_block"].startswith("GCB RETRIEVAL FOR AGENTS\n")
+    assert output["context_block"].startswith("4OK RETRIEVAL FOR AGENTS\n")
     assert output["results"][0] == {
         "source_ref": "slack:message:cancellation",
         "source_system": "slack-live",

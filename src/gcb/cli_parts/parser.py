@@ -13,7 +13,7 @@ from gcb.cli_parts.parser_webhooks import add_webhook_commands
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(prog="gcb")
+    parser = argparse.ArgumentParser(prog="4ok")
     subparsers = parser.add_subparsers(dest="command", metavar="COMMAND", required=True)
 
     add_search_commands(subparsers)

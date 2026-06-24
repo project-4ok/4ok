@@ -3,7 +3,6 @@
 .reference/
 .local/
 .env
-.infisical.json
 .pytest_cache/
 .ruff_cache/
 __pycache__/

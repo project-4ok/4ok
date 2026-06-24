@@ -11,7 +11,7 @@ from gcb.governance.state import create_governed_context_state
 from gcb.retrieval.evidence_pack import build_evidence_pack
 from gcb.retrieval.search import SearchResult
 from gcb.runtime.dashboard import operator_dashboard
-from gcb.runtime.mcp_retrieval import search_gcb
+from gcb.runtime.mcp_retrieval import search_4ok
 from gcb.runtime.openclaw import OpenClawMessage, openclaw_messages_to_source_records
 from gcb.runtime.source_imports import import_source_records
 from gcb.runtime.webhooks import WebhookEventInput, enqueue_webhook_event
@@ -320,7 +320,7 @@ def test_mcp_search_emits_safe_success_span(monkeypatch) -> None:
         ]
     )
 
-    response = search_gcb(
+    response = search_4ok(
         query="Sensitive renewal",
         state="private-state.sqlite",
         database_url="postgresql+psycopg://gcb:secret@localhost:5432/gcb",
@@ -331,7 +331,7 @@ def test_mcp_search_emits_safe_success_span(monkeypatch) -> None:
     assert spans[-1] == {
         "name": "gcb.mcp.search",
         "attributes": {
-            "gcb.mcp.tool": "search_gcb",
+            "gcb.mcp.tool": "search_4ok",
             "gcb.mcp.status": "succeeded",
             "gcb.search.limit": 5,
             "gcb.search.query_length": 17,
@@ -349,13 +349,13 @@ def test_mcp_search_failure_span_keeps_query_and_state_out(monkeypatch) -> None:
     monkeypatch.setattr("gcb.observability.trace.get_tracer", lambda _name: FakeTracer(spans))
 
     with pytest.raises(ValueError, match="query is required"):
-        search_gcb(query="   ", state="private-state.sqlite")
+        search_4ok(query="   ", state="private-state.sqlite")
 
     assert spans == [
         {
             "name": "gcb.mcp.search",
             "attributes": {
-                "gcb.mcp.tool": "search_gcb",
+                "gcb.mcp.tool": "search_4ok",
                 "gcb.mcp.status": "failed",
                 "gcb.error.class": "ValueError",
             },
