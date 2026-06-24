@@ -32,23 +32,36 @@ finally:
 PY
 }
 
+port_reserved() {
+  case " ${FOUROK_RESERVED_HOST_PORTS:-} " in
+    *" $1 "*) return 0 ;;
+    *) return 1 ;;
+  esac
+}
+
+reserve_host_port() {
+  FOUROK_RESERVED_HOST_PORTS="${FOUROK_RESERVED_HOST_PORTS:-} $1"
+}
+
 choose_host_port() {
   local var_name="$1"
   local preferred_port="$2"
   local port="${!var_name:-$preferred_port}"
 
   if [ "${!var_name:-}" != "" ]; then
+    reserve_host_port "$port"
     export "$var_name=$port"
     return 0
   fi
 
-  while ! port_available "$port"; do
+  while port_reserved "$port" || ! port_available "$port"; do
     if [ "$port" = "$preferred_port" ]; then
       log "Port $preferred_port is busy; choosing a free local port for $var_name"
     fi
     port=$((port + 1))
   done
 
+  reserve_host_port "$port"
   export "$var_name=$port"
 }
 
