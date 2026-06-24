@@ -23,13 +23,20 @@ def parse_dotenv_export_lines(lines: Sequence[str]) -> dict[str, str]:
         key = key.strip()
         if not key:
             raise ValueError(f"Invalid env line {line_number}: missing key")
-        try:
-            parts = shlex.split(raw_value, comments=False, posix=True)
-        except ValueError as error:
-            raise ValueError(f"Invalid env line {line_number}: {error}") from error
-        if len(parts) != 1:
-            raise ValueError(f"Invalid env line {line_number}: expected one value")
-        values[key] = parts[0]
+        raw_value = raw_value.strip()
+        if not raw_value:
+            values[key] = ""
+            continue
+        if raw_value[:1] in {"'", '"'}:
+            try:
+                parts = shlex.split(raw_value, comments=False, posix=True)
+            except ValueError as error:
+                raise ValueError(f"Invalid env line {line_number}: {error}") from error
+            if len(parts) != 1:
+                raise ValueError(f"Invalid env line {line_number}: expected one value")
+            values[key] = parts[0]
+            continue
+        values[key] = raw_value
     return values
 
 

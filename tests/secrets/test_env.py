@@ -27,6 +27,22 @@ def test_parse_dotenv_export_lines_supports_export_quotes_and_comments() -> None
     }
 
 
+def test_parse_dotenv_export_lines_accepts_empty_and_unquoted_values_with_spaces() -> None:
+    values = parse_dotenv_export_lines(
+        [
+            "LINEAR_LIMIT=1000",
+            "TAP_SLACK_SELECTED_CHANNELS=",
+            "OPENAI_API_KEY=value with spaces copied from a shell",
+        ]
+    )
+
+    assert values == {
+        "LINEAR_LIMIT": "1000",
+        "TAP_SLACK_SELECTED_CHANNELS": "",
+        "OPENAI_API_KEY": "value with spaces copied from a shell",
+    }
+
+
 def test_parse_json_export_supports_object_and_list_shapes() -> None:
     assert parse_json_export('{"LINEAR_API_KEY":"linear-value"}') == {
         "LINEAR_API_KEY": "linear-value"

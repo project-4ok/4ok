@@ -95,9 +95,7 @@ def retrieve_augmentation(
             response = RetrievalAugmentationResponse(
                 status="ok",
                 results=[],
-                limitations=[
-                    "Token budget was below 1, so no source excerpts were returned."
-                ],
+                limitations=["Token budget was below 1, so no source excerpts were returned."],
                 token_budget=token_budget,
             )
             _record_retrieval_query_event(
@@ -271,9 +269,7 @@ def _merge_ranked_rows(
         key = (source_ref, unit_index)
         metadata = metadata_by_ref.get(source_ref, {})
         title = str(row.get("subject", metadata.get("title", "")))
-        body_text = str(
-            metadata.get("retrieval_text") or row.get("body", row.get("snippet", ""))
-        )
+        body_text = str(metadata.get("retrieval_text") or row.get("body", row.get("snippet", "")))
         candidate = candidates_by_key.setdefault(
             key,
             {
@@ -443,9 +439,13 @@ def _canonical_link_source_refs(
 
 def _thread_context_source_refs(engine: Engine, source_records, source_ref: str) -> list[str]:
     with engine.connect() as connection:
-        seed = connection.execute(
-            select(source_records.c.thread_ref).where(source_records.c.source_ref == source_ref)
-        ).mappings().first()
+        seed = (
+            connection.execute(
+                select(source_records.c.thread_ref).where(source_records.c.source_ref == source_ref)
+            )
+            .mappings()
+            .first()
+        )
         if seed is None or not seed["thread_ref"]:
             return []
         statement = (

@@ -272,6 +272,7 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     assert "[Deployment] Observability data coverage" in dashboard_titles
     assert "[Deployment] Prometheus metrics present" in dashboard_titles
     assert "[Deployment] Recent fourok log streams" in dashboard_titles
+    assert "[Deployment] Configured live sources" in dashboard_titles
     assert "[Deployment] Retrieval telemetry present" in dashboard_titles
     assert "[Deployment] Embedding coverage complete" in dashboard_titles
     assert '{compose_project=~"$compose_project"}' in expressions
@@ -296,6 +297,20 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
 
     assert any("fourok_dagster_last_success_timestamp_seconds" in expr for expr in prometheus_exprs)
     assert any("fourok_connector_latest_run_status" in expr for expr in prometheus_exprs)
+    configured_sources_panel = next(
+        panel
+        for panel in prometheus_panels
+        if panel["title"] == "[Deployment] Configured live sources"
+    )
+    assert configured_sources_panel["targets"][0]["expr"] == (
+        'sum(fourok_connector_latest_run_status{status=~"success|succeeded"}) or vector(0)'
+    )
+    assert "0 configured" in json.dumps(configured_sources_panel)
+    assert "visible error" in configured_sources_panel["description"]
+    assert [
+        step["value"]
+        for step in configured_sources_panel["fieldConfig"]["defaults"]["thresholds"]["steps"]
+    ] == [None, 1]
     assert any(
         "fourok_connector_latest_finished_timestamp_seconds" in expr for expr in prometheus_exprs
     )
@@ -592,6 +607,13 @@ def test_dagster_code_receives_connector_secret_env_names() -> None:
 
         assert "SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}" in dagster_code
         assert "LINEAR_API_KEY: ${LINEAR_API_KEY:-}" in dagster_code
+        assert "FOUROK_DOTENV_PATH: /workspace/fourok/.env" in dagster_code
+        expected_workspace_mount = (
+            "../../:/workspace/fourok:ro"
+            if compose_file.name == "docker-compose.pinned.yml"
+            else "./:/workspace/fourok:ro"
+        )
+        assert expected_workspace_mount in dagster_code
         assert "TWENTY_API_KEY: ${TWENTY_API_KEY:-}" in dagster_code
         assert (
             "GOOGLE_WORKSPACE_OAUTH_CLIENT_SECRET_JSON: "
@@ -602,6 +624,18 @@ def test_dagster_code_receives_connector_secret_env_names() -> None:
             "${GOOGLE_WORKSPACE_OAUTH_REFRESH_TOKEN:-}" in dagster_code
         )
         assert "GOOGLE_WORKSPACE_DRIVE_IDS: ${GOOGLE_WORKSPACE_DRIVE_IDS:-}" in dagster_code
+
+
+def test_compose_does_not_force_openai_embedding_dimensions_without_provider() -> None:
+    compose_files = [Path("docker-compose.yml"), Path("deploy/runtime/docker-compose.pinned.yml")]
+
+    for compose_file in compose_files:
+        compose = compose_file.read_text(encoding="utf-8")
+        for service_name in ["dagster-code", "app"]:
+            service = _compose_service_block(compose, service_name)
+
+            assert "FOUROK_EMBEDDING_DIMENSIONS: ${FOUROK_EMBEDDING_DIMENSIONS:-}" in service
+            assert "FOUROK_EMBEDDING_DIMENSIONS: ${FOUROK_EMBEDDING_DIMENSIONS:-256}" not in service
 
 
 def test_dagster_daemon_starts_backfill_schedule_before_running() -> None:

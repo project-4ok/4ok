@@ -89,6 +89,43 @@ def test_access_boundary_accepts_expected_loopback_ports() -> None:
     ]
 
 
+def test_access_boundary_accepts_port_default_expressions() -> None:
+    report = check_compose_access_boundary(
+        compose_file=Path("docker-compose.yml"),
+        rendered_config={
+            "services": {
+                "observability": {
+                    "ports": [
+                        "127.0.0.1:${FOUROK_GRAFANA_PORT:-3000}:3000",
+                        "127.0.0.1:${FOUROK_LOKI_PORT:-3100}:3100",
+                    ]
+                },
+            }
+        },
+    )
+
+    assert report["status"] == "ok"
+    assert report["violations"] == []
+    assert report["exposures"] == [
+        {
+            "service": "observability",
+            "host_ip": "127.0.0.1",
+            "published": "${FOUROK_GRAFANA_PORT:-3000}",
+            "target": "3000",
+            "protocol": "tcp",
+            "status": "allowed",
+        },
+        {
+            "service": "observability",
+            "host_ip": "127.0.0.1",
+            "published": "${FOUROK_LOKI_PORT:-3100}",
+            "target": "3100",
+            "protocol": "tcp",
+            "status": "allowed",
+        },
+    ]
+
+
 def test_access_boundary_rejects_broad_or_unexpected_ports() -> None:
     report = check_compose_access_boundary(
         compose_file=Path("docker-compose.yml"),

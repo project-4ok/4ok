@@ -40,6 +40,10 @@ _verify_live_db_changed: Any = _check_module._verify_live_db_changed
 _record_live_connector_success: Any = _module._record_live_connector_success
 _meltano_asset_span_name: Any = _module._meltano_asset_span_name
 _source_records_asset_span_name: Any = _module._source_records_asset_span_name
+_configured_live_backfill_asset_keys: Any = _module._configured_live_backfill_asset_keys
+_configured_live_sources: Any = _module._configured_live_sources
+_safe_output_tail: Any = _module._safe_output_tail
+_meltano_failure_detail: Any = _module._meltano_failure_detail
 
 
 def test_dagster_definitions_expose_only_operator_product_lineage_assets() -> None:
@@ -76,6 +80,13 @@ def test_dagster_definitions_expose_only_operator_product_lineage_assets() -> No
         "fourok_golden_retrieval_eval",
     }
     assert asset_names.isdisjoint(obsolete_or_fixture_assets)
+
+
+def test_dagster_check_script_tracks_live_asset_graph_without_running_openviking() -> None:
+    assert "fourok_openviking_live_source_records_from_sessions" in _check_module.EXPECTED_ASSETS
+    assert "fourok_openviking_live_source_records_from_sessions" not in _live_connector_asset_names(
+        "all"
+    )
 
 
 def test_dagster_entrypoint_keeps_resource_definitions_separate() -> None:
@@ -120,6 +131,95 @@ def test_dagster_definitions_expose_recurring_live_ingestion_hooks() -> None:
     assert backfill_schedule.default_status.name == "RUNNING"
 
 
+def test_dagster_hourly_schedule_selects_only_configured_live_sources(tmp_path: Path) -> None:
+    assert _configured_live_sources({"LINEAR_API_KEY": "linear-secret"}) == ("linear",)
+
+    selected = {
+        key.to_user_string()
+        for key in _configured_live_backfill_asset_keys({"LINEAR_API_KEY": "linear-secret"})
+    }
+
+    assert "meltano_linear_live_raw_landing" in selected
+    assert "fourok_linear_live_source_records_from_raw_landing" in selected
+    assert "fourok_operator_dashboard" in selected
+    assert "meltano_slack_live_raw_landing" not in selected
+    assert "meltano_twenty_live_raw_landing" not in selected
+    assert "meltano_google_drive_live_raw_landing" not in selected
+    assert "fourok_openviking_live_source_records_from_sessions" not in selected
+
+    sessions = tmp_path / "sessions"
+    sessions.mkdir()
+    assert _configured_live_sources({"OPENVIKING_SESSIONS_DIR": str(sessions)}) == ("openviking",)
+
+
+def test_dagster_hourly_schedule_reads_current_dotenv_for_source_selection(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    from dagster import build_schedule_context
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("LINEAR_API_KEY", raising=False)
+    monkeypatch.setenv("FOUROK_DOTENV_PATH", str(tmp_path / ".env"))
+    (tmp_path / ".env").write_text("LINEAR_API_KEY=linear-secret\n", encoding="utf-8")
+
+    result = _module.fourok_hourly_live_backfill_schedule.evaluate_tick(build_schedule_context())
+    [request] = result.run_requests
+    selected = {key.to_user_string() for key in request.asset_selection}
+
+    assert request.tags["fourok/configured_sources"] == "linear"
+    assert "meltano_linear_live_raw_landing" in selected
+    assert "meltano_slack_live_raw_landing" not in selected
+
+
+def test_meltano_failure_detail_surfaces_stderr_and_redacts_secrets() -> None:
+    tail = _safe_output_tail(
+        "first\ntap-fourok-linear failed: LINEAR_API_KEY abc123456789 rejected\n",
+        secret_env={"LINEAR_API_KEY": "abc123456789"},
+    )
+
+    assert "abc123456789" not in tail
+    assert "[REDACTED]" in tail
+    assert _meltano_failure_detail(stderr_tail=tail, stdout_tail="") == (
+        "tap-fourok-linear failed: LINEAR_API_KEY [REDACTED] rejected"
+    )
+    assert (
+        _meltano_failure_detail(
+            stderr_tail=(
+                "tap-fourok-linear failed: unauthorized\n"
+                "meltano      Extractor failed\n"
+                "meltano      Block run completed"
+            ),
+            stdout_tail="",
+        )
+        == "tap-fourok-linear failed: unauthorized"
+    )
+
+
+def test_meltano_raw_landing_failure_raises_dagster_failure_with_stderr(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    class Completed:
+        returncode = 1
+        stdout = ""
+        stderr = "tap-fourok-linear failed: LINEAR_API_KEY abc123456789 rejected\n"
+
+    monkeypatch.setattr(_module.shutil, "which", lambda _name: "/bin/meltano")
+    monkeypatch.setattr(_module.subprocess, "run", lambda *_args, **_kwargs: Completed())
+
+    with pytest.raises(_dagster.Failure) as exc_info:
+        _module._run_meltano_raw_landing(
+            job_name="linear-live-to-raw",
+            landing_dir=tmp_path / "landing",
+            project_root=tmp_path,
+            secret_env={"LINEAR_API_KEY": "abc123456789"},
+        )
+
+    assert "tap-fourok-linear failed" in exc_info.value.description
+    assert "abc123456789" not in exc_info.value.description
+
+
 def test_dagster_hourly_live_backfill_rebuilds_retrieval_and_operator_counts() -> None:
     job = defs.resolve_job_def("fourok_hourly_live_backfill")
     node_names = {node.name for node in job.all_node_defs}
@@ -132,14 +232,30 @@ def test_dagster_hourly_live_backfill_rebuilds_retrieval_and_operator_counts() -
     assert "fourok_audit_metadata" in node_names
     assert "fourok_golden_retrieval_eval" not in node_names
     assert job.executor_def.name == "in_process"
-    upstream_node_names = {
+    canonical_upstream_node_names = {
+        output.node_name
+        for outputs in job.dependency_structure.input_to_upstream_outputs_for_node(
+            "fourok_canonical_objects_and_entity_links"
+        ).values()
+        for output in outputs
+    }
+    assert canonical_upstream_node_names == {
+        "fourok_webhook_backlog",
+        "fourok_slack_live_source_records_from_raw_landing",
+        "fourok_twenty_live_source_records_from_raw_landing",
+        "fourok_linear_live_source_records_from_raw_landing",
+        "fourok_google_drive_live_source_records_from_raw_landing",
+        "fourok_openviking_live_source_records_from_sessions",
+    }
+
+    retrieval_upstream_node_names = {
         output.node_name
         for outputs in job.dependency_structure.input_to_upstream_outputs_for_node(
             "fourok_retrieval_records"
         ).values()
         for output in outputs
     }
-    assert upstream_node_names == {"fourok_webhook_backlog"}
+    assert retrieval_upstream_node_names == {"fourok_canonical_objects_and_entity_links"}
 
 
 def test_dagster_normalizes_openviking_sessions_for_live_import(tmp_path: Path) -> None:
@@ -201,8 +317,15 @@ def test_dagster_hourly_backfill_partial_failure_tolerant() -> None:
         for output in outputs
     }
     assert webhook_upstream_node_names == set()
-    assert canonical_upstream_node_names == {"fourok_webhook_backlog"}
-    assert retrieval_upstream_node_names == {"fourok_webhook_backlog"}
+    assert canonical_upstream_node_names == {
+        "fourok_webhook_backlog",
+        "fourok_slack_live_source_records_from_raw_landing",
+        "fourok_twenty_live_source_records_from_raw_landing",
+        "fourok_linear_live_source_records_from_raw_landing",
+        "fourok_google_drive_live_source_records_from_raw_landing",
+        "fourok_openviking_live_source_records_from_sessions",
+    }
+    assert retrieval_upstream_node_names == {"fourok_canonical_objects_and_entity_links"}
 
 
 def test_dagster_live_source_import_records_operator_freshness_and_counts(

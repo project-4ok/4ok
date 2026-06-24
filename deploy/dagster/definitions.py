@@ -4,13 +4,16 @@ import json
 import os
 import shutil
 import subprocess
+import sys
 from pathlib import Path
 from typing import Any, cast
 
 from dagster import (
+    AssetKey,
     AssetSelection,
     DefaultScheduleStatus,
     Definitions,
+    Failure,
     MaterializeResult,
     MetadataValue,
     RunRequest,
@@ -119,19 +122,44 @@ def _run_meltano_raw_landing(
         },
         status_attribute="fourok.raw_landing.status",
     ) as span:
-        meltano = shutil.which("meltano")
+        meltano = shutil.which("meltano") or _venv_executable("meltano")
         if meltano is None:
             raise RuntimeError("meltano executable is required for pipeline assets")
 
         landing_dir.mkdir(parents=True, exist_ok=True)
         result = subprocess.run(
             [meltano, "run", job_name],
-            check=True,
+            check=False,
             cwd=project_root,
             env=_meltano_environment(landing_dir=landing_dir, secret_env=secret_env),
             text=True,
             capture_output=True,
         )
+        if result.returncode != 0:
+            stderr_tail = _safe_output_tail(result.stderr, secret_env=secret_env)
+            stdout_tail = _safe_output_tail(result.stdout, secret_env=secret_env)
+            detail = _meltano_failure_detail(stderr_tail=stderr_tail, stdout_tail=stdout_tail)
+            set_safe_span_attributes(
+                span,
+                {
+                    "fourok.raw_landing.status": "failed",
+                    "fourok.raw_landing.exit_code": result.returncode,
+                    "fourok.raw_landing.error": detail,
+                },
+            )
+            raise Failure(
+                description=(
+                    f"Meltano job {job_name} failed with exit code {result.returncode}: {detail}"
+                ),
+                metadata={
+                    "job_name": job_name,
+                    "exit_code": result.returncode,
+                    "landing_dir": MetadataValue.path(landing_dir),
+                    "stderr_tail": MetadataValue.text(stderr_tail),
+                    "stdout_tail": MetadataValue.text(stdout_tail),
+                    "runtime_secret_key_count": len(secret_env),
+                },
+            )
 
         report = _target_report(result.stderr)
         stream_counts = _landed_stream_counts(landing_dir)
@@ -305,6 +333,34 @@ _LIVE_RAW_LANDING_ASSETS = [
     meltano_google_drive_live_raw_landing,
 ]
 
+_CONNECTOR_ASSET_KEYS = {
+    "slack": (
+        "meltano_slack_live_raw_landing",
+        "fourok_slack_live_source_records_from_raw_landing",
+    ),
+    "twenty": (
+        "meltano_twenty_live_raw_landing",
+        "fourok_twenty_live_source_records_from_raw_landing",
+    ),
+    "linear": (
+        "meltano_linear_live_raw_landing",
+        "fourok_linear_live_source_records_from_raw_landing",
+    ),
+    "google_drive": (
+        "meltano_google_drive_live_raw_landing",
+        "fourok_google_drive_live_source_records_from_raw_landing",
+    ),
+    "openviking": ("fourok_openviking_live_source_records_from_sessions",),
+}
+
+_SHARED_BACKFILL_ASSET_KEYS = (
+    "fourok_webhook_backlog",
+    "fourok_canonical_objects_and_entity_links",
+    "fourok_retrieval_records",
+    "fourok_operator_dashboard",
+    "fourok_audit_metadata",
+)
+
 
 @asset
 def fourok_webhook_backlog(fourok_runtime: FourokRuntimeResource) -> MaterializeResult[Any]:
@@ -328,7 +384,7 @@ def fourok_webhook_backlog(fourok_runtime: FourokRuntimeResource) -> Materialize
         )
 
 
-@asset(deps=[fourok_webhook_backlog])
+@asset(deps=[fourok_webhook_backlog, *_LIVE_SOURCE_RECORD_IMPORT_ASSETS])
 def fourok_canonical_objects_and_entity_links(
     fourok_runtime: FourokRuntimeResource,
 ) -> MaterializeResult[Any]:
@@ -367,7 +423,7 @@ def fourok_canonical_objects_and_entity_links(
         )
 
 
-@asset(deps=[fourok_webhook_backlog])
+@asset(deps=[fourok_canonical_objects_and_entity_links])
 def fourok_retrieval_records(fourok_runtime: FourokRuntimeResource) -> MaterializeResult[Any]:
     with critical_span(
         "fourok_retrieval_records", attributes={"fourok.dagster.asset": "fourok_retrieval_records"}
@@ -601,9 +657,22 @@ fourok_process_webhook_backlog = define_asset_job(
     ),
 )
 
+
+def _hourly_live_backfill_schedule(_context) -> RunRequest:
+    env = build_default_resources()["connector_env"].secret_env()
+    configured_sources = _configured_live_sources(env)
+    return RunRequest(
+        asset_selection=_configured_live_backfill_asset_keys(env),
+        tags={
+            "fourok/configured_sources": ",".join(configured_sources) or "none",
+        },
+    )
+
+
 fourok_hourly_live_backfill_schedule = ScheduleDefinition(
     job=fourok_hourly_live_backfill,
     cron_schedule="0 * * * *",
+    execution_fn=_hourly_live_backfill_schedule,
     default_status=DefaultScheduleStatus.RUNNING,
 )
 
@@ -668,6 +737,77 @@ def _target_report(stderr: str) -> dict[str, Any]:
         if isinstance(parsed, dict) and "record_count" in parsed:
             return parsed
     return {}
+
+
+def _venv_executable(name: str) -> str | None:
+    candidate = Path(sys.executable).with_name(name)
+    return str(candidate) if candidate.exists() else None
+
+
+def _configured_live_backfill_asset_keys(env: dict[str, str]) -> list[AssetKey]:
+    asset_names = [
+        asset_name
+        for source in _configured_live_sources(env)
+        for asset_name in _CONNECTOR_ASSET_KEYS[source]
+    ]
+    asset_names.extend(_SHARED_BACKFILL_ASSET_KEYS)
+    return [AssetKey(asset_name) for asset_name in asset_names]
+
+
+def _configured_live_sources(env: dict[str, str]) -> tuple[str, ...]:
+    sources: list[str] = []
+    if _has_env_value(env, "SLACK_BOT_TOKEN") or _has_env_value(env, "TAP_SLACK_API_KEY"):
+        sources.append("slack")
+    if _has_env_value(env, "TWENTY_API_KEY"):
+        sources.append("twenty")
+    if any(
+        _has_env_value(env, key)
+        for key in ("LINEAR_API_KEY", "TAP_LINEAR_API_KEY", "FOUROK_LINEAR_API_KEY")
+    ):
+        sources.append("linear")
+    if _has_env_value(env, "GOOGLE_WORKSPACE_ACCESS_TOKEN") or _has_env_value(
+        env,
+        "GOOGLE_WORKSPACE_OAUTH_CLIENT_SECRET_JSON",
+        "GOOGLE_WORKSPACE_OAUTH_REFRESH_TOKEN",
+    ):
+        sources.append("google_drive")
+    openviking_sessions_dir = env.get("OPENVIKING_SESSIONS_DIR", "").strip()
+    if openviking_sessions_dir and Path(openviking_sessions_dir).exists():
+        sources.append("openviking")
+    return tuple(sources)
+
+
+def _has_env_value(env: dict[str, str], *keys: str) -> bool:
+    return all(env.get(key, "").strip() for key in keys)
+
+
+def _safe_output_tail(output: str, *, secret_env: dict[str, str], line_limit: int = 40) -> str:
+    text = "\n".join(output.splitlines()[-line_limit:])
+    for value in secret_env.values():
+        if len(value) >= 8:
+            text = text.replace(value, "[REDACTED]")
+    return text
+
+
+def _meltano_failure_detail(*, stderr_tail: str, stdout_tail: str) -> str:
+    for output in (stderr_tail, stdout_tail):
+        for line in reversed(output.splitlines()):
+            stripped = line.strip()
+            lowered = stripped.lower()
+            if stripped and (" failed:" in lowered or "failed:" in lowered):
+                return stripped
+    for output in (stderr_tail, stdout_tail):
+        for line in reversed(output.splitlines()):
+            stripped = line.strip()
+            lowered = stripped.lower()
+            if stripped and ("failed" in lowered or "error" in lowered or "traceback" in lowered):
+                return stripped
+    for output in (stderr_tail, stdout_tail):
+        for line in reversed(output.splitlines()):
+            stripped = line.strip()
+            if stripped:
+                return stripped
+    return "Meltano command failed without stderr/stdout"
 
 
 def _landed_stream_counts(landing_dir: Path) -> dict[str, int]:

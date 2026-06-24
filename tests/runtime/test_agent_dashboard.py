@@ -20,13 +20,14 @@ def test_fourok_dashboard_starts_with_agent_runtime_coverage_row() -> None:
         "[Deployment] Recent fourok log streams": (
             'count(count_over_time({compose_project=~"$compose_project"}[15m]))'
         ),
+        "[Deployment] Configured live sources": (
+            'sum(fourok_connector_latest_run_status{status=~"success|succeeded"}) or vector(0)'
+        ),
         "[Deployment] Retrieval telemetry present": (
             "fourok_retrieval_requests_total or fourok_search_requests_total or "
             "fourok_retrieval_prepare_total"
         ),
-        "[Deployment] Embedding telemetry present": (
-            "fourok_embedding_coverage_ratio or fourok_embedding_records_total"
-        ),
+        "[Deployment] Embedding coverage complete": "fourok_embedding_coverage_ratio",
     }
     for title, expr in expected_top_stat_panels.items():
         panel = by_title[title]

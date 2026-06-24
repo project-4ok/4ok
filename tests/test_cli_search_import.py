@@ -268,9 +268,7 @@ def test_cli_access_smoke_prints_compose_access_report(capsys, monkeypatch, tmp_
             "skipped_services": [],
         }
 
-    monkeypatch.setattr(
-        "fourok.runtime.cli.check_compose_access_boundary", fake_check
-    )
+    monkeypatch.setattr("fourok.runtime.cli.check_compose_access_boundary", fake_check)
     monkeypatch.setattr(
         "sys.argv",
         ["fourok", "access-smoke", "--compose-file", str(compose_file)],

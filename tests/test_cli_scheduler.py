@@ -563,6 +563,7 @@ def test_cli_rebuilds_retrieval_units_from_source_records(
         "source_records": 1,
         "retrieval_units_deleted": 1,
         "retrieval_units_created": len(rows),
+        "embeddings_indexed": len(rows),
     }
     assert len(rows) > 1
     assert context.source_records()[0]["source_ref"] == "docs:runbook:rebuild"

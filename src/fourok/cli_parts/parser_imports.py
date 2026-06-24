@@ -207,13 +207,25 @@ def add_import_commands(subparsers) -> None:
         help="Print the latest stored connector checkpoint.",
     )
     connector_checkpoint_parser.add_argument("connector_name")
-    connector_checkpoint_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
+    connector_checkpoint_parser.set_defaults(state_explicit=False)
+    connector_checkpoint_parser.add_argument(
+        "--state",
+        type=Path,
+        default=DEFAULT_STATE,
+        action=StoreExplicitState,
+    )
     connector_checkpoint_parser.add_argument("--database-url")
 
     connector_jobs_parser = subparsers.add_parser(
         "connector-jobs",
         help="Print stored connector job runs.",
     )
-    connector_jobs_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
+    connector_jobs_parser.set_defaults(state_explicit=False)
+    connector_jobs_parser.add_argument(
+        "--state",
+        type=Path,
+        default=DEFAULT_STATE,
+        action=StoreExplicitState,
+    )
     connector_jobs_parser.add_argument("--database-url")
     connector_jobs_parser.add_argument("--connector-name")

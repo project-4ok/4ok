@@ -22,7 +22,7 @@ from fourok.etl.extract.context_snapshot import load_context_snapshot_source_rec
 from fourok.etl.extract.document_extraction import DocumentConversionError, pdf_source_record
 from fourok.etl.extract.openviking_adapter import load_openviking_messages_jsonl_source_records
 from fourok.etl.extract.sync_jobs import connector_checkpoint, connector_job_runs
-from fourok.runtime.operator_live import host_database_url
+from fourok.runtime.operator_live import host_database_url, operator_environment
 from fourok.runtime.recurring_live_ingestion import (
     live_ingestion_status,
     run_live_ingestion_backfill,
@@ -258,6 +258,10 @@ def _database_url_unless_explicit_state(args: argparse.Namespace) -> str | None:
     database_url = os.environ.get("FOUROK_DATABASE_URL")
     if database_url and not _running_in_container():
         return host_database_url(database_url)
+    if not database_url and not _running_in_container():
+        database_url = operator_environment(Path(".")).get("FOUROK_DATABASE_URL", "")
+        if database_url:
+            return host_database_url(database_url)
     return database_url
 
 

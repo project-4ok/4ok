@@ -250,7 +250,7 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
     assert "Add their secrets to .env, then refresh fourok:" in output
     assert "1. fourok onboard initial-run" in output
     assert "2. fourok status" in output
-    assert "3. fourok retrieve \"What changed this week?\"" in output
+    assert '3. fourok retrieve "What changed this week?"' in output
     assert "google_drive: missing GOOGLE_WORKSPACE_DRIVE_IDS" in output
     assert "Better semantic search:" in output
     assert "Set OPENAI_API_KEY in .env" in output

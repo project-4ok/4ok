@@ -148,6 +148,26 @@ def test_cli_run_live_ingestion_without_explicit_state_uses_database_url(
     assert jobs[0]["connector_name"] == "slack-live"
 
 
+def test_cli_run_live_ingestion_rewrites_dotenv_compose_database_url_for_host(
+    monkeypatch,
+    tmp_path: Path,
+) -> None:
+    from argparse import Namespace
+
+    from fourok.cli_parts.commands_imports import _database_url_unless_explicit_state
+
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("FOUROK_DATABASE_URL", raising=False)
+    (tmp_path / ".env").write_text(
+        "FOUROK_DATABASE_URL=postgresql+psycopg://fourok:secret@postgres:5432/fourok\n",
+        encoding="utf-8",
+    )
+
+    assert _database_url_unless_explicit_state(
+        Namespace(database_url=None, state_explicit=False)
+    ) == ("postgresql+psycopg://fourok:secret@127.0.0.1:5432/fourok")
+
+
 def test_cli_run_live_ingestion_skips_source_with_running_job(
     capsys,
     monkeypatch,

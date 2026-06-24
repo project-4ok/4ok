@@ -127,12 +127,8 @@ def test_retrieve_respects_explicit_token_budget(capsys, monkeypatch, tmp_path: 
 def test_retrieve_formats_source_dates_for_agent_time_reasoning() -> None:
     now = datetime(2026, 6, 24, 14, 10, tzinfo=UTC)
 
-    assert _source_date_label("2026-06-01T14:08:35.162Z", now=now) == (
-        "23 days ago (2026-06-01)"
-    )
-    assert _source_date_label("2026-06-24T08:00:00+00:00", now=now) == (
-        "today (2026-06-24)"
-    )
+    assert _source_date_label("2026-06-01T14:08:35.162Z", now=now) == ("23 days ago (2026-06-01)")
+    assert _source_date_label("2026-06-24T08:00:00+00:00", now=now) == ("today (2026-06-24)")
     assert _source_date_label("", now=now) == "unknown"
 
 
@@ -176,9 +172,7 @@ def test_retrieve_rewrites_container_database_url_for_host_cli(capsys, monkeypat
         "postgresql+psycopg://fourok:local-check@postgres:5432/fourok",
     )
     monkeypatch.setattr("fourok.retrieval.cli._running_in_container", lambda: False)
-    monkeypatch.setattr(
-        "fourok.retrieval.clients.cli.retrieve_block", fake_retrieve_block
-    )
+    monkeypatch.setattr("fourok.retrieval.clients.cli.retrieve_block", fake_retrieve_block)
     monkeypatch.setattr("sys.argv", ["fourok", "retrieve", "refund"])
 
     main()

@@ -8,7 +8,11 @@ from fourok.etl.extract.connectors import (
     load_twenty_source_records,
     twenty_person_source_record_from_raw,
 )
-from fourok.etl.extract.twenty_tap import TwentyTapConfig, run_twenty_tap
+from fourok.etl.extract.twenty_tap import (
+    TwentyTapConfig,
+    _normalize_rest_base_url,
+    run_twenty_tap,
+)
 
 FIXTURES = Path(__file__).parents[3] / "fixtures" / "connectors"
 SINGER_TWENTY_CRM = FIXTURES / "singer_twenty_crm.jsonl"
@@ -202,6 +206,12 @@ def test_twenty_tap_paginates_companies_and_people_until_configured_limit() -> N
         {"path": "people", "params": {"limit": 200, "starting_after": "cursor-person-199"}},
         {"path": "people", "params": {"limit": 50, "starting_after": "cursor-person-399"}},
     ]
+
+
+def test_twenty_base_url_without_rest_suffix_targets_rest_api() -> None:
+    assert _normalize_rest_base_url("https://api.twenty.com") == "https://api.twenty.com/rest"
+    assert _normalize_rest_base_url("https://api.twenty.com/") == "https://api.twenty.com/rest"
+    assert _normalize_rest_base_url("https://api.twenty.com/rest") == "https://api.twenty.com/rest"
 
 
 def test_twenty_tap_output_feeds_existing_source_record_adapter(tmp_path: Path) -> None:

@@ -355,13 +355,13 @@ def _onboard_message(args: argparse.Namespace) -> str:
             "  Add their secrets to .env, then refresh fourok:",
             "    1. fourok onboard initial-run   # reloads .env into dagster-code and imports data",
             "    2. fourok status              # confirm the connector imported context",
-            "    3. fourok retrieve \"What changed this week?\"",
+            '    3. fourok retrieve "What changed this week?"',
             *_embedding_lines(embedding_report),
             "",
             "Need another connector?",
             "  Create a GitHub issue on project-4ok/4ok with the workspace app,",
             "  auth method, record types, and permission model you need:",
-            "    gh issue create --repo project-4ok/4ok --title \"Connector: <workspace app>\"",
+            '    gh issue create --repo project-4ok/4ok --title "Connector: <workspace app>"',
         ]
     )
     if dagster_secret_presence.get("status") == "missing":
@@ -437,7 +437,7 @@ def _run_onboard_initial_run() -> str:
             "Initial run finished.",
             "Next:",
             "  fourok status",
-            "  fourok retrieve \"What changed this week?\"",
+            '  fourok retrieve "What changed this week?"',
             "  fourok admin connector-jobs",
         ]
     )

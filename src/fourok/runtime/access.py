@@ -56,11 +56,12 @@ def check_compose_access_boundary(
             exposure = _exposure(service_name, port)
             if exposure is None:
                 continue
-            allowed = _exposure_key(exposure) in ALLOWED_EXPOSURES or _is_allowed_dynamic_mcp(
-                exposure
-            )
+            normalized_exposure = _normalized_exposure(exposure)
+            allowed = _exposure_key(
+                normalized_exposure
+            ) in ALLOWED_EXPOSURES or _is_allowed_dynamic_mcp(exposure)
             exposures.append({**exposure, "status": "allowed" if allowed else "unexpected"})
-            if exposure["host_ip"] in BROAD_HOSTS:
+            if normalized_exposure["host_ip"] in BROAD_HOSTS or exposure["host_ip"] in BROAD_HOSTS:
                 violations.append({**exposure, "reason": "broad_host_binding"})
             elif not allowed:
                 violations.append({**exposure, "reason": "unexpected_exposure"})
@@ -173,13 +174,35 @@ def _is_allowed_dynamic_mcp(exposure: dict[str, str]) -> bool:
     )
 
 
+def _normalized_exposure(exposure: dict[str, str]) -> dict[str, str]:
+    return {
+        **exposure,
+        "host_ip": _normalize_port_expression(exposure["host_ip"]),
+        "published": _normalize_port_expression(exposure["published"]),
+        "target": _normalize_port_expression(exposure["target"]),
+    }
+
+
+def _normalize_port_expression(value: str) -> str:
+    if not (value.startswith("${") and value.endswith("}")):
+        return value
+
+    variable_expr = value[2:-1]
+    default_delimiter = ":-"
+    default_index = variable_expr.find(default_delimiter)
+    if default_index < 0:
+        return value
+
+    return variable_expr[default_index + len(default_delimiter) :]
+
+
 def _string_exposure(service_name: str, port: str) -> dict[str, str] | None:
     protocol = "tcp"
     port_spec = port
     if "/" in port:
         port_spec, protocol = port.rsplit("/", 1)
 
-    parts = port_spec.rsplit(":", 2)
+    parts = _split_port_mapping(port_spec)
     if len(parts) == 3:
         host_ip, published, target = parts
     elif len(parts) == 2:
@@ -199,3 +222,29 @@ def _string_exposure(service_name: str, port: str) -> dict[str, str] | None:
         "target": target,
         "protocol": protocol,
     }
+
+
+def _split_port_mapping(port_spec: str) -> list[str]:
+    if not port_spec:
+        return []
+
+    parts: list[str] = []
+    in_placeholder = False
+    start = 0
+
+    for index, char in enumerate(port_spec):
+        if (
+            not in_placeholder
+            and char == "$"
+            and index + 1 < len(port_spec)
+            and port_spec[index + 1] == "{"
+        ):
+            in_placeholder = True
+        elif in_placeholder and char == "}":
+            in_placeholder = False
+        elif char == ":" and not in_placeholder:
+            parts.append(port_spec[start:index])
+            start = index + 1
+
+    parts.append(port_spec[start:])
+    return parts

@@ -98,7 +98,7 @@ def run_twenty_tap(
 
 
 def rest_transport(*, base_url: str, api_key: str) -> RestTransport:
-    normalized_base_url = base_url.rstrip("/")
+    normalized_base_url = _normalize_rest_base_url(base_url)
 
     def _transport(path: str, params: dict[str, object]) -> dict[str, object]:
         encoded = urlencode({key: value for key, value in params.items() if value is not None})
@@ -122,6 +122,13 @@ def rest_transport(*, base_url: str, api_key: str) -> RestTransport:
         return parsed
 
     return _transport
+
+
+def _normalize_rest_base_url(base_url: str) -> str:
+    normalized = base_url.rstrip("/")
+    if normalized.endswith("/rest"):
+        return normalized
+    return f"{normalized}/rest"
 
 
 def _paginated_records(transport: RestTransport, path: str, limit: int) -> list[dict[str, Any]]:

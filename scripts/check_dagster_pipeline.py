@@ -19,6 +19,7 @@ EXPECTED_ASSETS = {
     "fourok_canonical_objects_and_entity_links",
     "fourok_google_drive_live_source_records_from_raw_landing",
     "fourok_linear_live_source_records_from_raw_landing",
+    "fourok_openviking_live_source_records_from_sessions",
     "fourok_operator_dashboard",
     "fourok_retrieval_records",
     "fourok_slack_live_source_records_from_raw_landing",
@@ -33,7 +34,14 @@ EXPECTED_ASSETS = {
 FIXTURE_ASSETS: set[str] = set()
 
 LIVE_CONNECTOR_ASSETS = {
-    name for name in EXPECTED_ASSETS if "_live_" in name or name.endswith("_live_raw_landing")
+    "meltano_google_drive_live_raw_landing",
+    "fourok_google_drive_live_source_records_from_raw_landing",
+    "meltano_linear_live_raw_landing",
+    "fourok_linear_live_source_records_from_raw_landing",
+    "meltano_slack_live_raw_landing",
+    "fourok_slack_live_source_records_from_raw_landing",
+    "meltano_twenty_live_raw_landing",
+    "fourok_twenty_live_source_records_from_raw_landing",
 }
 
 
