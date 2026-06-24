@@ -1,0 +1,22 @@
+---
+global:
+  scrape_native_histograms: true
+  scrape_interval: 15s
+otlp:
+  keep_identifying_resource_attributes: true
+  promote_resource_attributes:
+    - service.instance.id
+    - service.name
+    - service.namespace
+    - service.version
+    - container.name
+    - deployment.environment
+    - deployment.environment.name
+    - host.name
+storage:
+  tsdb:
+    out_of_order_time_window: 10m
+scrape_configs:
+  - job_name: gcb-dagster-runtime
+    static_configs:
+      - targets: ["gcb-metrics-exporter:9108"]

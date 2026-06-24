@@ -1,0 +1,307 @@
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: gcb
+      POSTGRES_USER: gcb
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U gcb -d gcb"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  cerbos:
+    image: ghcr.io/cerbos/cerbos:0.53.0
+    restart: unless-stopped
+    command: ["server", "--config=/config/config.yaml"]
+    ports:
+      - "127.0.0.1:3592:3592"
+      - "127.0.0.1:3593:3593"
+    volumes:
+      - ./cerbos/config.yaml:/config/config.yaml:ro
+      - ./cerbos/policies:/policies:ro
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "/cerbos",
+          "healthcheck",
+          "--config=/config/config.yaml",
+          "--kind=http",
+          "--insecure",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  observability:
+    profiles: ["observability"]
+    image: grafana/otel-lgtm:0.28.0
+    restart: unless-stopped
+    environment:
+      ENABLE_LOGS_ALL: "true"
+    ports:
+      - "127.0.0.1:3000:3000"
+      - "127.0.0.1:3100:3100"
+      - "127.0.0.1:3200:3200"
+      - "127.0.0.1:4317:4317"
+      - "127.0.0.1:4318:4318"
+    volumes:
+      - observability-data:/data
+      - ./deploy/observability/grafana-dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/gcb-dashboards.yaml:ro
+      - ./deploy/observability/gcb-local-runtime-logs.json:/otel-lgtm/gcb-local-runtime-logs.json:ro
+      - ./deploy/observability/prometheus.yaml:/otel-lgtm/prometheus.yaml:ro
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "curl -fsS http://localhost:3000/api/health >/dev/null || exit 1",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  promtail:
+    profiles: ["observability"]
+    image: grafana/promtail:3.5.3
+    restart: unless-stopped
+    command: ["-config.file=/etc/promtail/config.yml"]
+    volumes:
+      - ./deploy/observability/promtail-config.yml:/etc/promtail/config.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+    depends_on:
+      observability:
+        condition: service_healthy
+
+  gcb-metrics-exporter:
+    profiles: ["observability"]
+    image: 4ok-app:${GCB_IMAGE_TAG:?set GCB_IMAGE_TAG}
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    restart: unless-stopped
+    entrypoint: ["/app/.venv/bin/python"]
+    command:
+      [
+        "-m",
+        "gcb.runtime.metrics_exporter",
+        "--host",
+        "0.0.0.0",
+        "--port",
+        "9108",
+      ]
+    environment:
+      GCB_DAGSTER_GRAPHQL_URL: http://dagster-webserver:3001/graphql
+      GCB_DATABASE_URL: ${GCB_DATABASE_URL:?set GCB_DATABASE_URL}
+      GCB_STATE_PATH: /app/.local/dagster/gcb-state.sqlite
+    expose:
+      - "9108"
+    volumes:
+      - gcb-local:/app/.local
+    depends_on:
+      observability:
+        condition: service_healthy
+
+  dagster-postgres:
+    profiles: ["pipeline"]
+    image: postgres:16.10-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: dagster
+      POSTGRES_USER: dagster
+      POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
+    volumes:
+      - dagster-postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U dagster -d dagster"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+  dagster-code:
+    profiles: ["pipeline"]
+    image: 4ok-dagster-code:${GCB_IMAGE_TAG:?set GCB_IMAGE_TAG}
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: docker/dagster.Dockerfile
+      target: dagster-code
+    environment:
+      DAGSTER_CURRENT_IMAGE: 4ok-dagster-code:${GCB_IMAGE_TAG:?set GCB_IMAGE_TAG}
+      DAGSTER_POSTGRES_USER: dagster
+      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
+      DAGSTER_POSTGRES_DB: dagster
+      DAGSTER_POSTGRES_HOST: dagster-postgres
+      GCB_DATABASE_URL: ${GCB_DATABASE_URL:?set GCB_DATABASE_URL}
+      GCB_PROJECT_ROOT: /app
+      GCB_RAW_LANDING_DIR: /app/.local/raw/singer
+      GCB_STATE_PATH: /app/.local/dagster/gcb-state.sqlite
+      GCB_INFISICAL_ENABLED: ${GCB_INFISICAL_ENABLED:-}
+      GCB_INFISICAL_PROJECT_ID: ${GCB_INFISICAL_PROJECT_ID:-}
+      GCB_INFISICAL_ENV: ${GCB_INFISICAL_ENV:-runtime}
+      GCB_INFISICAL_PATH: ${GCB_INFISICAL_PATH:-/}
+      GCB_INFISICAL_DOMAIN: ${GCB_INFISICAL_DOMAIN:-}
+      GCB_EMBEDDING_PROVIDER: ${GCB_EMBEDDING_PROVIDER:-}
+      GCB_OPENAI_EMBEDDING_MODEL: ${GCB_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      GCB_EMBEDDING_DIMENSIONS: ${GCB_EMBEDDING_DIMENSIONS:-256}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      INFISICAL_DOMAIN: ${INFISICAL_DOMAIN:-}
+      INFISICAL_TOKEN: ${INFISICAL_TOKEN:-}
+      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID:-}
+      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET:-}
+      INFISICAL_UNIVERSAL_AUTH_CLIENT_ID: ${INFISICAL_UNIVERSAL_AUTH_CLIENT_ID:-}
+      INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET: ${INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET:-}
+      INFISICAL_API_URL: ${INFISICAL_API_URL:-}
+      GCB_OBSERVABILITY_ENABLED: ${GCB_OBSERVABILITY_ENABLED:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-gcb-dagster-code}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      dagster-postgres:
+        condition: service_healthy
+    volumes:
+      - gcb-local:/app/.local
+    healthcheck:
+      test: ["CMD", "dagster", "api", "grpc-health-check", "-p", "4000"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+      start_period: 5s
+
+  dagster-webserver:
+    profiles: ["pipeline"]
+    image: ${GCB_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
+    restart: unless-stopped
+    command:
+      - sh
+      - -lc
+      - >
+        mkdir -p "$$DAGSTER_HOME" &&
+        cp /tmp/gcb-dagster-home/dagster.yaml /tmp/gcb-dagster-home/workspace.yaml "$$DAGSTER_HOME"/ &&
+        exec dagster-webserver -h 0.0.0.0 -p 3001 -w workspace.yaml
+    environment:
+      DAGSTER_HOME: /opt/dagster/dagster_home
+      DAGSTER_POSTGRES_USER: dagster
+      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
+      DAGSTER_POSTGRES_DB: dagster
+      DAGSTER_POSTGRES_HOST: dagster-postgres
+      GCB_OBSERVABILITY_ENABLED: ${GCB_OBSERVABILITY_ENABLED:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-gcb-dagster-webserver}
+    ports:
+      - "127.0.0.1:3001:3001"
+    volumes:
+      - dagster-local:/var/lib/dagster
+      - ./deploy/dagster/dagster.yaml:/tmp/gcb-dagster-home/dagster.yaml:ro
+      - ./deploy/dagster/workspace.yaml:/tmp/gcb-dagster-home/workspace.yaml:ro
+    depends_on:
+      dagster-postgres:
+        condition: service_healthy
+      dagster-code:
+        condition: service_healthy
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:3001/server_info', timeout=2).read()\"",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  dagster-daemon:
+    profiles: ["pipeline"]
+    image: ${GCB_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
+    restart: unless-stopped
+    command:
+      - sh
+      - -lc
+      - >
+        mkdir -p "$$DAGSTER_HOME" &&
+        cp /tmp/gcb-dagster-home/dagster.yaml /tmp/gcb-dagster-home/workspace.yaml "$$DAGSTER_HOME"/ &&
+        exec dagster-daemon run
+    environment:
+      DAGSTER_HOME: /opt/dagster/dagster_home
+      DAGSTER_POSTGRES_USER: dagster
+      DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
+      DAGSTER_POSTGRES_DB: dagster
+      DAGSTER_POSTGRES_HOST: dagster-postgres
+      GCB_OBSERVABILITY_ENABLED: ${GCB_OBSERVABILITY_ENABLED:-true}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-gcb-dagster-daemon}
+    volumes:
+      - dagster-local:/var/lib/dagster
+      - ./deploy/dagster/dagster.yaml:/tmp/gcb-dagster-home/dagster.yaml:ro
+      - ./deploy/dagster/workspace.yaml:/tmp/gcb-dagster-home/workspace.yaml:ro
+    depends_on:
+      dagster-postgres:
+        condition: service_healthy
+      dagster-code:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "dagster-daemon liveness-check"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 15s
+
+  app:
+    image: 4ok-app:${GCB_IMAGE_TAG:?set GCB_IMAGE_TAG}
+    restart: unless-stopped
+    build:
+      context: .
+      dockerfile: docker/app.Dockerfile
+    environment:
+      GCB_DATABASE_URL: ${GCB_DATABASE_URL:?set GCB_DATABASE_URL}
+      GCB_OBSERVABILITY_ENABLED: ${GCB_OBSERVABILITY_ENABLED:-false}
+      GCB_GMAIL_INFISICAL_PROJECT_ID: ${GCB_GMAIL_INFISICAL_PROJECT_ID:-}
+      GCB_GMAIL_INFISICAL_ENV: ${GCB_GMAIL_INFISICAL_ENV:-}
+      GCB_GMAIL_INFISICAL_PATH: ${GCB_GMAIL_INFISICAL_PATH:-}
+      GCB_EMBEDDING_PROVIDER: ${GCB_EMBEDDING_PROVIDER:-}
+      GCB_OPENAI_EMBEDDING_MODEL: ${GCB_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      GCB_EMBEDDING_DIMENSIONS: ${GCB_EMBEDDING_DIMENSIONS:-256}
+      OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      INFISICAL_API_URL: ${INFISICAL_API_URL:-}
+      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID:-}
+      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET:-}
+      OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-gcb-app}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      cerbos:
+        condition: service_healthy
+    volumes:
+      - gcb-local:/app/.local
+      - gcb-data:/var/lib/gcb
+      - ${GCB_CONFIG_PATH:-./.local/gcb.toml}:/etc/gcb/gcb.toml:ro
+    healthcheck:
+      test: ["CMD", "/app/.venv/bin/gcb", "health"]
+      interval: 10s
+      timeout: 10s
+      retries: 12
+      start_period: 10s
+    command:
+      [
+        "runtime-monitor",
+        "--config",
+        "/etc/gcb/gcb.toml",
+      ]
+
+volumes:
+  postgres-data:
+  observability-data:
+  dagster-postgres-data:
+  dagster-local:
+  gcb-local:
+  gcb-data:

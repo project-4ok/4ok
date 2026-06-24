@@ -1,0 +1,13 @@
+From: refunds@acme.example.com
+To: finance@example.com
+Date: Mon, 13 May 2026 09:25:00 +0000
+Subject: Refund IBAN for canceled account
+Message-ID: <fixture-0013@example.com>
+
+Hello finance,
+
+Please send the refund for the canceled ACME account to IBAN DE89370400440532013000.
+If there are questions, call +49 30 12345678 or email anna.refunds@example.com.
+
+Thanks,
+ACME refunds

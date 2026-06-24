@@ -1,0 +1,150 @@
+project_id: 4ok
+default_environment: internal
+
+environments:
+- name: internal
+
+plugins:
+  extractors:
+  - name: tap-gcb-fixture
+    namespace: tap_gcb_fixture
+    pip_url: -e .
+    executable: tap-gcb-fixture
+    capabilities:
+    - state
+    settings:
+    - name: fixture_path
+      kind: file
+    config:
+      fixture_path: fixtures/connectors/singer_email_messages.jsonl
+  - name: tap-gcb-slack-fixture
+    namespace: tap_gcb_slack_fixture
+    pip_url: -e .
+    executable: tap-gcb-fixture
+    capabilities:
+    - state
+    settings:
+    - name: fixture_path
+      kind: file
+    config:
+      fixture_path: fixtures/connectors/singer_slack_messages.jsonl
+  - name: tap-gcb-twenty-fixture
+    namespace: tap_gcb_twenty_fixture
+    pip_url: -e .
+    executable: tap-gcb-fixture
+    capabilities:
+    - state
+    settings:
+    - name: fixture_path
+      kind: file
+    config:
+      fixture_path: fixtures/connectors/singer_twenty_crm.jsonl
+  - name: tap-gcb-twenty
+    namespace: tap_gcb_twenty
+    pip_url: -e .
+    executable: tap-gcb-twenty
+    capabilities:
+    - state
+    settings:
+    - name: api_key
+      env: TWENTY_API_KEY
+      sensitive: true
+    - name: base_url
+      env: TWENTY_BASE_URL
+    - name: limit
+      env: TWENTY_LIMIT
+  - name: tap-gcb-linear-fixture
+    namespace: tap_gcb_linear_fixture
+    pip_url: -e .
+    executable: tap-gcb-fixture
+    capabilities:
+    - state
+    settings:
+    - name: fixture_path
+      kind: file
+    config:
+      fixture_path: fixtures/connectors/singer_linear_work_items.jsonl
+  - name: tap-gcb-linear
+    namespace: tap_gcb_linear
+    pip_url: -e .
+    executable: tap-gcb-linear
+    capabilities:
+    - state
+    settings:
+    - name: api_key
+      env: LINEAR_API_KEY
+      sensitive: true
+    - name: endpoint
+      env: LINEAR_GRAPHQL_URL
+    - name: limit
+      env: LINEAR_LIMIT
+  - name: tap-gcb-google-drive-fixture
+    namespace: tap_gcb_google_drive_fixture
+    pip_url: -e .
+    executable: tap-gcb-fixture
+    capabilities:
+    - state
+    settings:
+    - name: fixture_path
+      kind: file
+    config:
+      fixture_path: fixtures/connectors/singer_google_drive_docs.jsonl
+  - name: tap-gcb-google-drive
+    namespace: tap_gcb_google_drive
+    pip_url: -e .
+    executable: tap-gcb-google-drive
+    capabilities:
+    - state
+    settings:
+    - name: oauth_client_secret_json
+      env: GOOGLE_WORKSPACE_OAUTH_CLIENT_SECRET_JSON
+      sensitive: true
+    - name: oauth_refresh_token
+      env: GOOGLE_WORKSPACE_OAUTH_REFRESH_TOKEN
+      sensitive: true
+    - name: drive_ids
+      env: GOOGLE_WORKSPACE_DRIVE_IDS
+    - name: limit
+      env: GOOGLE_WORKSPACE_LIMIT
+
+  - name: tap-slack
+    variant: meltanolabs
+    pip_url: git+https://github.com/MeltanoLabs/tap-slack.git@v0.4.1
+  loaders:
+  - name: target-gcb-raw-jsonl
+    namespace: target_gcb_raw_jsonl
+    pip_url: -e .
+    executable: target-gcb-raw-jsonl
+    settings:
+    - name: landing_dir
+    config:
+      landing_dir: .local/raw/singer
+
+jobs:
+- name: singer-fixture-to-raw
+  tasks:
+  - tap-gcb-fixture target-gcb-raw-jsonl
+- name: singer-slack-fixture-to-raw
+  tasks:
+  - tap-gcb-slack-fixture target-gcb-raw-jsonl
+- name: slack-live-to-raw
+  tasks:
+  - tap-slack target-gcb-raw-jsonl
+- name: singer-twenty-fixture-to-raw
+  tasks:
+  - tap-gcb-twenty-fixture target-gcb-raw-jsonl
+- name: twenty-live-to-raw
+  tasks:
+  - tap-gcb-twenty target-gcb-raw-jsonl
+- name: singer-linear-fixture-to-raw
+  tasks:
+  - tap-gcb-linear-fixture target-gcb-raw-jsonl
+- name: linear-live-to-raw
+  tasks:
+  - tap-gcb-linear target-gcb-raw-jsonl
+- name: singer-google-drive-fixture-to-raw
+  tasks:
+  - tap-gcb-google-drive-fixture target-gcb-raw-jsonl
+- name: google-drive-live-to-raw
+  tasks:
+  - tap-gcb-google-drive target-gcb-raw-jsonl

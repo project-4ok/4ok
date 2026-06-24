@@ -1,0 +1,62 @@
+[project]
+name = "4ok"
+version = "0.1.0"
+description = "Spike prototypes for governed company context retrieval."
+readme = "README.md"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+    "infisicalsdk>=1.0.16",
+    "mcp>=1.21.0",
+    "opentelemetry-exporter-otlp-proto-http>=1.39.0",
+    "opentelemetry-instrumentation-logging>=0.60b0",
+    "opentelemetry-instrumentation-sqlalchemy>=0.60b0",
+    "opentelemetry-sdk>=1.39.0",
+    "pgvector>=0.4.0",
+    "presidio-analyzer>=2.2.360",
+    "psycopg[binary]>=3.2",
+    "pypdf>=6.13.0",
+    "pyyaml>=6.0",
+    "sqlalchemy>=2.0.49",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[project.scripts]
+gcb = "gcb.cli:main"
+gcb-dev = "gcb.devtools.dev:main"
+gcb-mcp = "gcb.runtime.mcp_retrieval:main"
+tap-gcb-fixture = "gcb.etl.extract.fixture_tap:main"
+tap-gcb-google-drive = "gcb.etl.extract.google_drive_tap:main"
+tap-gcb-linear = "gcb.etl.extract.linear_tap:main"
+tap-gcb-twenty = "gcb.etl.extract.twenty_tap:main"
+target-gcb-raw-jsonl = "gcb.etl.extract.raw_jsonl_target:main"
+
+[dependency-groups]
+dev = [
+    "pytest>=8.0",
+    "ruff>=0.8",
+    "splink>=4.0.16",
+]
+pipeline = [
+    "dagster==1.13.8",
+    "dagster-postgres==0.29.8",
+    "dagster-webserver==1.13.8",
+    "meltano==4.2.0",
+]
+
+[tool.ruff]
+line-length = 100
+src = ["src", "tests"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/gcb"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = ["--import-mode=importlib"]

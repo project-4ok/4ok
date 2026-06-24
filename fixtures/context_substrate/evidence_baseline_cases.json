@@ -1,0 +1,32 @@
+[
+  {
+    "id": "linear_issue_by_title",
+    "query": "ask Robin to move meeting",
+    "expected_source_refs": ["linear:issue:ABC-123"]
+  },
+  {
+    "id": "employee_identity_catalog",
+    "query": "Olivia Slack Linear Twenty employee",
+    "expected_source_refs": [
+      "linear:user:linear-user-olivia",
+      "slack:user:U123456",
+      "twenty:workspaceMember:twenty-member-olivia"
+    ]
+  },
+  {
+    "id": "linear_project_catalog",
+    "query": "Meeting Operations project",
+    "expected_source_refs": ["linear:project:project-meetings"]
+  },
+  {
+    "id": "linear_team_catalog",
+    "query": "Operations OPS team",
+    "expected_source_refs": ["linear:team:ops"]
+  },
+  {
+    "id": "lifecycle_filters_superseded",
+    "query": "superseded duplicate repeated source records cleanup",
+    "expected_source_refs": ["linear:issue:JKL-101"],
+    "unacceptable_source_refs": ["linear:issue:duplicate"]
+  }
+]

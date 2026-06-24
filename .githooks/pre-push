@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mkdir -p .scratch/uv-cache
+export UV_CACHE_DIR=.scratch/uv-cache
+
+uv run pytest -q

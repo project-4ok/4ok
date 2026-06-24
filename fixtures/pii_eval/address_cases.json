@@ -1,0 +1,50 @@
+[
+  {
+    "id": "addr-en-001",
+    "language": "en",
+    "text": "Please mail the refund confirmation to 12 Market Street.",
+    "expected": [
+      {"type": "address", "value": "12 Market Street"}
+    ]
+  },
+  {
+    "id": "addr-en-002",
+    "language": "en",
+    "text": "The billing address changed to 7 Queens Boulevard last week.",
+    "expected": [
+      {"type": "address", "value": "7 Queens Boulevard"}
+    ]
+  },
+  {
+    "id": "addr-en-003",
+    "language": "en",
+    "text": "Send the signed document to 8 River Lane.",
+    "expected": [
+      {"type": "address", "value": "8 River Lane"}
+    ]
+  },
+  {
+    "id": "addr-de-001",
+    "language": "de",
+    "text": "Die neue Rechnungsadresse ist Hauptstrasse 8.",
+    "expected": [
+      {"type": "address", "value": "Hauptstrasse 8"}
+    ]
+  },
+  {
+    "id": "addr-de-002",
+    "language": "de",
+    "text": "Bitte den Brief an Sonnenweg 4 senden.",
+    "expected": [
+      {"type": "address", "value": "Sonnenweg 4"}
+    ]
+  },
+  {
+    "id": "addr-de-003",
+    "language": "de",
+    "text": "Die Immobilie liegt am Schlossplatz 10.",
+    "expected": [
+      {"type": "address", "value": "Schlossplatz 10"}
+    ]
+  }
+]

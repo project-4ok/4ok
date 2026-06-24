@@ -1,0 +1,10 @@
+From: support@example.com
+To: operations@acme.example.com
+Date: Mon, 29 Apr 2026 10:00:00 +0000
+Subject: Account termination confirmed
+Message-ID: <fixture-0011@example.com>
+
+Hello ACME operations,
+
+This confirms account termination effective May 31.
+Support access remains available until the final invoice and refund review are complete.

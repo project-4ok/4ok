@@ -1,0 +1,178 @@
+{
+  "twenty_workspace_members": [
+    {
+      "id": "twenty-member-olivia",
+      "display_name": "Olivia Smith",
+      "email": "olivia@example.com"
+    },
+    {
+      "id": "twenty-member-robin",
+      "display_name": "Robin Scharf",
+      "email": "robin.scharf@example.com"
+    },
+    {
+      "id": "twenty-member-robin-ops",
+      "display_name": "Robin Keller",
+      "email": "robin.keller@example.com"
+    }
+  ],
+  "slack_users": [
+    {
+      "id": "UOLIVIA",
+      "display_name": "Olivia Smith",
+      "email": "olivia@example.com",
+      "deleted": false,
+      "is_bot": false
+    },
+    {
+      "id": "UROBIN",
+      "display_name": "Robin Scharf",
+      "email": "robin.scharf@example.com",
+      "deleted": false,
+      "is_bot": false
+    },
+    {
+      "id": "UROBINOPS",
+      "display_name": "Robin Keller",
+      "email": "robin.keller@example.com",
+      "deleted": false,
+      "is_bot": false
+    }
+  ],
+  "linear_users": [
+    {
+      "id": "linear-user-olivia",
+      "display_name": "Olivia Smith",
+      "email": "olivia@example.com"
+    },
+    {
+      "id": "linear-user-robin-scharf",
+      "display_name": "Robin Scharf",
+      "email": "robin.scharf@example.com"
+    },
+    {
+      "id": "linear-user-robin-keller",
+      "display_name": "Robin Keller",
+      "email": "robin.keller@example.com"
+    }
+  ],
+  "linear_teams": [
+    {
+      "id": "ops",
+      "key": "OPS",
+      "name": "Operations"
+    },
+    {
+      "id": "sales",
+      "key": "SAL",
+      "name": "Sales"
+    }
+  ],
+  "linear_projects": [
+    {
+      "id": "project-meetings",
+      "name": "Meeting Operations"
+    },
+    {
+      "id": "project-portal",
+      "name": "Customer Portal"
+    }
+  ],
+  "linear_issues": [
+    {
+      "id": "linear-issue-abc-123",
+      "identifier": "ABC-123",
+      "title": "ask Robin Scharf to move renewal meeting",
+      "description": "Olivia needs Robin Scharf from sales to move the Acme renewal meeting to Thursday.",
+      "url": "https://linear.app/acme/issue/ABC-123/ask-robin-scharf-to-move-renewal-meeting",
+      "team_id": "sales",
+      "permission_refs": ["linear:team:sales", "workflow:renewals"],
+      "project_id": "project-meetings",
+      "created_at": "2026-06-01T10:00:00+00:00",
+      "updated_at": "2026-06-01T10:15:00+00:00",
+      "creator_id": "linear-user-olivia",
+      "assignee_id": "linear-user-olivia"
+    },
+    {
+      "id": "linear-issue-def-456",
+      "identifier": "DEF-456",
+      "title": "Robin Keller to review support handoff",
+      "description": "Robin Keller from operations should review the support handoff before the portal rollout.",
+      "url": "https://linear.app/acme/issue/DEF-456/robin-keller-review-support-handoff",
+      "team_id": "ops",
+      "permission_refs": ["linear:team:ops", "workflow:billing"],
+      "project_id": "project-portal",
+      "created_at": "2026-06-01T11:00:00+00:00",
+      "updated_at": "2026-06-01T11:15:00+00:00",
+      "creator_id": "linear-user-olivia",
+      "assignee_id": "linear-user-robin-keller"
+    },
+    {
+      "id": "linear-issue-ghi-789",
+      "identifier": "GHI-789",
+      "title": "Portal billing status follow-up",
+      "description": "Acme portal billing still shows a stale pending state after the renewal update.",
+      "url": "https://linear.app/acme/issue/GHI-789/portal-billing-status-follow-up",
+      "team_id": "ops",
+      "project_id": "project-portal",
+      "created_at": "2026-06-02T09:00:00+00:00",
+      "updated_at": "2026-06-02T09:15:00+00:00",
+      "creator_id": "linear-user-robin-keller",
+      "assignee_id": "linear-user-robin-keller"
+    },
+    {
+      "id": "linear-issue-jkl-101",
+      "identifier": "JKL-101",
+      "title": "Portal billing status follow-up",
+      "description": "Superseded duplicate of GHI-789 kept to test repeated source records and day-2 cleanup.",
+      "url": "https://linear.app/acme/issue/JKL-101/portal-billing-status-follow-up-duplicate",
+      "team_id": "ops",
+      "project_id": "project-portal",
+      "created_at": "2026-06-02T09:05:00+00:00",
+      "updated_at": "2026-06-02T09:10:00+00:00",
+      "creator_id": "linear-user-robin-keller",
+      "assignee_id": "linear-user-robin-keller"
+    }
+  ],
+  "linear_comments": [
+    {
+      "id": "linear-comment-1",
+      "body": "Robin Scharf confirmed the renewal meeting can move to Thursday at 15:00.",
+      "url": "https://linear.app/acme/issue/ABC-123#comment-1",
+      "issue_id": "linear-issue-abc-123",
+      "issue_identifier": "ABC-123",
+      "issue_title": "ask Robin Scharf to move renewal meeting",
+      "team_id": "sales",
+      "permission_refs": ["linear:team:sales", "workflow:renewals"],
+      "created_at": "2026-06-01T10:30:00+00:00",
+      "updated_at": "2026-06-01T10:35:00+00:00",
+      "user_id": "linear-user-olivia"
+    },
+    {
+      "id": "linear-comment-2",
+      "body": "Robin Keller found that the portal billing status changed from pending to resolved.",
+      "url": "https://linear.app/acme/issue/GHI-789#comment-2",
+      "issue_id": "linear-issue-ghi-789",
+      "issue_identifier": "GHI-789",
+      "issue_title": "Portal billing status follow-up",
+      "team_id": "ops",
+      "permission_refs": ["linear:team:ops", "workflow:billing"],
+      "created_at": "2026-06-02T10:00:00+00:00",
+      "updated_at": "2026-06-02T10:05:00+00:00",
+      "user_id": "linear-user-robin-keller"
+    },
+    {
+      "id": "linear-comment-3",
+      "body": "Olivia noted the renewal meeting agenda now includes pricing approval before the Thursday 15:00 call.",
+      "url": "https://linear.app/acme/issue/ABC-123#comment-3",
+      "issue_id": "linear-issue-abc-123",
+      "issue_identifier": "ABC-123",
+      "issue_title": "ask Robin Scharf to move renewal meeting",
+      "team_id": "sales",
+      "permission_refs": ["linear:team:sales", "workflow:renewals"],
+      "created_at": "2026-06-01T10:45:00+00:00",
+      "updated_at": "2026-06-01T10:50:00+00:00",
+      "user_id": "linear-user-olivia"
+    }
+  ]
+}

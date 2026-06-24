@@ -1,0 +1,11 @@
+[Unit]
+Description=Run 4ok retention purge daily
+
+[Timer]
+OnCalendar=*-*-* 03:15:00
+AccuracySec=10min
+Persistent=true
+Unit=gcb-retention.service
+
+[Install]
+WantedBy=timers.target

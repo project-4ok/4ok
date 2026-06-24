@@ -1,0 +1,83 @@
+{
+  "id": "gcb-local",
+  "name": "4ok",
+  "description": "Local governed company context tools for OpenClaw agents.",
+  "contracts": {
+    "tools": ["gcb_search_context", "gcb_health"]
+  },
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {
+      "command": {
+        "type": "string",
+        "default": "gcb",
+        "description": "Executable used to run the GCB CLI."
+      },
+      "commandArgs": {
+        "type": "array",
+        "items": { "type": "string" },
+        "default": [],
+        "description": "Arguments placed before the GCB subcommand, for example ['run', 'gcb'] when command is 'uv'."
+      },
+      "state": {
+        "type": "string",
+        "default": ".local/context.sqlite",
+        "description": "Local SQLite state path used when databaseUrl is unset."
+      },
+      "databaseUrl": {
+        "type": "string",
+        "description": "Optional SQLAlchemy database URL for the governed runtime."
+      },
+      "config": {
+        "type": "string",
+        "description": "Optional GCB TOML config path."
+      },
+      "rawStore": {
+        "type": "string",
+        "default": ".local/raw",
+        "description": "Raw-store path used by the health tool."
+      },
+      "timeoutMs": {
+        "type": "integer",
+        "minimum": 1000,
+        "default": 15000,
+        "description": "Maximum time to wait for each local GCB CLI call."
+      }
+    }
+  },
+  "uiHints": {
+    "command": {
+      "label": "GCB Command",
+      "placeholder": "gcb"
+    },
+    "commandArgs": {
+      "label": "GCB Command Args",
+      "advanced": true,
+      "help": "Use ['run', 'gcb'] with command 'uv' when the package is not installed on PATH."
+    },
+    "state": {
+      "label": "State Path",
+      "placeholder": ".local/context.sqlite"
+    },
+    "databaseUrl": {
+      "label": "Database URL",
+      "advanced": true,
+      "placeholder": "postgresql+psycopg://..."
+    },
+    "config": {
+      "label": "GCB Config",
+      "advanced": true,
+      "placeholder": "gcb.toml"
+    },
+    "rawStore": {
+      "label": "Raw Store",
+      "advanced": true,
+      "placeholder": ".local/raw"
+    },
+    "timeoutMs": {
+      "label": "Timeout (ms)",
+      "advanced": true
+    }
+  }
+}

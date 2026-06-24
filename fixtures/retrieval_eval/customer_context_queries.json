@@ -1,0 +1,42 @@
+[
+  {
+    "id": "rq-001",
+    "query": "Which customer asked for a refund after cancellation?",
+    "expected_source_refs": ["local_email:0002-refund-bank-transfer"]
+  },
+  {
+    "id": "rq-002",
+    "query": "Where is the account termination confirmation?",
+    "expected_source_refs": ["local_email:0011-termination-confirmed"]
+  },
+  {
+    "id": "rq-003",
+    "query": "Which message mentions the March invoice payment failure?",
+    "expected_source_refs": ["local_email:0004-payment-failed"]
+  },
+  {
+    "id": "rq-004",
+    "query": "Find the data export and workspace archive request.",
+    "expected_source_refs": ["local_email:0009-data-export"]
+  },
+  {
+    "id": "rq-005",
+    "query": "Which email asks for an upgrade with extra seats and priority support?",
+    "expected_source_refs": ["local_email:0010-upgrade-plan"]
+  },
+  {
+    "id": "rq-006",
+    "query": "Find the billing address change request.",
+    "expected_source_refs": ["local_email:0006-address-change"]
+  },
+  {
+    "id": "rq-007",
+    "query": "Which message has a support complaint that remains unresolved?",
+    "expected_source_refs": ["local_email:0007-support-complaint"]
+  },
+  {
+    "id": "rq-008",
+    "query": "Where is the contract renewal legal review email?",
+    "expected_source_refs": ["local_email:0005-contract-renewal"]
+  }
+]

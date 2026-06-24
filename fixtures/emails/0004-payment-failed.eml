@@ -1,0 +1,10 @@
+From: payments@example.com
+To: accounts@globex.example.com
+Date: Tue, 12 Mar 2026 08:15:00 +0000
+Subject: Payment failed for March invoice
+Message-ID: <fixture-0004@example.com>
+
+Hello Globex,
+
+The March invoice payment failed. Please update the payment method
+or contact billing if the bank transfer has already been sent.

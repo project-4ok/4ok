@@ -1,0 +1,10 @@
+From: finance@example.com
+To: anna.customer@example.com
+Date: Tue, 23 Apr 2026 15:35:00 +0000
+Subject: Final invoice paid
+Message-ID: <fixture-0008@example.com>
+
+Hello Anna,
+
+The final invoice for ACME has been paid.
+We have closed the billing item related to the cancellation request.

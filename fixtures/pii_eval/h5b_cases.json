@@ -1,0 +1,302 @@
+[
+  {
+    "id": "de-001",
+    "language": "de",
+    "text": "Maria Schneider von Acme GmbH bittet um Rueckruf in Berlin. Kontakt: maria.schneider@example.com, +49 30 11111111, IBAN DE89370400440532013000, Referenz PMT-20260501.",
+    "expected": [
+      {"type": "person", "value": "Maria Schneider"},
+      {"type": "organization", "value": "Acme GmbH"},
+      {"type": "location", "value": "Berlin"},
+      {"type": "email", "value": "maria.schneider@example.com"},
+      {"type": "phone", "value": "+49 30 11111111"},
+      {"type": "iban", "value": "DE89370400440532013000"},
+      {"type": "payment_identifier", "value": "PMT-20260501"},
+      {"type": "address", "value": "Musterstrasse 12"}
+    ]
+  },
+  {
+    "id": "de-002",
+    "language": "de",
+    "text": "Thomas Mueller von Nordwind AG wohnt in der Hauptstrasse 8 in Hamburg. Kontakt: thomas.mueller@example.com, +49 40 22222222, IBAN DE89 3704 0044 0532 0130 01, Referenz PMT-20260502.",
+    "expected": [
+      {"type": "person", "value": "Thomas Mueller"},
+      {"type": "organization", "value": "Nordwind AG"},
+      {"type": "location", "value": "Hamburg"},
+      {"type": "email", "value": "thomas.mueller@example.com"},
+      {"type": "phone", "value": "+49 40 22222222"},
+      {"type": "iban", "value": "DE89 3704 0044 0532 0130 01"},
+      {"type": "payment_identifier", "value": "PMT-20260502"},
+      {"type": "address", "value": "Hauptstrasse 8"}
+    ]
+  },
+  {
+    "id": "de-003",
+    "language": "de",
+    "text": "Sofia Becker bei Globex GmbH fragt wegen Koeln nach der Rechnung. Kontakt: sofia.becker@example.com, +49 221 3333333, IBAN DE89370400440532013002, Referenz PMT-20260503.",
+    "expected": [
+      {"type": "person", "value": "Sofia Becker"},
+      {"type": "organization", "value": "Globex GmbH"},
+      {"type": "location", "value": "Koeln"},
+      {"type": "email", "value": "sofia.becker@example.com"},
+      {"type": "phone", "value": "+49 221 3333333"},
+      {"type": "iban", "value": "DE89370400440532013002"},
+      {"type": "payment_identifier", "value": "PMT-20260503"},
+      {"type": "address", "value": "Domplatz 3"}
+    ]
+  },
+  {
+    "id": "de-004",
+    "language": "de",
+    "text": "Lukas Wagner von Initech AG meldet die Adresse Sonnenweg 4 in Muenchen. Kontakt: lukas.wagner@example.com, +49 89 44444444, IBAN DE89370400440532013003, Referenz PMT-20260504.",
+    "expected": [
+      {"type": "person", "value": "Lukas Wagner"},
+      {"type": "organization", "value": "Initech AG"},
+      {"type": "location", "value": "Muenchen"},
+      {"type": "email", "value": "lukas.wagner@example.com"},
+      {"type": "phone", "value": "+49 89 44444444"},
+      {"type": "iban", "value": "DE89370400440532013003"},
+      {"type": "payment_identifier", "value": "PMT-20260504"},
+      {"type": "address", "value": "Sonnenweg 4"}
+    ]
+  },
+  {
+    "id": "de-005",
+    "language": "de",
+    "text": "Anna Fischer von Umbrella GmbH moechte einen Termin in Frankfurt. Kontakt: anna.fischer@example.com, +49 69 55555555, IBAN DE89370400440532013004, Referenz PMT-20260505.",
+    "expected": [
+      {"type": "person", "value": "Anna Fischer"},
+      {"type": "organization", "value": "Umbrella GmbH"},
+      {"type": "location", "value": "Frankfurt"},
+      {"type": "email", "value": "anna.fischer@example.com"},
+      {"type": "phone", "value": "+49 69 55555555"},
+      {"type": "iban", "value": "DE89370400440532013004"},
+      {"type": "payment_identifier", "value": "PMT-20260505"},
+      {"type": "address", "value": "Mainkai 5"}
+    ]
+  },
+  {
+    "id": "de-006",
+    "language": "de",
+    "text": "Jonas Weber bei Stark Industries GmbH bestaetigt Bonn als Standort. Kontakt: jonas.weber@example.com, +49 228 6666666, IBAN DE89370400440532013005, Referenz PMT-20260506.",
+    "expected": [
+      {"type": "person", "value": "Jonas Weber"},
+      {"type": "organization", "value": "Stark Industries GmbH"},
+      {"type": "location", "value": "Bonn"},
+      {"type": "email", "value": "jonas.weber@example.com"},
+      {"type": "phone", "value": "+49 228 6666666"},
+      {"type": "iban", "value": "DE89370400440532013005"},
+      {"type": "payment_identifier", "value": "PMT-20260506"},
+      {"type": "address", "value": "Rheinweg 6"}
+    ]
+  },
+  {
+    "id": "de-007",
+    "language": "de",
+    "text": "Laura Hoffmann von Hooli GmbH schreibt aus Dresden. Kontakt: laura.hoffmann@example.com, +49 351 7777777, IBAN DE89370400440532013006, Referenz PMT-20260507.",
+    "expected": [
+      {"type": "person", "value": "Laura Hoffmann"},
+      {"type": "organization", "value": "Hooli GmbH"},
+      {"type": "location", "value": "Dresden"},
+      {"type": "email", "value": "laura.hoffmann@example.com"},
+      {"type": "phone", "value": "+49 351 7777777"},
+      {"type": "iban", "value": "DE89370400440532013006"},
+      {"type": "payment_identifier", "value": "PMT-20260507"},
+      {"type": "address", "value": "Elbstrasse 7"}
+    ]
+  },
+  {
+    "id": "de-008",
+    "language": "de",
+    "text": "Felix Braun bei Soylent GmbH ruft aus Leipzig an. Kontakt: felix.braun@example.com, +49 341 8888888, IBAN DE89370400440532013007, Referenz PMT-20260508.",
+    "expected": [
+      {"type": "person", "value": "Felix Braun"},
+      {"type": "organization", "value": "Soylent GmbH"},
+      {"type": "location", "value": "Leipzig"},
+      {"type": "email", "value": "felix.braun@example.com"},
+      {"type": "phone", "value": "+49 341 8888888"},
+      {"type": "iban", "value": "DE89370400440532013007"},
+      {"type": "payment_identifier", "value": "PMT-20260508"},
+      {"type": "address", "value": "Markt 8"}
+    ]
+  },
+  {
+    "id": "de-009",
+    "language": "de",
+    "text": "Nina Koch von Vandelay GmbH meldet die Kantstrasse 5 in Berlin. Kontakt: nina.koch@example.com, +49 30 9999999, IBAN DE89370400440532013008, Referenz PMT-20260509.",
+    "expected": [
+      {"type": "person", "value": "Nina Koch"},
+      {"type": "organization", "value": "Vandelay GmbH"},
+      {"type": "location", "value": "Berlin"},
+      {"type": "email", "value": "nina.koch@example.com"},
+      {"type": "phone", "value": "+49 30 9999999"},
+      {"type": "iban", "value": "DE89370400440532013008"},
+      {"type": "payment_identifier", "value": "PMT-20260509"},
+      {"type": "address", "value": "Kantstrasse 5"}
+    ]
+  },
+  {
+    "id": "de-010",
+    "language": "de",
+    "text": "Paul Richter bei Wayne GmbH fragt in Stuttgart nach Support. Kontakt: paul.richter@example.com, +49 711 10101010, IBAN DE89370400440532013009, Referenz PMT-20260510.",
+    "expected": [
+      {"type": "person", "value": "Paul Richter"},
+      {"type": "organization", "value": "Wayne GmbH"},
+      {"type": "location", "value": "Stuttgart"},
+      {"type": "email", "value": "paul.richter@example.com"},
+      {"type": "phone", "value": "+49 711 10101010"},
+      {"type": "iban", "value": "DE89370400440532013009"},
+      {"type": "payment_identifier", "value": "PMT-20260510"},
+      {"type": "address", "value": "Schlossplatz 10"}
+    ]
+  },
+  {
+    "id": "en-001",
+    "language": "en",
+    "text": "Sarah Miller from Acme Ltd wrote from London. Contact sarah.miller@example.com, +1 (415) 555-0101, IBAN DE89370400440532013100, reference PMT-20260601.",
+    "expected": [
+      {"type": "person", "value": "Sarah Miller"},
+      {"type": "organization", "value": "Acme Ltd"},
+      {"type": "location", "value": "London"},
+      {"type": "email", "value": "sarah.miller@example.com"},
+      {"type": "phone", "value": "+1 (415) 555-0101"},
+      {"type": "iban", "value": "DE89370400440532013100"},
+      {"type": "payment_identifier", "value": "PMT-20260601"},
+      {"type": "address", "value": "12 Market Street"}
+    ]
+  },
+  {
+    "id": "en-002",
+    "language": "en",
+    "text": "Michael Brown at Globex Inc asked from Manchester. Contact michael.brown@example.com, +1 (415) 555-0102, IBAN DE89370400440532013101, reference PMT-20260602.",
+    "expected": [
+      {"type": "person", "value": "Michael Brown"},
+      {"type": "organization", "value": "Globex Inc"},
+      {"type": "location", "value": "Manchester"},
+      {"type": "email", "value": "michael.brown@example.com"},
+      {"type": "phone", "value": "+1 (415) 555-0102"},
+      {"type": "iban", "value": "DE89370400440532013101"},
+      {"type": "payment_identifier", "value": "PMT-20260602"},
+      {"type": "address", "value": "4 King Road"}
+    ]
+  },
+  {
+    "id": "en-003",
+    "language": "en",
+    "text": "Emma Wilson from Initech Ltd reported from Dublin. Contact emma.wilson@example.com, +1 (415) 555-0103, IBAN DE89370400440532013102, reference PMT-20260603.",
+    "expected": [
+      {"type": "person", "value": "Emma Wilson"},
+      {"type": "organization", "value": "Initech Ltd"},
+      {"type": "location", "value": "Dublin"},
+      {"type": "email", "value": "emma.wilson@example.com"},
+      {"type": "phone", "value": "+1 (415) 555-0103"},
+      {"type": "iban", "value": "DE89370400440532013102"},
+      {"type": "payment_identifier", "value": "PMT-20260603"},
+      {"type": "address", "value": "8 River Lane"}
+    ]
+  },
+  {
+    "id": "en-004",
+    "language": "en",
+    "text": "Daniel Clark at Umbrella Ltd replied from Edinburgh. Contact daniel.clark@example.com, +1 (415) 555-0104, IBAN DE89370400440532013103, reference PMT-20260604.",
+    "expected": [
+      {"type": "person", "value": "Daniel Clark"},
+      {"type": "organization", "value": "Umbrella Ltd"},
+      {"type": "location", "value": "Edinburgh"},
+      {"type": "email", "value": "daniel.clark@example.com"},
+      {"type": "phone", "value": "+1 (415) 555-0104"},
+      {"type": "iban", "value": "DE89370400440532013103"},
+      {"type": "payment_identifier", "value": "PMT-20260604"},
+      {"type": "address", "value": "15 Castle Road"}
+    ]
+  },
+  {
+    "id": "en-005",
+    "language": "en",
+    "text": "Olivia Taylor from Stark Ltd wrote from Bristol. Contact olivia.taylor@example.com, +1 (415) 555-0105, IBAN DE89370400440532013104, reference PMT-20260605.",
+    "expected": [
+      {"type": "person", "value": "Olivia Taylor"},
+      {"type": "organization", "value": "Stark Ltd"},
+      {"type": "location", "value": "Bristol"},
+      {"type": "email", "value": "olivia.taylor@example.com"},
+      {"type": "phone", "value": "+1 (415) 555-0105"},
+      {"type": "iban", "value": "DE89370400440532013104"},
+      {"type": "payment_identifier", "value": "PMT-20260605"},
+      {"type": "address", "value": "20 Queen Street"}
+    ]
+  },
+  {
+    "id": "en-006",
+    "language": "en",
+    "text": "Rachel Green from Wayne Corp wrote from Seattle. Contact rachel.green@example.com, +1 (415) 555-0106, IBAN DE89370400440532013105, reference PMT-20260606.",
+    "expected": [
+      {"type": "person", "value": "Rachel Green"},
+      {"type": "organization", "value": "Wayne Corp"},
+      {"type": "location", "value": "Seattle"},
+      {"type": "email", "value": "rachel.green@example.com"},
+      {"type": "phone", "value": "+1 (415) 555-0106"},
+      {"type": "iban", "value": "DE89370400440532013105"},
+      {"type": "payment_identifier", "value": "PMT-20260606"},
+      {"type": "address", "value": "6 Pine Street"}
+    ]
+  },
+  {
+    "id": "en-007",
+    "language": "en",
+    "text": "Peter Parker at Oscorp LLC asked from New York. Contact peter.parker@example.com, +1 (415) 555-0107, IBAN DE89370400440532013106, reference PMT-20260607.",
+    "expected": [
+      {"type": "person", "value": "Peter Parker"},
+      {"type": "organization", "value": "Oscorp"},
+      {"type": "location", "value": "New York"},
+      {"type": "email", "value": "peter.parker@example.com"},
+      {"type": "phone", "value": "+1 (415) 555-0107"},
+      {"type": "iban", "value": "DE89370400440532013106"},
+      {"type": "payment_identifier", "value": "PMT-20260607"},
+      {"type": "address", "value": "7 Queens Boulevard"}
+    ]
+  },
+  {
+    "id": "en-008",
+    "language": "en",
+    "text": "Bruce Wayne from Wayne Enterprises reported from Gotham. Contact bruce.wayne@example.com, +1 (415) 555-0108, IBAN DE89370400440532013107, reference PMT-20260608.",
+    "expected": [
+      {"type": "person", "value": "Bruce Wayne"},
+      {"type": "organization", "value": "Wayne Enterprises"},
+      {"type": "location", "value": "Gotham"},
+      {"type": "email", "value": "bruce.wayne@example.com"},
+      {"type": "phone", "value": "+1 (415) 555-0108"},
+      {"type": "iban", "value": "DE89370400440532013107"},
+      {"type": "payment_identifier", "value": "PMT-20260608"},
+      {"type": "address", "value": "8 Manor Drive"}
+    ]
+  },
+  {
+    "id": "en-009",
+    "language": "en",
+    "text": "Diana Prince at Themyscira Ltd replied from Paris. Contact diana.prince@example.com, +1 (415) 555-0109, IBAN DE89370400440532013108, reference PMT-20260609.",
+    "expected": [
+      {"type": "person", "value": "Diana Prince"},
+      {"type": "organization", "value": "Themyscira Ltd"},
+      {"type": "location", "value": "Paris"},
+      {"type": "email", "value": "diana.prince@example.com"},
+      {"type": "phone", "value": "+1 (415) 555-0109"},
+      {"type": "iban", "value": "DE89370400440532013108"},
+      {"type": "payment_identifier", "value": "PMT-20260609"},
+      {"type": "address", "value": "9 Embassy Row"}
+    ]
+  },
+  {
+    "id": "en-010",
+    "language": "en",
+    "text": "Clark Kent from Daily Planet Inc wrote from Metropolis. Contact clark.kent@example.com, +1 (415) 555-0110, IBAN DE89370400440532013109, reference PMT-20260610.",
+    "expected": [
+      {"type": "person", "value": "Clark Kent"},
+      {"type": "organization", "value": "Daily Planet Inc"},
+      {"type": "location", "value": "Metropolis"},
+      {"type": "email", "value": "clark.kent@example.com"},
+      {"type": "phone", "value": "+1 (415) 555-0110"},
+      {"type": "iban", "value": "DE89370400440532013109"},
+      {"type": "payment_identifier", "value": "PMT-20260610"},
+      {"type": "address", "value": "10 Press Avenue"}
+    ]
+  }
+]

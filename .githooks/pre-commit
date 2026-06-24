@@ -1,0 +1,11 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+mkdir -p .scratch/uv-cache
+export UV_CACHE_DIR=.scratch/uv-cache
+
+uv run ruff check .
+uv run ruff format --check src tests scripts
+uv run python scripts/check_file_lengths.py --staged --max-lines 800
+uv run pytest tests/etl/extract -q
+uv run pytest tests/runtime/test_dashboard.py -q

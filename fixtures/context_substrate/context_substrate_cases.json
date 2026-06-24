@@ -1,0 +1,111 @@
+[
+  {
+    "id": "exact_employee_olivia",
+    "category": "entity_linking_exact",
+    "query": "Olivia Slack Linear Twenty employee",
+    "expected_source_refs": [
+      "linear:user:linear-user-olivia",
+      "slack:user:UOLIVIA",
+      "twenty:workspaceMember:twenty-member-olivia"
+    ],
+    "expected_entities": ["employee:email:olivia@example.com"]
+  },
+  {
+    "id": "exact_employee_robin_scharf",
+    "category": "entity_linking_exact",
+    "query": "Robin Scharf sales employee",
+    "expected_source_refs": ["linear:user:linear-user-robin-scharf"],
+    "expected_entities": ["employee:email:robin.scharf@example.com"]
+  },
+  {
+    "id": "exact_employee_robin_keller",
+    "category": "entity_linking_exact",
+    "query": "Robin Keller operations employee",
+    "expected_source_refs": ["linear:user:linear-user-robin-keller"],
+    "expected_entities": ["employee:email:robin.keller@example.com"]
+  },
+  {
+    "id": "ambiguous_robin_meeting",
+    "category": "entity_linking_ambiguous",
+    "query": "Robin renewal meeting Thursday",
+    "expected_source_refs": ["linear:issue:ABC-123"],
+    "expected_entities": ["employee:email:olivia@example.com"]
+  },
+  {
+    "id": "ambiguous_robin_operations",
+    "category": "entity_linking_ambiguous",
+    "query": "Robin operations support handoff portal rollout",
+    "expected_source_refs": ["linear:issue:DEF-456"],
+    "expected_entities": ["employee:email:robin.keller@example.com"]
+  },
+  {
+    "id": "ambiguous_robin_comment",
+    "category": "entity_linking_ambiguous",
+    "query": "Robin Keller billing changed pending resolved",
+    "expected_source_refs": ["linear:comment:linear-comment-2"],
+    "expected_entities": ["employee:email:robin.keller@example.com"]
+  },
+  {
+    "id": "retrieval_project_portal",
+    "category": "retrieval_provenance",
+    "query": "Customer Portal project",
+    "expected_source_refs": ["linear:project:project-portal"]
+  },
+  {
+    "id": "retrieval_team_sales",
+    "category": "retrieval_provenance",
+    "query": "Sales SAL team",
+    "expected_source_refs": ["linear:team:sales"]
+  },
+  {
+    "id": "retrieval_issue_source_url",
+    "category": "retrieval_provenance",
+    "query": "Acme portal billing stale pending state",
+    "expected_source_refs": ["linear:issue:GHI-789"],
+    "expected_entities": ["employee:email:robin.keller@example.com"]
+  },
+  {
+    "id": "governance_renewal_permissions",
+    "category": "governance_compatibility",
+    "query": "renewal meeting source permission sales workflow",
+    "expected_source_refs": ["linear:issue:ABC-123"],
+    "expected_entities": ["employee:email:olivia@example.com"],
+    "expected_permission_refs": ["linear:team:sales", "workflow:renewals"]
+  },
+  {
+    "id": "governance_billing_permissions",
+    "category": "governance_compatibility",
+    "query": "portal billing stale pending permission ops workflow",
+    "expected_source_refs": ["linear:issue:GHI-789"],
+    "expected_entities": ["employee:email:robin.keller@example.com"],
+    "expected_permission_refs": ["linear:team:ops", "workflow:billing"]
+  },
+  {
+    "id": "chat_knowledge_meeting_confirmed",
+    "category": "chat_acquired_knowledge",
+    "query": "renewal meeting confirmed Thursday 15:00",
+    "expected_source_refs": ["linear:comment:linear-comment-1"],
+    "expected_entities": ["employee:email:olivia@example.com"]
+  },
+  {
+    "id": "chat_knowledge_pricing_agenda",
+    "category": "chat_acquired_knowledge",
+    "query": "renewal meeting agenda pricing approval Thursday call",
+    "expected_source_refs": ["linear:comment:linear-comment-3"],
+    "expected_entities": ["employee:email:olivia@example.com"]
+  },
+  {
+    "id": "day2_changed_status",
+    "category": "day2_lifecycle",
+    "query": "portal billing changed from pending to resolved",
+    "expected_source_refs": ["linear:comment:linear-comment-2"],
+    "expected_entities": ["employee:email:robin.keller@example.com"]
+  },
+  {
+    "id": "day2_repeated_duplicate",
+    "category": "day2_lifecycle",
+    "query": "superseded duplicate repeated source records cleanup",
+    "expected_source_refs": ["linear:issue:JKL-101"],
+    "expected_entities": ["employee:email:robin.keller@example.com"]
+  }
+]

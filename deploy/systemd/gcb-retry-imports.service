@@ -1,0 +1,12 @@
+[Unit]
+Description=4ok retry failed imports
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/4ok
+Environment=GCB_IMAGE_TAG=replace-with-commit-hash
+Environment=GCB_CONFIG_PATH=/opt/4ok/.local/gcb.toml
+EnvironmentFile=/etc/gcb/gcb.env
+ExecStart=/usr/bin/docker compose run --rm app run-imports --connector gmail-singer --singer-file /var/lib/gcb/raw/gmail/tap-gmail-output.jsonl --database-url ${GCB_DATABASE_URL} --config /etc/gcb/gcb.toml --retry-failed --retry-base-delay-seconds 300

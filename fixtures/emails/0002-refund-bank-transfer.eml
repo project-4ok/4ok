@@ -1,0 +1,13 @@
+From: billing@acme.example.com
+To: finance@example.com
+Date: Fri, 19 Apr 2026 09:30:00 +0000
+Subject: Refund by bank transfer
+Message-ID: <fixture-0002@example.com>
+
+Hi finance team,
+
+The customer asks for a refund by bank transfer after the cancellation.
+Please use the bank account already on file and confirm when payment is scheduled.
+
+Thanks,
+Billing

@@ -1,0 +1,82 @@
+[
+  {
+    "identity_ref": "gmail:email:anna.refunds@example.com",
+    "source_system": "gmail",
+    "identity_type": "sender",
+    "value": "anna.refunds@example.com",
+    "display_name": "Anna Refunds",
+    "expected_entity": "person:anna-refunds"
+  },
+  {
+    "identity_ref": "linear:email:anna.refunds@example.com",
+    "source_system": "linear",
+    "identity_type": "assignee",
+    "value": "anna.refunds@example.com",
+    "display_name": "Anna Refunds",
+    "expected_entity": "person:anna-refunds"
+  },
+  {
+    "identity_ref": "slack:email:anna.r@example.com",
+    "source_system": "slack",
+    "identity_type": "member",
+    "value": "anna.r@example.com",
+    "display_name": "Anna Refunds",
+    "expected_entity": "person:anna-refunds"
+  },
+  {
+    "identity_ref": "gmail:email:sam.support@example.com",
+    "source_system": "gmail",
+    "identity_type": "sender",
+    "value": "sam.support@example.com",
+    "display_name": "Sam Support",
+    "expected_entity": "person:sam-support"
+  },
+  {
+    "identity_ref": "slack:email:sam.support@example.com",
+    "source_system": "slack",
+    "identity_type": "member",
+    "value": "sam.support@example.com",
+    "display_name": "Sam S.",
+    "expected_entity": "person:sam-support"
+  },
+  {
+    "identity_ref": "linear:email:samuel.support@example.com",
+    "source_system": "linear",
+    "identity_type": "assignee",
+    "value": "samuel.support@example.com",
+    "display_name": "Sam Support",
+    "expected_entity": "person:sam-support"
+  },
+  {
+    "identity_ref": "gmail:email:billing@example.com",
+    "source_system": "gmail",
+    "identity_type": "sender",
+    "value": "billing@example.com",
+    "display_name": "Billing Team",
+    "expected_entity": "team:billing"
+  },
+  {
+    "identity_ref": "slack:email:billing@example.com",
+    "source_system": "slack",
+    "identity_type": "channel",
+    "value": "billing@example.com",
+    "display_name": "Billing",
+    "expected_entity": "team:billing"
+  },
+  {
+    "identity_ref": "gmail:email:alex.owner@example.com",
+    "source_system": "gmail",
+    "identity_type": "sender",
+    "value": "alex.owner@example.com",
+    "display_name": "Alex Lee",
+    "expected_entity": "person:alex-owner"
+  },
+  {
+    "identity_ref": "slack:email:alex.legal@example.com",
+    "source_system": "slack",
+    "identity_type": "member",
+    "value": "alex.legal@example.com",
+    "display_name": "Alex Lee",
+    "expected_entity": "person:alex-legal"
+  }
+]

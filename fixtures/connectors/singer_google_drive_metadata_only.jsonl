@@ -1,0 +1,3 @@
+{"type":"SCHEMA","stream":"google_drive_files","schema":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"mimeType":{"type":"string"}}}}
+{"type":"RECORD","stream":"google_drive_files","record":{"createdTime":"2026-06-03T09:10:00Z","id":"drive-metadata-only-snapshot","mimeType":"image/png","modifiedTime":"2026-06-03T10:00:00Z","name":"Drive Metadata-Only Snapshot","owners":[{"displayName":"Ops Team","emailAddress":"ops@example.com"}],"permissions":[{"type":"domain","domain":"beta.example","role":"reader"}],"parents":["folder-snapshots"],"folder_path":"My Drive/Operations","text":""}}
+{"type":"STATE","value":{"bookmarks":{"google_drive_files":{"modifiedTime":"2026-06-03T10:00:00Z"}}}}

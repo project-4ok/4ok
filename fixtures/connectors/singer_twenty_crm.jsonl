@@ -1,0 +1,5 @@
+{"type":"SCHEMA","stream":"twenty_companies","schema":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"string"},"domainName":{"type":"string"}}}}
+{"type":"RECORD","stream":"twenty_companies","record":{"created_at":"2026-06-01T08:00:00Z","domainName":"alpha.example","id":"company-alpha","name":"Alpha Hausverwaltung","updated_at":"2026-06-02T09:00:00Z","url":"https://twenty.example/objects/companies/company-alpha"}}
+{"type":"SCHEMA","stream":"twenty_people","schema":{"type":"object","properties":{"id":{"type":"string"},"name":{"type":"object"},"emails":{"type":"array"}}}}
+{"type":"RECORD","stream":"twenty_people","record":{"company_id":"company-alpha","company_name":"Alpha Hausverwaltung","created_at":"2026-06-01T08:05:00Z","emails":["robin.alpha@example.com"],"id":"person-robin","jobTitle":"Operations Lead","name":{"firstName":"Robin","lastName":"Scharf"},"updated_at":"2026-06-02T09:05:00Z","url":"https://twenty.example/objects/people/person-robin"}}
+{"type":"STATE","value":{"bookmarks":{"twenty_companies":{"updated_at":"2026-06-02T09:00:00Z"},"twenty_people":{"updated_at":"2026-06-02T09:05:00Z"}}}}

@@ -1,0 +1,12 @@
+[Unit]
+Description=4ok PostgreSQL backup
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/4ok
+Environment=GCB_IMAGE_TAG=replace-with-commit-hash
+Environment=GCB_CONFIG_PATH=/opt/4ok/.local/gcb.toml
+EnvironmentFile=/etc/gcb/gcb.env
+ExecStart=/bin/sh -lc '/usr/bin/docker compose run --rm app postgres-backup --database-url "$GCB_DATABASE_URL" --output "/var/lib/gcb/backups/gcb-$(date +%%Y%%m%%d-%%H%%M%%S).dump"'

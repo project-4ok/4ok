@@ -1,0 +1,12 @@
+[Unit]
+Description=Retry failed 4ok imports every 10 minutes
+
+[Timer]
+OnBootSec=10min
+OnUnitActiveSec=10min
+AccuracySec=1min
+Persistent=true
+Unit=gcb-retry-imports.service
+
+[Install]
+WantedBy=timers.target

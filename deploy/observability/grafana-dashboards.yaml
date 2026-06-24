@@ -1,0 +1,9 @@
+apiVersion: 1
+
+providers:
+  - name: "GCB Local Runtime Logs"
+    type: file
+    updateIntervalSeconds: 10
+    options:
+      path: /otel-lgtm/gcb-local-runtime-logs.json
+      foldersFromFilesStructure: false
