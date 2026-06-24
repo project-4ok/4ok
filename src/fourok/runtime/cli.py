@@ -342,7 +342,23 @@ def _onboard_message(args: argparse.Namespace) -> str:
             else "  data: no connector data has been imported yet"
         )
         lines.append(data_line)
-    lines.extend(["", "Connector credentials:", *_connector_lines(secret_report)])
+    lines.extend(
+        [
+            "",
+            "Connect your workspace:",
+            "  fourok works best when you connect your whole workspace.",
+            "  These connectors are already implemented; activate the ones you use by adding",
+            "  their secrets to .env:",
+            *_connector_lines(secret_report),
+            "  Add their secrets to .env, then run:",
+            "    fourok onboard initial-run",
+            "",
+            "Need another connector?",
+            "  Create a GitHub issue on project-4ok/4ok with the workspace app,",
+            "  auth method, record types, and permission model you need:",
+            "    gh issue create --repo project-4ok/4ok --title \"Connector: <workspace app>\"",
+        ]
+    )
     if dagster_secret_presence.get("status") == "missing":
         lines.extend(
             [

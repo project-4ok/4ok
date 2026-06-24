@@ -241,7 +241,12 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
     output = capsys.readouterr().out
     assert "Current state" in output
     assert "only demo context is present" in output
+    assert "fourok works best when you connect your whole workspace" in output
+    assert "These connectors are already implemented" in output
+    assert "Add their secrets to .env, then run:" in output
     assert "google_drive: missing GOOGLE_WORKSPACE_DRIVE_IDS" in output
+    assert "Need another connector?" in output
+    assert "gh issue create --repo project-4ok/4ok" in output
     assert "dagster-code is not receiving connector credentials" in output
     assert "docker compose up -d --build dagster-code" in output
     assert "fourok onboard initial-run" in output
