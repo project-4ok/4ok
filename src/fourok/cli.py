@@ -8,6 +8,8 @@ from fourok.cli_parts.parser import build_parser
 def main() -> None:
     parser = build_parser()
     args = parser.parse_args()
+    if args.command == "admin":
+        args.command = args.admin_command
     if dispatch_core(args):
         return
     if dispatch_honcho(args):

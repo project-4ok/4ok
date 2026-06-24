@@ -1,8 +1,8 @@
-# fourok CLI shape draft
+# fourok CLI shape
 
 Purpose: make the CLI feel like a small product surface, not an internal toolbox.
 
-This is a draft for discussion. The goal is to agree on the command shape before moving code.
+This document captures the agreed command shape.
 
 ## Product principle
 
@@ -16,7 +16,7 @@ fourok retrieve "What do we know about the renewal?"
 
 Everything else is either an admin task or a developer/operator task.
 
-## Proposed top-level commands
+## Top-level commands
 
 ### 1. `fourok retrieve`
 
@@ -36,15 +36,10 @@ Responsibilities:
 - search governed company context
 - apply permissions/lifecycle filters
 - return source-backed evidence
-- produce a human-readable answer block by default
+- produce a human-readable answer/evidence block by default
 - optionally produce stable JSON for agents/tools
 
-Possible aliases, if wanted later:
-
-- `fourok ask` as a friendlier interactive wrapper
-- `fourok search` only if we need a low-level power-user command
-
-Default stance: keep only `retrieve` public until proven otherwise.
+Decision: use `retrieve`, not `ask`, as the product command. `ask`, `search`, and `search-state` are internal/admin/debug surfaces unless later proven necessary for clients.
 
 ### 2. `fourok status`
 
@@ -61,21 +56,20 @@ fourok status --json
 
 Responsibilities:
 
+- show whether fourok is ready in non-technical language
 - show whether local/runtime storage is reachable
 - show whether retrieval data exists
-- show connector/import freshness at a high level
-- show whether permissions/audit basics are active
+- show connector/import freshness only at a high level
 - give the next useful action, not a wall of diagnostics
+
+Boundary: `status` must be safe for non-technical client users. Detailed runtime, connector, freshness, logs, and database diagnostics belong under `fourok admin ...` or `fourok-dev ...`.
 
 Example output shape:
 
 ```text
 fourok is ready
 
-Context:      1,284 source records, 3,942 retrieval units
-Freshness:    Slack 12m ago, Linear 34m ago, Drive not connected
-Permissions:  enabled
-Audit:        enabled
+Context: 1,284 source records, 3,942 retrieval units
 
 Try:
   fourok retrieve "What changed this week?"
@@ -93,43 +87,30 @@ Example:
 fourok onboard
 fourok onboard --check
 fourok onboard --demo
+fourok onboard connectors
 ```
 
 Responsibilities:
 
 - explain prerequisites in plain language
 - check Docker, uv, Python, and repo/runtime files
-- start or verify the local stack
+- start or verify the local stack when appropriate
 - seed safe demo/fixture data when requested
-- run `fourok status`
-- run one demo `fourok retrieve` query
+- run or suggest `fourok status`
+- run or suggest one demo `fourok retrieve` query
 - never ask for or write secrets by default
 
-Important boundary:
+Connector setup decision: connector onboarding should live at `fourok onboard connectors`. It may guide the user, but should not silently collect or store secrets.
 
-- onboarding can tell the user how to add real connectors later
-- onboarding should not become connector auth, secret management, or deployment ops
+Installer decision: `install.sh` stays as the one-command bootstrap, but should end by telling the user to run `fourok onboard` next.
 
-Possible flow:
-
-```text
-1. Check prerequisites
-2. Install/sync local dependencies if needed
-3. Start local stack
-4. Seed demo data
-5. Verify status
-6. Show first retrieve command
-```
-
-## Where the rest should go
-
-### `fourok admin ...`
+### 4. `fourok admin ...`
 
 Administrative/operator tasks.
 
-This is for people maintaining the deployment, not casual users.
+This appears in `fourok --help`, but is clearly separated from daily client commands.
 
-Candidates to move under `fourok admin`:
+Candidates under `fourok admin`:
 
 - imports and ingestion
 - connector checkpoint/job inspection
@@ -139,21 +120,22 @@ Candidates to move under `fourok admin`:
 - runtime monitor
 - operator dashboard/status internals
 - acceptance/readiness/proof checks
+- low-level search/debug/eval commands
 
 Examples:
 
 ```bash
-fourok admin imports run
-fourok admin connectors status
-fourok admin audit summary
-fourok admin backup postgres
-fourok admin retention status
-fourok admin runtime monitor
+fourok admin connector-jobs
+fourok admin connector-checkpoint slack
+fourok admin audit-summary
+fourok admin postgres-backup
+fourok admin retention-status
+fourok admin runtime-monitor
 ```
 
-Question: should this be `fourok admin ...` or a separate `fourok-admin` binary?
+Decision: use `fourok admin ...`, not a separate `fourok-admin` binary, so there is still one product entrypoint.
 
-Default recommendation: `fourok admin ...` so there is still one binary, but the public help stays grouped and readable.
+## Developer command
 
 ### `fourok-dev ...`
 
@@ -175,9 +157,7 @@ Examples that belong here:
 - install-hooks
 - agent-diagnostics
 
-Default recommendation: keep `fourok-dev` as-is, but prune any client-facing wording from it.
-
-## Proposed public help screen
+## Public help screen
 
 ```text
 usage: fourok COMMAND ...
@@ -193,8 +173,6 @@ Commands:
 Run `fourok COMMAND --help` for details.
 ```
 
-If we want an even stricter client-facing view, hide `admin` from the top help and document it separately.
-
 ## Migration from current CLI
 
 Current visible commands should be mapped, not deleted blindly.
@@ -202,32 +180,22 @@ Current visible commands should be mapped, not deleted blindly.
 | Current area | New home |
 | --- | --- |
 | `retrieve` | `fourok retrieve` |
-| `search`, `search-state`, `ask` | hide, fold into `retrieve`, or move to `fourok admin debug ...` |
-| `health`, `operator-status` | `fourok status` internals |
-| `stage1-acceptance`, `acceptance-proof`, `internal-prod-readiness` | `fourok admin proof ...` or `fourok-dev` |
-| import/connectors commands | `fourok admin imports ...` / `fourok admin connectors ...` |
-| audit/retention/backup | `fourok admin audit ...`, `retention ...`, `backup ...` |
-| webhooks | `fourok admin webhooks ...` |
-| runtime monitor/services | `fourok admin runtime ...` |
-| `eval-retrieval` | `fourok-dev` or `fourok admin eval ...` |
+| `search`, `search-state`, `ask` | hidden compatibility or `fourok admin ...` |
+| `health`, `operator-status` | `fourok status` internals / `fourok admin health` |
+| `stage1-acceptance`, `acceptance-proof`, `internal-prod-readiness` | `fourok admin ...` or `fourok-dev` |
+| import/connectors commands | `fourok admin ...`; guided setup starts at `fourok onboard connectors` |
+| audit/retention/backup | `fourok admin ...` |
+| webhooks | `fourok admin ...` |
+| runtime monitor/services | `fourok admin ...` |
+| `eval-retrieval` | `fourok-dev` or `fourok admin ...` |
 
-## Open questions
+## Implementation slices
 
-1. Should the product command be only `retrieve`, or do we also want `ask` as an interactive friendly mode?
-2. Should `admin` appear in `fourok --help`, or be hidden but available?
-3. Should onboarding live in `fourok onboard`, or stay as `install.sh` plus `fourok status`?
-4. Should connector setup eventually be `fourok onboard connectors`, or is that clearly admin?
-5. Do we want `fourok status` to be safe for non-technical client users, or mostly operator-readable?
-
-## Suggested first implementation slice
-
-Do not move everything at once.
-
-1. Add `fourok status` as the friendly wrapper around current health/operator checks.
-2. Add `fourok onboard --check` as a no-side-effect guided check.
-3. Keep `fourok retrieve` as the main retrieval command.
-4. Move current long-tail commands behind `fourok admin` or hide them from top-level help.
-5. Update README to show only:
+1. Make `fourok --help` show only `retrieve`, `status`, `onboard`, and `admin`.
+2. Keep old top-level commands as hidden compatibility while moving docs/examples to `fourok admin ...`.
+3. Add `fourok status` as the friendly wrapper around current health/operator checks.
+4. Add `fourok onboard` and `fourok onboard connectors` as safe guidance commands.
+5. Update `install.sh` and README to point users to:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/project-fourok/fourok/main/install.sh | bash

@@ -1,12 +1,13 @@
 from __future__ import annotations
 
+import argparse
 import os
 from pathlib import Path
 
 from fourok.cli_parts.shared import DEFAULT_STATE
 
 
-def add_search_commands(subparsers) -> None:
+def add_search_commands(subparsers, *, public: bool = False) -> None:
     search_parser = subparsers.add_parser(
         "search",
         help="Search local email fixture regression data.",
@@ -54,23 +55,44 @@ def add_search_commands(subparsers) -> None:
         description="Build an LLM-ready retrieval augmentation block from governed state.",
     )
     retrieve_parser.add_argument("query")
-    retrieve_parser.add_argument("--candidate-limit", type=int, default=40)
-    retrieve_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
+    retrieve_parser.add_argument(
+        "--candidate-limit",
+        type=int,
+        default=40,
+        help=argparse.SUPPRESS if public else None,
+    )
+    retrieve_parser.add_argument(
+        "--state",
+        type=Path,
+        default=DEFAULT_STATE,
+        help=argparse.SUPPRESS if public else None,
+    )
     retrieve_parser.add_argument(
         "--database-url",
         default=os.environ.get("FOUROK_DATABASE_URL"),
-        help="SQLAlchemy database URL. Defaults to SQLite --state when unset.",
+        help=argparse.SUPPRESS
+        if public
+        else "SQLAlchemy database URL. Defaults to SQLite --state when unset.",
     )
     retrieve_parser.add_argument(
         "--format",
         choices=["block", "json"],
         default="block",
-        help="Output format. The default block format is designed for LLM prompt augmentation.",
+        help=argparse.SUPPRESS
+        if public
+        else "Output format. The default block format is designed for LLM prompt augmentation.",
+    )
+    retrieve_parser.add_argument(
+        "--json",
+        dest="format",
+        action="store_const",
+        const="json",
+        help="Print machine-readable JSON.",
     )
     retrieve_parser.add_argument(
         "--retrievers",
         default="keyword,vector",
-        help="Comma-separated retrievers to use: keyword,vector.",
+        help=argparse.SUPPRESS if public else "Comma-separated retrievers to use: keyword,vector.",
     )
 
     ask_parser = subparsers.add_parser(

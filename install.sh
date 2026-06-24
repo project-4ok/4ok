@@ -146,8 +146,9 @@ main() {
 
   log "fourok is ready"
   printf 'Project: %s\n' "$(pwd)"
-  printf 'Status:  uv run fourok-dev pipeline-ps\n'
-  printf 'Try:     uv run fourok search "refund cancellation payment"\n'
+  printf 'Next:    uv run fourok onboard\n'
+  printf 'Status:  uv run fourok status\n'
+  printf 'Try:     uv run fourok retrieve "refund cancellation payment"\n'
   printf '\nSecrets and connector credentials are not configured by this installer.\n'
 }
 

@@ -26,6 +26,30 @@ from fourok.storage.health import check_database_health, check_runtime_health
 
 
 def dispatch_runtime_commands(args: argparse.Namespace) -> bool:
+    if args.command == "onboard":
+        print(_onboard_message(args))
+        return True
+
+    if args.command == "status":
+        database_url = health_database_url(
+            state=DEFAULT_STATE,
+            state_explicit=False,
+            explicit_database_url=None,
+        )
+        state = create_governed_context_state(
+            state_path=DEFAULT_STATE,
+            database_url=database_url,
+            raw_store_path=None,
+        )
+        report = check_runtime_health(state)
+        if args.json:
+            print(json.dumps(report, indent=2, sort_keys=True))
+        else:
+            print(_format_client_status(report))
+        if report["status"] != "ok":
+            raise SystemExit(1)
+        return True
+
     if args.command == "stage1-acceptance":
         database_url = host_operator_database_url(
             state=args.state,
@@ -200,6 +224,57 @@ def dispatch_runtime_commands(args: argparse.Namespace) -> bool:
         )
         return True
     return False
+
+
+def _format_client_status(report: dict) -> str:
+    checks = report.get("checks", [])
+    counts = {check.get("name"): check.get("count") for check in checks if isinstance(check, dict)}
+    source_count = counts.get("source_records") or 0
+    retrieval_count = counts.get("retrieval_records") or 0
+    ready_line = "fourok is ready" if report.get("status") == "ok" else "fourok needs attention"
+    return "\n".join(
+        [
+            ready_line,
+            "",
+            f"Context: {source_count} source records, {retrieval_count} retrieval units",
+            "",
+            "Try:",
+            '  fourok retrieve "What changed this week?"',
+        ]
+    )
+
+
+def _onboard_message(args: argparse.Namespace) -> str:
+    if args.onboard_step == "connectors":
+        return "\n".join(
+            [
+                "Connector onboarding",
+                "",
+                "This command does not collect or store secrets.",
+                "Use it as a safe guide, then run operator commands when you are ready.",
+                "",
+                "Next:",
+                "  fourok admin connector-jobs",
+                "  fourok admin connector-checkpoint <source>",
+                "  fourok status",
+            ]
+        )
+    lines = [
+        "fourok onboarding",
+        "",
+        "1. Check Docker and local runtime prerequisites.",
+        "2. Start or verify the local stack from install.sh.",
+        "3. Run a client-safe status check.",
+        "4. Try one retrieval query.",
+        "",
+        "Next:",
+        "  fourok status",
+        '  fourok retrieve "What changed this week?"',
+        "  fourok onboard connectors",
+    ]
+    if args.demo:
+        lines.extend(["", "Demo:", '  fourok retrieve "refund cancellation payment"'])
+    return "\n".join(lines)
 
 
 def host_operator_database_url(

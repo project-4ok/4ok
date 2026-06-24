@@ -29,7 +29,7 @@ real work:
 Start from a fresh machine with Docker installed:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/project-fourok/fourok/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/project-4ok/4ok/main/install.sh | bash
 ```
 
 The installer clones or updates fourok, installs `uv` if needed, runs `uv sync`,
@@ -44,8 +44,8 @@ credentials later when you are ready to connect real sources.
 Prerequisites: Python 3.13 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
-git clone https://github.com/project-fourok/fourok.git
-cd fourok
+git clone https://github.com/project-4ok/4ok.git
+cd 4ok
 uv sync
 uv run fourok-dev check
 ```
@@ -89,8 +89,10 @@ The current internal v0 is a source-record-first retrieval runtime:
   supersede, and duplicate operations
 - derived retrieval units with source refs
 - permission/lifecycle-filtered search and retrieval augmentation
-- audit, dashboard, health, retention, backup/restore, and local runtime checks
-- stdio MCP tool surface: `search_fourok(query, limit?)`
+- audit, dashboard, health, retention, backup/restore, recurring ingestion,
+  webhooks, and local runtime checks
+- stdio and HTTP MCP retrieval surfaces: `search_fourok(query, limit?)` and
+  `operator_status()`
 
 Deferred or intentionally out of scope for the active stage:
 
@@ -102,46 +104,41 @@ Deferred or intentionally out of scope for the active stage:
 ## Project map
 
 ```text
-src/fourok/etl/extract/      source connectors, raw landing, fixture taps, PDF text import
-src/fourok/etl/load/         source changes, source records, context objects, retrieval records
-src/fourok/storage/          config, ORM models, health, raw store, PostgreSQL utilities
-src/fourok/retrieval/        API boundary, clients, search, evidence packs, retrieval evaluation
-src/fourok/retrieval/api.py  API-first retrieval boundary used by all clients
-src/fourok/retrieval/clients/ thin client wrappers for CLI, MCP, and future adapters
-src/fourok/governance/       permissions, lifecycle, retention, audit behavior
-src/fourok/runtime/          MCP server, operator runtime, observability, Dagster support
-src/fourok/devtools/         repeatable local development and operator commands
-fixtures/                 synthetic data for deterministic onboarding and tests
-docs/                     architecture, operations, compliance, and internal-v0 runbooks
+src/fourok/cli.py             public CLI entrypoint
+src/fourok/cli_parts/         CLI parsers and command handlers
+src/fourok/etl/extract/       source connectors, raw landing, fixture taps, document import
+src/fourok/etl/load/          source changes, source records, context objects, retrieval records
+src/fourok/etl/transform/     PII, token, and entity-linking transforms
+src/fourok/storage/           config, raw store, health, backups, schema contracts, ORM models
+src/fourok/retrieval/         API boundary, search/ranking, evidence packs, retrieval evaluation
+src/fourok/retrieval/api.py   API-first retrieval boundary used by CLI, MCP, and clients
+src/fourok/retrieval/clients/ thin wrappers for CLI, MCP, and future adapters
+src/fourok/governance/        permissions, lifecycle, retention, reveal policy, audit behavior
+src/fourok/runtime/           MCP, operator status, dashboards, observability, Dagster/runtime checks
+src/fourok/orchestration/     Dagster resource wiring
+src/fourok/honcho/            side experiment for OpenClaw/user-continuity memory
+src/fourok/agent_experience/  agent-facing Grafana helpers
+src/fourok/devtools/          local development gates, diagnostics, and goal audits
+src/fourok/secrets/           environment/secret loading helpers
+fixtures/                    synthetic data for deterministic onboarding and tests
+deploy/                      Docker, Compose, systemd, and runtime deployment artifacts
+docs/                        architecture, operations, compliance, and internal-v0 runbooks
 ```
 
-## Common commands
+## CLI shape
 
 ```bash
-# default local gate for development
-uv run fourok-dev check
-uv run fourok-dev fast  # backwards-compatible alias
-
-# full release-style local gate
-uv run fourok-dev full
-
-# run a narrow test target
-uv run fourok-dev test tests/retrieval -q
-
-# inspect CLI surfaces
-uv run fourok --help
-uv run fourok-dev --help
-
-# local golden-query retrieval/evidence evaluation
-uv run fourok eval-retrieval
-
-# operator health and dashboard checks
-uv run fourok health
-uv run fourok dashboard
-
-# Docker Compose config check with safe local placeholders
-uv run fourok-dev compose-config
+fourok onboard
+fourok status
+fourok retrieve "What changed this week?"
 ```
+
+The client-facing CLI stays small: `retrieve` for daily source-backed context,
+`status` for a non-technical readiness check, and `onboard` for guided setup.
+Operator and maintenance commands live under `fourok admin ...`; project-local
+developer commands stay in `fourok-dev ...`.
+
+See [CLI shape](docs/cli-shape.md) for the command boundary.
 
 ## Onboarding path for contributors
 
@@ -171,6 +168,7 @@ mixed with behavior changes.
 
 ## Status
 
-Prototype moving toward internal production v0. The live Gmail pilot has run;
-the current focus is a PostgreSQL-backed runtime with repeatable local gates,
-scheduling, observability, backup/restore, and operator-facing proof commands.
+Internal v0 is source-record-first and PostgreSQL-backed. The current focus is
+keeping the runtime proof loop small and useful: `retrieve`, MCP retrieval,
+operator status, scheduling, observability, backup/restore, and deployment
+readiness.

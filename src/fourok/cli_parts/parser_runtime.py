@@ -148,6 +148,13 @@ def add_runtime_commands(subparsers) -> None:
         help="Only require database connectivity; intended for container readiness checks.",
     )
 
+    status_parser = subparsers.add_parser(
+        "status",
+        help="Show whether fourok is ready to retrieve context.",
+    )
+    status_parser.set_defaults(state_explicit=False)
+    status_parser.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
+
     monitor_parser = subparsers.add_parser(
         "runtime-monitor",
         help="Keep the local app container alive and emit periodic health reports.",
