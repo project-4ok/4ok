@@ -87,6 +87,29 @@ enabled = []
 EOF
 }
 
+start_local_stack() {
+  export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-local-check}"
+  export DAGSTER_POSTGRES_PASSWORD="${DAGSTER_POSTGRES_PASSWORD:-local-check}"
+  export GCB_IMAGE_TAG="${GCB_IMAGE_TAG:-$(git rev-parse --short HEAD)}"
+  export GCB_DATABASE_URL="${GCB_DATABASE_URL:-postgresql+psycopg://gcb:${POSTGRES_PASSWORD}@postgres:5432/gcb}"
+
+  docker compose \
+    --profile observability \
+    --profile pipeline \
+    up \
+    --build \
+    --force-recreate \
+    -d \
+    postgres \
+    cerbos \
+    app \
+    observability \
+    dagster-postgres \
+    dagster-code \
+    dagster-webserver \
+    dagster-daemon
+}
+
 main() {
   log "4ok local onboarding"
   require_runtime
@@ -105,7 +128,7 @@ main() {
     log "Skipping container startup because GCB_INSTALL_START_STACK=0"
   else
     log "Starting local runtime, observability, and pipeline containers"
-    uv run gcb-dev stack-up
+    start_local_stack
   fi
 
   log "4ok is ready"
