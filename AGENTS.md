@@ -108,8 +108,13 @@ If two agents need the same lane, shrink the slice or serialize. Schema/storage 
 - Do not bundle unrelated fixes, refactors, formatting churn, or experiments into the same commit.
 - Treat each completed vertical slice as a commit trigger.
 - Before starting a new slice, run `git status --short`; if the previous slice is verified and uncommitted, commit it first.
+- Multiple agents may work in the same checkout. Other agents' modified or
+  untracked files must not block committing a verified slice: stage only the
+  files you touched, commit them atomically, and push immediately.
 - Use `git diff --stat` as a size trigger: when the uncommitted diff grows beyond roughly 200 changed lines, stop and consider whether a verified atomic commit should be made before continuing.
 - Commit immediately after verification when a slice changes behavior, docs, dependencies, schema, fixtures, or workflow.
+- Push each committed slice after local verification unless the user explicitly
+  asks to keep it local.
 - Do not let more than one coherent slice remain uncommitted unless the user explicitly asks to defer commits.
 - If work is interrupted, resume by checking whether the current diff can be split into already-verified atomic commits before writing more code.
 - Keep the system releasable.

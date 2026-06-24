@@ -1,128 +1,50 @@
 # 4ok
 
-A governed context layer for organizational AI.
+Governed company context retrieval for AI agents.
 
-This is not generic agent memory. It is controlled retrieval for a human using
-an agent.
-
-## Product Boundary
-
-The system ingests company context, normalizes it, and retrieves governed
-evidence for internal testing. PII masking, tokenization, and reveal are
-deferred from the active runtime while the source-record retrieval path is
-being simplified.
-
-Core flow:
+4ok helps a human-with-agent workflow answer questions from company context with
+source-backed, permission-filtered evidence. It is not generic agent memory and
+it does not ask the agent to make the business decision. The job is narrower:
+ingest operational sources, preserve traceable source records, retrieve only
+what the current role may see, and leave an audit trail.
 
 ```text
-source data -> raw store -> source records -> permission-filtered retrieval -> evidence -> audit
+source data -> raw store -> source records -> governed retrieval -> evidence -> audit
 ```
 
-The first bounded workflow is customer context from email. The system should
-summarize evidence and provide source refs. It should not make the business
-decision for the human.
+## Why 4ok exists
 
-## Active Agent Tools
+Teams are connecting agents to email, CRM, documents, issues, and chat. The hard
+part is not another vector search demo; it is making retrieval safe enough for
+real work:
 
-- `search_context(query)`
-- local stdio MCP wrapper: `uv run gcb-mcp`
+- every answer points back to source records
+- permissions and lifecycle state filter retrieval output before the agent sees it
+- raw payloads are preserved for replay and operator inspection when available
+- derived indexes can be rebuilt from source records
+- audits show what was searched or surfaced
 
-No reveal, `read_source`, `record_decision`, or canonical entity-resolution
-tool in the active internal stage.
+## Quick start
 
-## Current Stack
-
-- Python, uv, pytest, ruff
-- SQLAlchemy Core
-- PostgreSQL target, SQLite local fallback
-- Presidio for deferred PII experiments
-- Cerbos for deferred policy experiments
-- Infisical for connector credentials
-- Meltano/Singer-style connector experiments
-- pypdf for text-layer-only PDF import
-- Docling only in isolated/container experiments for now
-
-## Docs
-
-- [Plan](docs/plan.md)
-- [Architecture](docs/architecture.md)
-- [Implemented architecture flow](docs/architecture-flow.md)
-- [Contracts](docs/contracts.md)
-- [Operations](docs/operations.md)
-- [Internal production v0](docs/internal-prod.md)
-- [GCB MCP retrieval server](docs/mcp-retrieval.md)
-- [K3s deployment readiness](docs/k3s-deployment-readiness.md)
-- [Compliance](docs/compliance.md)
-- [Development](docs/development.md)
-- [Review log](docs/review.md)
-- [Changelog](CHANGELOG.md)
-
-## Experiment Docs
-
-- [Honcho experiment runbook](docs/honcho-experiment.md)
-
-Agent instructions live in [AGENTS.md](AGENTS.md).
-
-## Local Commands
-
-Install dependencies:
+Prerequisites: Python 3.13 and [uv](https://docs.astral.sh/uv/).
 
 ```bash
+git clone https://github.com/project-4ok/4ok.git
+cd 4ok
 uv sync
-```
-
-Run tests:
-
-```bash
-uv run pytest
-```
-
-Run the reusable local development gate:
-
-```bash
 uv run gcb-dev fast
 ```
 
-Run formatting/lint checks:
+That installs the project and runs the default local development gate: lint,
+format check, tracked tests, goal audit, and whitespace checks.
 
-```bash
-uv run ruff check src tests scripts
-uv run ruff format --check src tests scripts
-```
-
-Search an existing governed state:
-
-```bash
-uv run gcb search-state "refund cancellation payment"
-```
-
-Run the local MCP retrieval server for stdio clients:
-
-```bash
-uv run gcb-mcp
-```
-
-Import live/internal Gmail Singer records into governed state:
-
-```bash
-uv run gcb ingest-gmail-singer .local/gmail-pilot/tap-gmail-output.jsonl
-```
-
-Run the local golden-query retrieval/evidence check:
-
-```bash
-uv run gcb eval-retrieval
-```
-
-Fixture-only deterministic regression path:
-
-Search local email fixtures:
+Try a fixture-only retrieval path:
 
 ```bash
 uv run gcb search "refund cancellation payment"
 ```
 
-Import and query the context-substrate fixture:
+Try the source-record flow with a deterministic context snapshot:
 
 ```bash
 uv run gcb import-context-fixture \
@@ -135,124 +57,103 @@ uv run gcb search-state \
   --role linear:team:sales
 ```
 
-Prepare a repeatable ignored seed snapshot for acceptance runs:
+Run the local MCP retrieval server for stdio clients:
 
 ```bash
-uv run gcb prepare-seed-snapshot \
-  --input fixtures/context_substrate/source_snapshot_eval.json \
-  --output .local/seeds/context-substrate.json
+uv run gcb-mcp
 ```
 
-Run the local human-with-agent workflow harness:
+## What is implemented now
 
-```bash
-uv run gcb ask "refund iban canceled account" --role finance
+The current internal v0 is a source-record-first retrieval runtime:
+
+- Singer-style connector experiments for Gmail, Google Drive, Linear, Twenty,
+  Slack, fixtures, PDFs, and OpenClaw chat capture
+- raw landing plus stable `SourceRecord` envelopes
+- source-change import behavior for upsert, restore, restrict, delete,
+  supersede, and duplicate operations
+- derived retrieval units with source refs
+- permission/lifecycle-filtered search and retrieval augmentation
+- audit, dashboard, health, retention, backup/restore, and local runtime checks
+- stdio MCP tool surface: `search_context(query, limit?)`
+
+Deferred or intentionally out of scope for the active stage:
+
+- generic long-term agent memory
+- agent-made business decisions
+- GDPR-complete reveal/tokenization workflows
+- active `read_source`, `record_decision`, or entity-resolution tools
+
+## Project map
+
+```text
+src/gcb/etl/extract/      source connectors, raw landing, fixture taps, PDF text import
+src/gcb/etl/load/         source changes, source records, context objects, retrieval records
+src/gcb/storage/          config, ORM models, health, raw store, PostgreSQL utilities
+src/gcb/retrieval/        search, evidence packs, retrieval evaluation
+src/gcb/governance/       permissions, lifecycle, retention, audit behavior
+src/gcb/runtime/          MCP server, operator runtime, observability, Dagster support
+src/gcb/devtools/         repeatable local development and operator commands
+fixtures/                 synthetic data for deterministic onboarding and tests
+docs/                     architecture, operations, compliance, and internal-v0 runbooks
 ```
 
-Check runtime health:
+## Common commands
 
 ```bash
+# default local gate for development
+uv run gcb-dev fast
+
+# full release-style local gate
+uv run gcb-dev full
+
+# run a narrow test target
+uv run gcb-dev test tests/retrieval -q
+
+# inspect CLI surfaces
+uv run gcb --help
+uv run gcb-dev --help
+
+# local golden-query retrieval/evidence evaluation
+uv run gcb eval-retrieval
+
+# operator health and dashboard checks
 uv run gcb health
-```
-
-Inspect operator import/link/lifecycle/audit stats:
-
-```bash
 uv run gcb dashboard
+
+# Docker Compose config check with safe local placeholders
+uv run gcb-dev compose-config
 ```
 
-Process pending source-change webhook events:
+## Onboarding path for contributors
 
-```bash
-uv run gcb webhook-process --max-attempts 3 --retry-delay-seconds 60
-```
+1. Run `uv sync` and `uv run gcb-dev fast`.
+2. Read [Architecture](docs/architecture.md) for the source-record contract.
+3. Read [Development](docs/development.md) for the local gates.
+4. Pick a small vertical slice and prove it with a fixture, CLI command, or
+   executable acceptance check.
+5. Keep changes small: source records are truth; retrieval indexes are derived.
 
-Ingest a PDF that already has an extractable text layer:
+Agent contributors should also read [AGENTS.md](AGENTS.md). The project prefers
+test-first, observable acceptance criteria, small diffs, and no broad refactors
+mixed with behavior changes.
 
-```bash
-uv run gcb ingest-pdf ./contract.pdf --landing-dir .local/raw/pdf
-```
+## Documentation
 
-Inspect runtime boundaries:
-
-```bash
-uv run gcb runtime-services
-```
-
-Check Docker Compose host-port exposure:
-
-```bash
-uv run gcb access-smoke
-```
-
-Run Docker-backed local services:
-
-```bash
-export GCB_IMAGE_TAG="$(git rev-parse --short HEAD)"
-export POSTGRES_PASSWORD="local-dev-password"
-export GCB_DATABASE_URL="postgresql+psycopg://gcb:${POSTGRES_PASSWORD}@postgres:5432/gcb"
-docker compose up -d postgres cerbos
-```
-
-Start the resident app container when validating Compose restart behavior:
-
-```bash
-uv run gcb-dev app-up
-uv run gcb-dev pipeline-ps
-```
-
-`app-up` is the short wrapper for the longer `docker compose up --build
---force-recreate -d postgres cerbos app` form. It loads project `.env`, derives
-`GCB_IMAGE_TAG`, and supplies stable local Compose defaults so shell variables do
-not have to be repeated.
-
-The `app` service runs `gcb runtime-monitor` and uses `gcb health` as its
-Compose healthcheck. Use `docker compose run --rm app ...` for one-off
-operator commands.
-
-Run local observability:
-
-```bash
-uv run gcb-dev observability-up
-uv run gcb observability-smoke
-```
-
-Start the local Dagster pipeline from current source:
-
-```bash
-uv run gcb-dev pipeline-up
-uv run gcb operator-status --database-url "$GCB_DATABASE_URL" --config gcb.toml
-```
-
-`pipeline-up` derives `GCB_IMAGE_TAG` from the current commit, rebuilds tagged
-Dagster images, and recreates the pipeline containers. `operator-status` prints
-compact imported item counts, retrieval counts, latest connector job status, and
-per-source live ingestion freshness for local checks.
-
-Run the internal v0 acceptance proof:
-
-```bash
-uv run gcb acceptance-proof \
-  --config .local/gcb.toml \
-  --fixture .local/seeds/context-substrate.json \
-  --backup-database-url postgresql://gcb:gcb_dev_password@localhost:5432/gcb \
-  --backup-output .local/backups/acceptance-proof.dump
-```
-
-This deterministic regression proof covers fixture import with raw-store
-writes, webhook enqueue/process with raw payload landing, dashboard stats,
-search/evidence, audit, Compose access-boundary smoke, OTel smoke, and
-backup/restore command wiring. It is not the live operator import path.
-
-Run PostgreSQL integration tests:
-
-```bash
-GCB_TEST_DATABASE_URL=postgresql+psycopg://gcb:gcb_dev_password@localhost:5432/gcb \
-  uv run pytest tests/integration/test_postgres.py
-```
+- [Architecture](docs/architecture.md)
+- [Implemented architecture flow](docs/architecture-flow.md)
+- [Development](docs/development.md)
+- [Operations](docs/operations.md)
+- [Internal production v0](docs/internal-prod.md)
+- [GCB MCP retrieval server](docs/mcp-retrieval.md)
+- [Contracts](docs/contracts.md)
+- [Compliance](docs/compliance.md)
+- [K3s deployment readiness](docs/k3s-deployment-readiness.md)
+- [Review log](docs/review.md)
+- [Changelog](CHANGELOG.md)
 
 ## Status
 
-Prototype moving toward internal production v0. The real Gmail pilot has run;
-the next priority is a PostgreSQL-backed internal runtime with scheduling,
-backup/restore, and operator runbook.
+Prototype moving toward internal production v0. The live Gmail pilot has run;
+the current focus is a PostgreSQL-backed runtime with repeatable local gates,
+scheduling, observability, backup/restore, and operator-facing proof commands.
