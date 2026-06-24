@@ -101,12 +101,26 @@ start_local_stack() {
     --force-recreate \
     -d \
     postgres \
+    cerbos \
     app \
     observability \
     dagster-postgres \
     dagster-code \
     dagster-webserver \
     dagster-daemon
+}
+
+seed_fixture_data() {
+  log "Seeding fixture retrieval data"
+  for attempt in $(seq 1 12); do
+    if docker compose exec -T app /app/.venv/bin/gcb search "refund cancellation payment" >/dev/null; then
+      return 0
+    fi
+    log "Fixture seed not ready yet; retrying ($attempt/12)"
+    sleep 5
+  done
+  printf 'Could not seed fixture retrieval data. Check docker compose logs app and retry.\n' >&2
+  exit 1
 }
 
 main() {
@@ -128,6 +142,7 @@ main() {
   else
     log "Starting local runtime, observability, and pipeline containers"
     start_local_stack
+    seed_fixture_data
   fi
 
   log "4ok is ready"
