@@ -322,6 +322,7 @@ _REQUIRED_CONNECTOR_SECRETS = {
 def _onboard_message(args: argparse.Namespace) -> str:
     status_report = _safe_client_status_report()
     secret_report = _connector_secret_report()
+    embedding_report = _embedding_secret_report()
     dagster_secret_presence = _dagster_code_secret_presence()
     checks = status_report.get("checks", [])
     counts = {check.get("name"): check.get("count") for check in checks if isinstance(check, dict)}
@@ -354,6 +355,7 @@ def _onboard_message(args: argparse.Namespace) -> str:
             "    1. fourok onboard initial-run   # reloads .env into dagster-code and imports data",
             "    2. fourok status              # confirm the connector imported context",
             "    3. fourok retrieve \"What changed this week?\"",
+            *_embedding_lines(embedding_report),
             "",
             "Need another connector?",
             "  Create a GitHub issue on project-4ok/4ok with the workspace app,",
@@ -497,6 +499,31 @@ def _connector_lines(secret_report: dict[str, object]) -> list[str]:
         else:
             lines.append(f"  {connector}: configured")
     return lines or ["  none configured"]
+
+
+def _embedding_secret_report() -> dict[str, object]:
+    env = _dotenv_values(Path(".env"))
+    env.update({key: value for key, value in os.environ.items() if value})
+    provider = str(env.get("FOUROK_EMBEDDING_PROVIDER") or "").strip().casefold()
+    if env.get("OPENAI_API_KEY") or provider == "openai":
+        return {"status": "ok", "provider": "openai"}
+    return {"status": "missing", "provider": "hash"}
+
+
+def _embedding_lines(embedding_report: dict[str, object]) -> list[str]:
+    if embedding_report.get("status") != "missing":
+        return [
+            "",
+            "Better semantic search:",
+            "  OPENAI_API_KEY is configured for OpenAI embeddings.",
+        ]
+    return [
+        "",
+        "Better semantic search:",
+        "  Set OPENAI_API_KEY in .env so fourok uses OpenAI embeddings.",
+        "  Without it, fourok falls back to local hash embeddings, which are much weaker.",
+        "  After adding OPENAI_API_KEY, run fourok onboard initial-run to rebuild embeddings.",
+    ]
 
 
 def _dagster_code_secret_presence() -> dict[str, object]:

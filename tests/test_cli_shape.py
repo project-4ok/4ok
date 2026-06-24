@@ -235,6 +235,10 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
         "fourok.runtime.cli._dagster_code_secret_presence",
         lambda: {"status": "missing", "missing": ["SLACK_BOT_TOKEN"]},
     )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._embedding_secret_report",
+        lambda: {"status": "missing", "provider": "hash"},
+    )
 
     main()
 
@@ -248,6 +252,9 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
     assert "2. fourok status" in output
     assert "3. fourok retrieve \"What changed this week?\"" in output
     assert "google_drive: missing GOOGLE_WORKSPACE_DRIVE_IDS" in output
+    assert "Better semantic search:" in output
+    assert "Set OPENAI_API_KEY in .env" in output
+    assert "Without it, fourok falls back to local hash embeddings" in output
     assert "Need another connector?" in output
     assert "gh issue create --repo project-4ok/4ok" in output
     assert "dagster-code is not receiving connector credentials" in output
