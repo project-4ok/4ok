@@ -71,7 +71,7 @@ write_local_config() {
   log "Writing local runtime config: .local/gcb.toml"
   cat >.local/gcb.toml <<'EOF'
 [raw_store]
-backend = "file"
+backend = "filesystem"
 path = "/app/.local/raw"
 
 [backup]
@@ -101,7 +101,6 @@ start_local_stack() {
     --force-recreate \
     -d \
     postgres \
-    cerbos \
     app \
     observability \
     dagster-postgres \

@@ -11,8 +11,8 @@ still needs to be done lives in [docs/plan.md](docs/plan.md).
   Cerbos, Honcho, Honcho Postgres/Redis, and the Python app container.
 - Added `gcb honcho-preflight`, `gcb honcho-sync`, `gcb honcho-smoke`, and
   `gcb honcho-receipt` for local operation and verification.
-- Wired Infisical SDK machine-identity auth into the app container and fixed
-  Honcho preflight to use the same Infisical environment defaults as sync.
+- Wired env/.env secret loading machine-identity auth into the app container and fixed
+  Honcho preflight to use the same env/.env environment defaults as sync.
 - Added bounded live source collection for Linear, Twenty workspace members,
   and Slack user identity.
 - Added email-based employee linking across Twenty workspace members, Linear
@@ -24,7 +24,7 @@ still needs to be done lives in [docs/plan.md](docs/plan.md).
 - Added source-ref based Honcho idempotency, write receipts, source imports,
   catalog refresh state, Linear checkpoints, overlap windows, changed-record
   superseding metadata, and receipt inspection.
-- Verified local Docker E2E with Infisical-backed live sources:
+- Verified local Docker E2E with env/.env-backed live sources:
   preflight passed for Linear, Slack, and Twenty; first bounded sync wrote 4
   Honcho messages; second sync wrote 0 messages and skipped already imported
   source refs.
@@ -43,12 +43,12 @@ still needs to be done lives in [docs/plan.md](docs/plan.md).
 - Added an OSS ownership map for connector/parser/policy/search decisions.
 - Added a Gmail/Workspace connector pilot checklist.
 - Added `scripts/run_gmail_pilot.py` to fetch Gmail pilot credentials from
-  Infisical or an ignored local fallback, validate required settings, and
+  external secret manager or an ignored local fallback, validate required settings, and
   capture raw tap output without printing secret values.
-- Added Gmail pilot preflight handling for environment-based Infisical metadata
-  and Infisical credential source errors.
-- Replaced the first Infisical CLI shell-out with a reusable
-  `gcb.secrets.infisical` provider backed by the official `infisicalsdk`
+- Added Gmail pilot preflight handling for environment-based env/.env metadata
+  and env/.env credential source errors.
+- Replaced the first external secret manager CLI shell-out with a reusable
+  `gcb.secrets.external-secret-manager` provider backed by the official `external-secret-managersdk`
   package.
 - Added `scripts/inspect_gmail_pilot_output.py` to summarize raw Singer output
   shape without printing email body, attachment body, or secret values.

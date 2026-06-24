@@ -1,29 +1,29 @@
-# GCB MCP Retrieval Server
+# 4OK MCP Retrieval Server
 
-GCB exposes a local stdio MCP server for agents that need to test retrieval
+4OK exposes a local stdio MCP server for agents that need to test retrieval
 against governed state. The server wraps the same `GovernedContext.search_context`
-path used by `gcb search-state`.
+path used by `4ok search-state`.
 
 ## Tools
 
-- `search_gcb`: searches governed retrieval units with permission filtering and
+- `search_4ok`: searches governed retrieval units with permission filtering and
   returns `query`, `results`, `summary`, `result_candidates`, `evidence_items`,
   object/entity fields, `limitations`, and `audit_ref`.
 - `operator_status`: returns the same compact runtime operator status as
-  `gcb operator-status`, including active imported-item counts, retrieval
+  `4ok operator-status`, including active imported-item counts, retrieval
   record totals/status counts, connector job freshness, and latest live
   ingestion metadata.
 
 Both tools accept optional `state`, `database_url`, and `config` arguments. If
 `database_url` is omitted and `state` is not provided, the server uses
-`GCB_DATABASE_URL`; otherwise it falls back to the explicit or default SQLite
-state path. `config` points at the normal GCB runtime TOML file and applies the
+`FOUR_OK_DATABASE_URL`; otherwise it falls back to the explicit or default SQLite
+state path. `config` points at the normal 4OK runtime TOML file and applies the
 configured raw-store and retrieval settings.
 
 ## Run
 
 ```bash
-uv run gcb-mcp
+uv run 4ok-mcp
 ```
 
 Hermes can connect to the stdio server with this native MCP config shape. Set
@@ -32,13 +32,13 @@ Hermes can connect to the stdio server with this native MCP config shape. Set
 ```json
 {
   "mcpServers": {
-    "gcb-retrieval": {
+    "4ok-retrieval": {
       "command": "uv",
-      "args": ["run", "gcb-mcp"],
+      "args": ["run", "4ok-mcp"],
       "cwd": "/home/simon/Projects/project-4ok/4ok",
       "env": {
-        "GCB_DATABASE_URL": "postgresql+psycopg://gcb:...@127.0.0.1:5432/gcb",
-        "GCB_CONFIG_PATH": "/home/simon/Projects/project-4ok/4ok/gcb.toml"
+        "FOUR_OK_DATABASE_URL": "postgresql+psycopg://4ok:...@127.0.0.1:5432/4ok",
+        "FOUR_OK_CONFIG_PATH": "/home/simon/Projects/project-4ok/4ok/4ok.toml"
       }
     }
   }
@@ -75,8 +75,8 @@ Live retrieval comparison, to run against the local runtime database after the
 database is available:
 
 ```bash
-uv run gcb search-state "refund escalation" \
-  --database-url "$GCB_DATABASE_URL" \
+uv run 4ok search-state "refund escalation" \
+  --database-url "$FOUR_OK_DATABASE_URL" \
   --role operator \
   --limit 5
 ```
@@ -84,10 +84,10 @@ uv run gcb search-state "refund escalation" \
 Interactive MCP inspection, when the local runtime database is available:
 
 ```bash
-npx -y @modelcontextprotocol/inspector uv run gcb-mcp
+npx -y @modelcontextprotocol/inspector uv run 4ok-mcp
 ```
 
-Expected tools are `search_gcb` and `operator_status`. Use `search_gcb` with the
+Expected tools are `search_4ok` and `operator_status`. Use `search_4ok` with the
 same query, `limit`, roles, and optional `config` as the CLI comparison.
 
 SDK stdio smoke check:
@@ -99,7 +99,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 async def main():
-    params = StdioServerParameters(command="uv", args=["run", "gcb-mcp"])
+    params = StdioServerParameters(command="uv", args=["run", "4ok-mcp"])
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()

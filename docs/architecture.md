@@ -240,11 +240,10 @@ Internal v0 runs as Docker Compose on one host:
 
 - Python app container
 - PostgreSQL
-- Cerbos only for deferred policy experiments unless actively needed
 - local observability backend
 - persistent volumes
 - pinned image references
-- Infisical-backed secrets
+- env/.env-backed secrets
 
 The next production-readiness release should add Dagster as the pipeline
 orchestrator and visual control plane. Dagster owns the asset graph, schedules,

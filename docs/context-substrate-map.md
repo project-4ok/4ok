@@ -95,8 +95,7 @@ contribute to identity merging when the evidence type is strong enough.
 | OpenViking | Resource-centric context filesystem, URIs, hierarchical retrieval | Entity linking and governance still ours; less clearly a temporal entity/fact graph | Optional docs/resource layer to revisit |
 | Microsoft GraphRAG | Batch corpus summarization, themes, communities, broad sensemaking | Less suited to live day-2 enterprise records, permissions, and precise evidence lifecycle | Possible secondary analysis layer |
 | Meltano/Singer | Connector execution, state/checkpoint patterns, existing taps | Source permissions and rich domain semantics often incomplete | Use where connector output is sufficient |
-| Infisical | Secret retrieval and runtime credential management | Product auth/policy still separate | Use for runtime connector credentials |
-| Cerbos | Policy decisions and workflow/purpose checks | Relationship-heavy access may need more modeling later | Current v1 reveal/source policy candidate |
+| Env/.env | Secret retrieval and runtime credential management | Product auth/policy still separate | Use for runtime connector credentials |
 | Presidio | PII recognizers and tokenization pipeline support | Domain-specific detection quality still needs tests | Current PII baseline |
 | Docling/unstructured | Document/PDF parsing and OCR pipeline candidates | Large footprint and extraction quality need isolated validation | Containerized experiments only for now |
 
@@ -105,11 +104,10 @@ contribute to identity merging when the evidence type is strong enough.
 Likely outsource:
 
 - source connector state where Singer taps are good enough
-- secret delivery through Infisical
+- secret delivery through env/.env or external runtime injection
 - graph episode/entity/fact extraction experiment through Graphiti OSS
 - graph storage/traversal through Graphiti backend or Neo4j
 - retrieval orchestration pieces through LlamaIndex where useful
-- policy evaluation through Cerbos
 - PII detection baseline through Presidio
 - agent workflow orchestration through LangGraph if needed
 

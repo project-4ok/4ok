@@ -36,8 +36,8 @@ Append audit-relevant open questions here. Keep this file short.
   strategy, and whether any broker is needed.
 - Identity: choose Keycloak or authentik; define how human and agent identity,
   groups, and trusted claims enter `PrincipalContext`.
-- Policy: confirm Cerbos is enough for v1 reveal/source-access policy before
-  introducing OpenFGA.
+- Policy: define the minimal in-process v1 source-access policy before
+  introducing an external policy engine such as OpenFGA.
 - Raw source storage: choose production object storage, encryption, deletion,
   and retention behavior.
 - Internal v0 retention/deletion policy: raw-source, audit-event, terminal
@@ -66,9 +66,8 @@ Append audit-relevant open questions here. Keep this file short.
   policy, and ingestion mistakes. It should preserve evidence, correction
   reason, reviewer identity, and audit history. Do not build this during the
   current internal-v0 implementation goal.
-- Infisical SDK: confirm license/dependency footprint before productionizing
+- env/.env loader: confirm license/dependency footprint before productionizing
   in-process secret access.
-- Infisical self-hosting: confirm `INFISICAL_API_URL` / host conventions and
   accepted universal-auth env names stay aligned across Hermes and production
   bootstrap.
 - Honcho runtime: current Compose builds Honcho from the ignored local
@@ -100,7 +99,7 @@ Append audit-relevant open questions here. Keep this file short.
   repository scripts. Decide whether production images should include those
   scripts or the runbook should use dedicated worker images.
 - Operator live ingestion: `gcb-dev operator-live --dry-run` is proven locally,
-  but this worktree has no `.env` or Infisical source settings and no running
+  but this worktree has no `.env` or env/.env source settings and no running
   local Dagster services. Run the actual live command against a credentialed
   local environment before treating live SaaS ingestion as operationally
   verified.

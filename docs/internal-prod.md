@@ -12,7 +12,7 @@ that lets us use the system on actual data and learn from operations.
 In scope:
 
 - one controlled Gmail source
-- Infisical-backed connector credentials
+- env/.env-backed connector credentials
 - PostgreSQL as the internal runtime database
 - restricted filesystem raw store
 - scheduled Gmail sync/retry
@@ -44,7 +44,6 @@ Docker Compose services
   -> app service running gcb runtime-monitor
   -> Python app / gcb CLI image for one-off operator commands
   -> PostgreSQL with pgvector
-  -> Cerbos
   -> optional local observability profile
 
 Host paths
@@ -57,8 +56,7 @@ Compose volumes
   -> observability-data mounted at /data
 ```
 
-Use Docker Compose locally/on the host for PostgreSQL, Cerbos, and the Python
-app. The resident `app` service runs `gcb runtime-monitor` so Compose restart
+Use Docker Compose locally/on the host for PostgreSQL and the Python app. The resident `app` service runs `gcb runtime-monitor` so Compose restart
 state reflects a real long-running process, while `gcb health` remains the
 service healthcheck. The app container should be the only supported way to run
 one-off `gcb` and Gmail pilot commands in internal prod. Build the image from
@@ -84,7 +82,6 @@ Internal prod v0 has no public service surface.
 - `app` does not publish an HTTP port; operators run `gcb` through
   `docker compose run --rm app ...`.
 - PostgreSQL is bound to `127.0.0.1:5432` for local operator/debug access only.
-- Cerbos is bound to `127.0.0.1:3592` and `127.0.0.1:3593`.
 - The optional observability profile binds Grafana and OTLP endpoints to
   `127.0.0.1`.
 - OpenClaw should use a trusted internal plugin/service integration for the RAG
@@ -157,20 +154,14 @@ Set non-secret environment:
 export GCB_IMAGE_TAG="$(git rev-parse --short HEAD)"
 export GCB_DATABASE_URL="postgresql+psycopg://gcb:<password>@postgres:5432/gcb"
 export POSTGRES_PASSWORD="<database-password>"
-export GCB_GMAIL_INFISICAL_PROJECT_ID="<project-id>"
-export GCB_GMAIL_INFISICAL_ENV="prod"
-export GCB_GMAIL_INFISICAL_PATH="/gmail-pilot"
 export GCB_EMBEDDING_PROVIDER="openai"
 export GCB_OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
 export GCB_EMBEDDING_DIMENSIONS="256"
-export INFISICAL_API_URL="<infisical-host>"
 ```
 
 Set machine identity through the host secret mechanism:
 
 ```bash
-export INFISICAL_CLIENT_ID="<machine-client-id>"
-export INFISICAL_CLIENT_SECRET="<machine-client-secret>"
 export OPENAI_API_KEY="<openai-api-key>"
 ```
 
@@ -178,10 +169,10 @@ Do not use the local env-file fallback for internal prod.
 
 ## Bring-Up Checklist
 
-1. Start PostgreSQL and Cerbos.
+1. Start PostgreSQL.
 
    ```bash
-   docker compose up -d postgres cerbos
+   docker compose up -d postgres
    docker compose build app
    ```
 
@@ -198,9 +189,6 @@ Do not use the local env-file fallback for internal prod.
    docker compose run --rm --entrypoint python app \
      scripts/run_gmail_pilot.py \
        --preflight \
-       --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
-       --infisical-env "$GCB_GMAIL_INFISICAL_ENV" \
-       --infisical-path "$GCB_GMAIL_INFISICAL_PATH"
    ```
 
 4. Run the Gmail sync into PostgreSQL.
@@ -209,9 +197,6 @@ Do not use the local env-file fallback for internal prod.
    docker compose run --rm --entrypoint python app \
      scripts/run_gmail_pilot.py \
        --inspect-output \
-       --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
-       --infisical-env "$GCB_GMAIL_INFISICAL_ENV" \
-       --infisical-path "$GCB_GMAIL_INFISICAL_PATH" \
        --database-url "$GCB_DATABASE_URL"
    ```
 
@@ -323,7 +308,7 @@ Template units live in `deploy/systemd/`:
 Copy them to the host systemd unit directory, set `WorkingDirectory`,
 `GCB_IMAGE_TAG`, `GCB_CONFIG_PATH`, and connector-specific arguments for the
 deployed source. Copy `deploy/systemd/gcb.env.example` to `/etc/gcb/gcb.env`,
-set the real database URL and Infisical machine identity there, restrict it to
+set the real database URL and external secret manager machine identity there, restrict it to
 the operator/service account, and do not commit it:
 
 ```bash
@@ -486,7 +471,7 @@ explicitly controlled now.
 - `gcb retention-status` reports configured raw/audit/webhook/backup windows,
   current deletion-eligible counts, and source-record/retrieval-unit lifecycle
   coverage before destructive purge commands are run.
-- Gmail preflight passes through Infisical.
+- Gmail preflight passes through external secret manager.
 - Gmail sync writes job history and connector checkpoint to PostgreSQL.
 - Gmail records ingest into governed state.
 - Search, audit, and evidence links work against PostgreSQL.

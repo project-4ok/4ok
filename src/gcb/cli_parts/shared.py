@@ -59,10 +59,3 @@ def _add_source_snapshot_args(parser: argparse.ArgumentParser) -> None:
         type=int,
         default=_int_env("HONCHO_CHECKPOINT_OVERLAP_MINUTES", 5),
     )
-    parser.add_argument(
-        "--infisical-project-id",
-        default=os.environ.get("INFISICAL_PROJECT_ID"),
-    )
-    parser.add_argument("--infisical-env", default=os.environ.get("INFISICAL_ENV", "runtime"))
-    parser.add_argument("--infisical-path", default=os.environ.get("INFISICAL_PATH", "/"))
-    parser.add_argument("--infisical-domain", default=os.environ.get("INFISICAL_DOMAIN", ""))

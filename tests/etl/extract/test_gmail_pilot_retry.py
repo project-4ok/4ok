@@ -19,7 +19,6 @@ sys.modules[SPEC.name] = gmail_pilot
 SPEC.loader.exec_module(gmail_pilot)
 
 GmailPilotConfig = gmail_pilot.GmailPilotConfig
-fetch_infisical_env = gmail_pilot.fetch_infisical_env
 load_env_file = gmail_pilot.load_env_file
 load_pilot_env = gmail_pilot.load_pilot_env
 load_pilot_env_with_secrets = gmail_pilot.load_pilot_env_with_secrets
@@ -43,76 +42,8 @@ class FakeRunner:
         raise AssertionError(f"Unexpected command: {command}")
 
 
-class FakeUniversalAuth:
-    def __init__(self) -> None:
-        self.login_calls: list[dict[str, str]] = []
-
-    def login(self, *, client_id: str, client_secret: str) -> None:
-        self.login_calls.append({"client_id": client_id, "client_secret": client_secret})
 
 
-class FakeSecrets:
-    def __init__(self) -> None:
-        self.list_calls: list[dict[str, str]] = []
-
-    def list_secrets(self, **kwargs):
-        self.list_calls.append(kwargs)
-        return type(
-            "SecretList",
-            (),
-            {
-                "secrets": [
-                    type(
-                        "Secret",
-                        (),
-                        {
-                            "secretKey": "TAP_GMAIL_USER_ID",
-                            "secretValue": "pilot@example.com",
-                        },
-                    )(),
-                    type(
-                        "Secret",
-                        (),
-                        {
-                            "secretKey": "TAP_GMAIL_OAUTH_CREDENTIALS_CLIENT_ID",
-                            "secretValue": "client-id",
-                        },
-                    )(),
-                    type(
-                        "Secret",
-                        (),
-                        {
-                            "secretKey": "TAP_GMAIL_OAUTH_CREDENTIALS_CLIENT_SECRET",
-                            "secretValue": "client-secret",
-                        },
-                    )(),
-                    type(
-                        "Secret",
-                        (),
-                        {
-                            "secretKey": "TAP_GMAIL_OAUTH_CREDENTIALS_REFRESH_TOKEN",
-                            "secretValue": "refresh-token",
-                        },
-                    )(),
-                ]
-            },
-        )()
-
-
-class FakeInfisicalClient:
-    instances: list[FakeInfisicalClient] = []
-
-    def __init__(self, *, host: str, token: str | None = None, cache_ttl: int = 60) -> None:
-        self.host = host
-        self.token = token
-        self.cache_ttl = cache_ttl
-        self.auth = type("FakeAuth", (), {"universal_auth": FakeUniversalAuth()})()
-        self.secrets = FakeSecrets()
-        self.closed = False
-        self.instances.append(self)
-
-    def close(self) -> None:
-        self.closed = True
 
 
 def _required_env_text() -> str:

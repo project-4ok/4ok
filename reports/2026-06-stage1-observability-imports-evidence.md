@@ -79,11 +79,6 @@ env -u POSTGRES_PASSWORD \
   -u DAGSTER_POSTGRES_PASSWORD \
   -u GCB_IMAGE_TAG \
   -u GCB_DATABASE_URL \
-  -u INFISICAL_TOKEN \
-  -u INFISICAL_CLIENT_ID \
-  -u INFISICAL_CLIENT_SECRET \
-  -u INFISICAL_UNIVERSAL_AUTH_CLIENT_ID \
-  -u INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET \
   -u TAP_GMAIL_USER_ID \
   -u TAP_GMAIL_OAUTH_CREDENTIALS_CLIENT_ID \
   uv run pytest -q
@@ -320,7 +315,7 @@ Safe result summary:
   "status": "blocked",
   "stage": "credentials",
   "credential_inputs": {
-    "has_infisical_project_id": false,
+    "has_external-secret-manager_project_id": false,
     "has_slack_token": false
   },
   "runtime_database": {

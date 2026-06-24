@@ -20,13 +20,7 @@ from gcb.etl.extract.sync_jobs import (
     start_connector_job,
 )
 from gcb.governance.state import create_governed_context_state
-from gcb.secrets.infisical import (
-    InfisicalClientFactory,
-    InfisicalConfig,
-    SecretProviderError,
-    fetch_infisical_secrets,
-    parse_dotenv_export_lines,
-)
+from gcb.secrets.env import parse_dotenv_export_lines
 
 REQUIRED_ENV_VARS = (
     "TAP_GMAIL_USER_ID",
@@ -42,8 +36,6 @@ DEFAULT_ENV_FILE = Path(".local/gmail-pilot/tap-gmail.env")
 DEFAULT_OUTPUT = Path(".local/gmail-pilot/tap-gmail-output.jsonl")
 DEFAULT_INSPECTION_OUTPUT = Path(".local/gmail-pilot/inspection-summary.json")
 DEFAULT_STATE_INPUT = Path(".local/gmail-pilot/tap-gmail-input-state.json")
-DEFAULT_INFISICAL_ENV = "dev"
-DEFAULT_INFISICAL_PATH = "/gmail-pilot"
 
 Runner = Callable[..., subprocess.CompletedProcess[str]]
 
@@ -54,10 +46,6 @@ class GmailPilotConfig:
     output: Path
     command: tuple[str, ...]
     inspection_output: Path = DEFAULT_INSPECTION_OUTPUT
-    infisical_project_id: str = ""
-    infisical_env: str = DEFAULT_INFISICAL_ENV
-    infisical_path: str = DEFAULT_INFISICAL_PATH
-    infisical_domain: str = ""
     state_path: Path | None = None
     state_input_path: Path | None = DEFAULT_STATE_INPUT
     database_url: str | None = None
@@ -81,50 +69,10 @@ def load_pilot_env(config: GmailPilotConfig, *, runner: Runner = subprocess.run)
     return load_pilot_env_with_secrets(config)
 
 
-def load_pilot_env_with_secrets(
-    config: GmailPilotConfig,
-    *,
-    client_factory=None,
-) -> dict[str, str]:
-    values: dict[str, str] = {}
-    if config.infisical_project_id:
-        values.update(
-            fetch_infisical_env(
-                project_id=config.infisical_project_id,
-                environment=config.infisical_env,
-                path=config.infisical_path,
-                domain=config.infisical_domain,
-                client_factory=client_factory,
-            )
-        )
-    if config.env_file.exists():
-        values.update(load_env_file(config.env_file))
-    elif not config.infisical_project_id:
+def load_pilot_env_with_secrets(config: GmailPilotConfig) -> dict[str, str]:
+    if not config.env_file.exists():
         raise FileNotFoundError(f"Missing Gmail pilot env file: {config.env_file}")
-    return values
-
-
-def fetch_infisical_env(
-    *,
-    project_id: str,
-    environment: str,
-    path: str,
-    domain: str = "",
-    client_factory: InfisicalClientFactory | None = None,
-) -> dict[str, str]:
-    try:
-        kwargs = {"client_factory": client_factory} if client_factory is not None else {}
-        return fetch_infisical_secrets(
-            InfisicalConfig(
-                project_id=project_id,
-                environment=environment,
-                path=path,
-                domain=domain,
-            ),
-            **kwargs,
-        )
-    except SecretProviderError as error:
-        raise RuntimeError(str(error)) from error
+    return load_env_file(config.env_file)
 
 
 def validate_required_env(values: Mapping[str, str]) -> list[str]:
@@ -143,7 +91,6 @@ def run_gmail_pilot(
     *,
     runner: Runner = subprocess.run,
     inspect_output: bool = False,
-    secret_client_factory: InfisicalClientFactory | None = None,
     now: datetime | None = None,
 ) -> int:
     sync_state = _sync_state(config)
@@ -178,7 +125,7 @@ def run_gmail_pilot(
             )
             retry_attempt = retry.attempt
 
-    env_values = load_pilot_env_with_secrets(config, client_factory=secret_client_factory)
+    env_values = load_pilot_env_with_secrets(config)
     missing = validate_required_env(env_values)
     if missing:
         print(json.dumps(preflight_report(env_values), indent=2, sort_keys=True), file=sys.stderr)
@@ -252,17 +199,16 @@ def preflight_gmail_pilot(
     config: GmailPilotConfig,
     *,
     runner: Runner = subprocess.run,
-    secret_client_factory: InfisicalClientFactory | None = None,
 ) -> int:
     try:
-        env_values = load_pilot_env_with_secrets(config, client_factory=secret_client_factory)
+        env_values = load_pilot_env_with_secrets(config)
     except FileNotFoundError as error:
         print(
             json.dumps(
                 {
                     "status": "missing_credential_source",
                     "error": str(error),
-                    "infisical_project_configured": bool(config.infisical_project_id),
+                    "credential_source": "env_file",
                 },
                 indent=2,
                 sort_keys=True,
@@ -275,7 +221,7 @@ def preflight_gmail_pilot(
                 {
                     "status": "credential_source_error",
                     "error": str(error),
-                    "infisical_project_configured": bool(config.infisical_project_id),
+                    "credential_source": "env_file",
                 },
                 indent=2,
                 sort_keys=True,
@@ -302,19 +248,6 @@ def main() -> int:
     parser.add_argument("--env-file", type=Path, default=DEFAULT_ENV_FILE)
     parser.add_argument("--output", type=Path, default=DEFAULT_OUTPUT)
     parser.add_argument("--inspection-output", type=Path, default=DEFAULT_INSPECTION_OUTPUT)
-    parser.add_argument(
-        "--infisical-project-id", default=os.environ.get("GCB_GMAIL_INFISICAL_PROJECT_ID", "")
-    )
-    parser.add_argument(
-        "--infisical-env", default=os.environ.get("GCB_GMAIL_INFISICAL_ENV", DEFAULT_INFISICAL_ENV)
-    )
-    parser.add_argument(
-        "--infisical-path",
-        default=os.environ.get("GCB_GMAIL_INFISICAL_PATH", DEFAULT_INFISICAL_PATH),
-    )
-    parser.add_argument(
-        "--infisical-domain", default=os.environ.get("GCB_GMAIL_INFISICAL_DOMAIN", "")
-    )
     parser.add_argument(
         "--state-path",
         type=Path,
@@ -365,10 +298,6 @@ def main() -> int:
         output=args.output,
         command=tuple(args.command),
         inspection_output=args.inspection_output,
-        infisical_project_id=args.infisical_project_id,
-        infisical_env=args.infisical_env,
-        infisical_path=args.infisical_path,
-        infisical_domain=args.infisical_domain,
         state_path=args.state_path,
         state_input_path=args.state_input_path,
         database_url=args.database_url,

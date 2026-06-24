@@ -16,30 +16,6 @@ services:
       timeout: 5s
       retries: 12
 
-  cerbos:
-    image: ghcr.io/cerbos/cerbos:0.53.0
-    restart: unless-stopped
-    command: ["server", "--config=/config/config.yaml"]
-    ports:
-      - "127.0.0.1:3592:3592"
-      - "127.0.0.1:3593:3593"
-    volumes:
-      - ./cerbos/config.yaml:/config/config.yaml:ro
-      - ./cerbos/policies:/policies:ro
-    healthcheck:
-      test:
-        [
-          "CMD",
-          "/cerbos",
-          "healthcheck",
-          "--config=/config/config.yaml",
-          "--kind=http",
-          "--insecure",
-        ]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-
   observability:
     profiles: ["observability"]
     image: grafana/otel-lgtm:0.28.0
@@ -260,8 +236,6 @@ services:
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-gcb-app}
     depends_on:
       postgres:
-        condition: service_healthy
-      cerbos:
         condition: service_healthy
     volumes:
       - gcb-local:/app/.local

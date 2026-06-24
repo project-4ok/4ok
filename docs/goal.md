@@ -46,7 +46,7 @@ Source code and executable tests are truth; this file tracks only current gates.
 - [ ] Add GCB pipeline/runtime deployment to the 4OK infrastructure repo.
   Proof: dev gateway/runtime assets can deploy Postgres/pgvector, GCB app,
   Dagster webserver/code/daemon, metrics/exporter, and Grafana/LGTM-equivalent
-  observability with secrets resolved through Infisical.
+  observability with secrets resolved through env/.env.
 - [ ] Install the standalone `gcb` CLI in the 4OK dev internal-agent image.
   Proof: inside the dev OpenClaw/internal-agent container, `gcb --help` includes
   `retrieve` and `gcb retrieve <known-query>` can reach the deployed dev GCB DB.

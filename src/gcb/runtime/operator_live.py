@@ -193,10 +193,6 @@ def operator_environment(project_root: Path) -> dict[str, str]:
         "GCB_DATABASE_URL",
         f"postgresql+psycopg://gcb:{env['POSTGRES_PASSWORD']}@postgres:5432/gcb",
     )
-    _copy_if_missing(env, "GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID")
-    _copy_if_missing(env, "GCB_INFISICAL_ENV", "INFISICAL_ENV")
-    _copy_if_missing(env, "GCB_INFISICAL_PATH", "INFISICAL_PATH")
-    _copy_if_missing(env, "GCB_INFISICAL_DOMAIN", "INFISICAL_DOMAIN")
     env.setdefault("GCB_OBSERVABILITY_ENABLED", "true")
     env.setdefault("OTEL_EXPORTER_OTLP_ENDPOINT", "http://observability:4318")
     return env
@@ -267,20 +263,9 @@ def _materialize_live_assets(
                     state_path=str(state_path),
                     database_url=database_url,
                 ),
-                "infisical_secrets": module.InfisicalSecretsResource(
-                    enabled=_truthy(env.get("GCB_INFISICAL_ENABLED", ""))
-                    or bool(env.get("GCB_INFISICAL_PROJECT_ID") or env.get("INFISICAL_PROJECT_ID")),
-                    project_id=_first_env(env, "GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID"),
-                    environment=_first_env(
-                        env, "GCB_INFISICAL_ENV", "INFISICAL_ENV", default="runtime"
-                    ),
-                    path=_first_env(env, "GCB_INFISICAL_PATH", "INFISICAL_PATH", default="/"),
-                    domain=_first_env(
-                        env,
-                        "GCB_INFISICAL_DOMAIN",
-                        "INFISICAL_DOMAIN",
-                        "INFISICAL_API_URL",
-                    ),
+                "connector_env": module.ConnectorEnvResource(
+                    dotenv_path=env.get("GCB_DOTENV_PATH", ".env"),
+                    load_dotenv=_truthy(env.get("GCB_LOAD_DOTENV", "true")),
                 ),
             },
         )

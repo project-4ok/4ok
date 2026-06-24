@@ -49,12 +49,11 @@ Current covered dependencies:
 
 - Docker Compose runtime
 - PostgreSQL
-- Infisical SDK
+- env/.env secret loading
 - Singer/Meltano-style connector boundary
 - text-layer PDF extraction with `pypdf`
 - local OpenTelemetry LGTM backend
 - OpenClaw plugin boundary
-- deferred Cerbos policy experiment
 
 The command reports proof commands for each dependency. A new integration should
 not be added to the active runtime until this registry shows which executable
@@ -262,10 +261,10 @@ Current boundaries:
 - `context-api`: search/source metadata facade
 - `connector-runner`: source sync, raw landing, job runs, checkpoints
 - `document-extraction-worker`: isolated attachment parsing experiments
-- `policy-engine`: static policy plus Cerbos adapter
+- `policy-engine`: static in-process policy only
 - `metadata-database`: SQLAlchemy state, PostgreSQL target
 - `raw-source-store`: restricted local filesystem now, object storage later
-- `secrets-provider`: Infisical SDK or runtime secret injection
+- `secrets-provider`: env/.env secret loading or runtime secret injection
 - `audit-store`: PostgreSQL-compatible audit events first
 
 No production broker is chosen yet. Internal v0 should use a durable

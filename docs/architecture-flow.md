@@ -68,7 +68,7 @@ flowchart TD
   end
 
   subgraph ops["Implemented Runtime Proofs"]
-    Compose["Docker Compose<br/>app, PostgreSQL, Cerbos, observability"]
+    Compose["Docker Compose<br/>app, PostgreSQL, observability"]
     OTel["OpenTelemetry smoke<br/>local LGTM backend"]
     Readiness["internal-prod-readiness"]
     Acceptance["acceptance-proof<br/>import/search/audit/OTel/backup wiring"]
@@ -173,7 +173,7 @@ flowchart TD
 
 ## Runtime Shape
 
-- Docker Compose can run PostgreSQL, Cerbos, local observability, and the
+- Docker Compose can run PostgreSQL, local observability, and the
   Python app container.
 - App images are tagged with the current commit hash through `GCB_IMAGE_TAG`.
 - Active Compose services have restart policies, health checks, named

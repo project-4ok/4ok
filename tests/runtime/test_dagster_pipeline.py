@@ -9,7 +9,6 @@ import pytest
 from gcb.etl.extract.openviking_sessions import write_openviking_session_messages_jsonl
 from gcb.etl.extract.sync_jobs import connector_job_runs, start_connector_job
 from gcb.governance.state import create_governed_context_state
-from gcb.orchestration.dagster_resources import _env_first
 from gcb.runtime.source_imports import SourceRecordImportReport
 
 _dagster = pytest.importorskip("dagster")
@@ -88,9 +87,9 @@ def test_dagster_entrypoint_keeps_resource_definitions_separate() -> None:
     assert "class RawLandingResource" not in definitions_source
     assert "class MeltanoProjectResource" not in definitions_source
     assert "class GcbRuntimeResource" not in definitions_source
-    assert "class InfisicalSecretsResource" not in definitions_source
+    assert "class ConnectorEnvResource" not in definitions_source
     assert "def build_default_resources" in resources_source
-    assert "fetch_infisical_secrets" in resources_source
+    assert "ConnectorEnvResource" in resources_source
 
 
 def test_dagster_trace_span_names_match_operator_lineage_assets() -> None:
@@ -118,6 +117,8 @@ def test_dagster_definitions_expose_recurring_live_ingestion_hooks() -> None:
     assert "gcb_process_webhook_backlog" in job_names
     assert schedule_names == {"gcb_hourly_live_backfill_schedule"}
     assert sensor_names == {"gcb_webhook_backlog_sensor"}
+    [backfill_schedule] = defs.schedules or []
+    assert backfill_schedule.default_status.name == "RUNNING"
 
 
 def test_dagster_hourly_live_backfill_rebuilds_retrieval_and_operator_counts() -> None:
@@ -415,17 +416,29 @@ def test_dagster_meltano_environment_does_not_override_explicit_tap_secret() -> 
     assert env["TAP_SLACK_API_KEY"] == "tap-token"
 
 
-def test_dagster_infisical_resource_is_disabled_by_default() -> None:
-    resource = _module.InfisicalSecretsResource()
+def test_dagster_connector_env_resource_loads_dotenv_without_overriding_process_env(
+    tmp_path: Path, monkeypatch
+) -> None:
+    dotenv = tmp_path / ".env"
+    dotenv.write_text(
+        "LINEAR_API_KEY=dotenv-token\nSLACK_BOT_TOKEN=dotenv-slack\n", encoding="utf-8"
+    )
+    monkeypatch.setenv("LINEAR_API_KEY", "process-token")
 
-    assert resource.secret_env() == {}
+    resource = _module.ConnectorEnvResource(dotenv_path=str(dotenv), load_dotenv=True)
+
+    env = resource.secret_env()
+    assert env["LINEAR_API_KEY"] == "process-token"
+    assert env["SLACK_BOT_TOKEN"] == "dotenv-slack"
 
 
-def test_dagster_env_first_supports_existing_infisical_domain_name(monkeypatch) -> None:
-    monkeypatch.delenv("GCB_INFISICAL_DOMAIN", raising=False)
-    monkeypatch.setenv("INFISICAL_DOMAIN", "https://infisical.example")
+def test_dagster_connector_env_resource_can_disable_dotenv(tmp_path: Path) -> None:
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("SLACK_BOT_TOKEN=dotenv-slack\n", encoding="utf-8")
 
-    assert _env_first("GCB_INFISICAL_DOMAIN", "INFISICAL_DOMAIN") == "https://infisical.example"
+    resource = _module.ConnectorEnvResource(dotenv_path=str(dotenv), load_dotenv=False)
+
+    assert "SLACK_BOT_TOKEN" not in resource.secret_env()
 
 
 def test_dagster_check_live_db_accepts_idempotent_current_rows(monkeypatch, capsys) -> None:
@@ -466,18 +479,18 @@ def test_dagster_live_connector_asset_names_can_select_linear_only() -> None:
 
 
 def test_dagster_check_loads_project_dotenv_defaults(tmp_path, monkeypatch) -> None:
-    monkeypatch.delenv("GCB_INFISICAL_PROJECT_ID", raising=False)
-    monkeypatch.setenv("INFISICAL_ENV", "shell-env")
+    monkeypatch.delenv("LINEAR_API_KEY", raising=False)
+    monkeypatch.setenv("SLACK_BOT_TOKEN", "shell-env")
     dotenv = tmp_path / ".env"
     dotenv.write_text(
-        "GCB_INFISICAL_PROJECT_ID=project-123\nINFISICAL_ENV=dotenv-env\n",
+        "LINEAR_API_KEY=project-123\nSLACK_BOT_TOKEN=dotenv-env\n",
         encoding="utf-8",
     )
 
     _load_dotenv_defaults(dotenv)
 
-    assert _check_module.os.environ["GCB_INFISICAL_PROJECT_ID"] == "project-123"
-    assert _check_module.os.environ["INFISICAL_ENV"] == "shell-env"
+    assert _check_module.os.environ["LINEAR_API_KEY"] == "project-123"
+    assert _check_module.os.environ["SLACK_BOT_TOKEN"] == "shell-env"
 
 
 def test_dagster_count_by_returns_stable_counts() -> None:

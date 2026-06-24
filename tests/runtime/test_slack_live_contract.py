@@ -3,7 +3,6 @@ from pathlib import Path
 
 from gcb.etl.extract.source_records import SourceRecord
 from gcb.governance import GovernedContext
-from gcb.secrets.infisical import SecretProviderError
 
 _SCRIPT = Path(__file__).parent.parent.parent / "scripts" / "check_slack_live_contract.py"
 _SPEC = importlib.util.spec_from_file_location("check_slack_live_contract", _SCRIPT)
@@ -15,23 +14,16 @@ _SPEC.loader.exec_module(slack_live_contract)
 
 def test_slack_env_defaults_to_readable_channel_types(monkeypatch) -> None:
     monkeypatch.delenv("TAP_SLACK_CHANNEL_TYPES", raising=False)
-    monkeypatch.setattr(slack_live_contract, "fetch_infisical_secrets", lambda config: {})
-
+    monkeypatch.setenv("SLACK_BOT_TOKEN", "secret-token")
     env = slack_live_contract._slack_env()
 
     assert env["TAP_SLACK_CHANNEL_TYPES"] == '["im","mpim","private_channel"]'
     assert env["TAP_SLACK_INCLUDE_ADMIN_STREAMS"] == "false"
 
 
-def test_slack_env_uses_exported_token_without_infisical(monkeypatch) -> None:
-    monkeypatch.delenv("GCB_INFISICAL_PROJECT_ID", raising=False)
-    monkeypatch.delenv("INFISICAL_PROJECT_ID", raising=False)
+def test_slack_env_uses_exported_token(monkeypatch) -> None:
     monkeypatch.setenv("SLACK_BOT_TOKEN", "secret-token")
 
-    def fail_fetch(config):
-        raise AssertionError("Infisical should not be required when a Slack token is exported")
-
-    monkeypatch.setattr(slack_live_contract, "fetch_infisical_secrets", fail_fetch)
 
     env = slack_live_contract._slack_env()
 
@@ -40,8 +32,7 @@ def test_slack_env_uses_exported_token_without_infisical(monkeypatch) -> None:
 
 def test_slack_env_preserves_explicit_channel_types(monkeypatch) -> None:
     monkeypatch.setenv("TAP_SLACK_CHANNEL_TYPES", '["private_channel"]')
-    monkeypatch.setattr(slack_live_contract, "fetch_infisical_secrets", lambda config: {})
-
+    monkeypatch.setenv("SLACK_BOT_TOKEN", "secret-token")
     env = slack_live_contract._slack_env()
 
     assert env["TAP_SLACK_CHANNEL_TYPES"] == '["private_channel"]'
@@ -53,13 +44,7 @@ def test_live_checker_reports_missing_credentials_as_blocker(
 ) -> None:
     monkeypatch.delenv("SLACK_BOT_TOKEN", raising=False)
     monkeypatch.delenv("TAP_SLACK_API_KEY", raising=False)
-    monkeypatch.delenv("GCB_INFISICAL_PROJECT_ID", raising=False)
-    monkeypatch.delenv("INFISICAL_PROJECT_ID", raising=False)
 
-    def fail_fetch(config):
-        raise SecretProviderError("Infisical project_id is required")
-
-    monkeypatch.setattr(slack_live_contract, "fetch_infisical_secrets", fail_fetch)
 
     report = slack_live_contract.check_slack_live_contract(tmp_path / "artifacts")
 
@@ -67,7 +52,7 @@ def test_live_checker_reports_missing_credentials_as_blocker(
     assert report["stage"] == "credentials"
     assert report["credential_inputs"] == {
         "has_slack_token": False,
-        "has_infisical_project_id": False,
+        "has_dotenv": Path(".env").exists(),
     }
     assert report["runtime_database"] == {
         "status": "skipped",

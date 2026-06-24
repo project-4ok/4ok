@@ -168,7 +168,7 @@ Root cause findings:
 
 2. **Twenty extraction truncation bug**:
    - `TwentyTapConfig.limit` defaulted to `100`, and `main()` defaulted `TWENTY_LIMIT` to `100`.
-   - Live API probe through Infisical-backed credentials showed:
+   - Live API probe through env/.env-backed credentials showed:
      - `limit=100` returns 100 companies.
      - `limit=1000` is API-capped at 200 companies but response has `totalCount=797` and `pageInfo.hasNextPage=True`.
      - Correct pagination parameter is `starting_after=<pageInfo.endCursor>`; `offset`, `page`, `after`, `cursor`, `startingAfter`, `afterCursor`, and `startCursor` all returned the first page again.
@@ -179,7 +179,7 @@ Verification:
 
 - Narrow tests after the fix:
   - `uv run pytest tests/etl/extract/test_twenty_connectors.py tests/etl/extract/test_connectors_ingest.py::test_snapshot_deleted_source_is_restored_when_present_in_later_active_import -q` -> `9 passed`.
-- Live fixed tap smoke with Infisical credentials, without printing secrets:
+- Live fixed tap smoke with env/.env credentials, without printing secrets:
   - configured limit: `1000`
   - Twenty companies returned: `797`
   - Twenty people returned: `704`

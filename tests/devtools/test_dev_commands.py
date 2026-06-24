@@ -97,8 +97,7 @@ def test_compose_env_report_redacts_runtime_env_and_keeps_non_secret_values(
     monkeypatch.setattr("gcb.devtools.dev._git_short_head", lambda *, default: "abc1234")
     (tmp_path / ".env").write_text(
         "POSTGRES_PASSWORD=super-secret\n"
-        "INFISICAL_PROJECT_ID=project-123\n"
-        "INFISICAL_DOMAIN=https://infisical.example\n",
+        "LINEAR_API_KEY=linear-token\n",
         encoding="utf-8",
     )
 
@@ -108,7 +107,7 @@ def test_compose_env_report_redacts_runtime_env_and_keeps_non_secret_values(
     assert report["env"]["POSTGRES_PASSWORD"] == "[REDACTED]"
     assert report["env"]["GCB_DATABASE_URL"] == "[REDACTED]"
     assert report["env"]["GCB_IMAGE_TAG"] == "abc1234"
-    assert report["env"]["GCB_INFISICAL_PROJECT_ID"] == "project-123"
+    assert report["env"]["LINEAR_API_KEY"] == "[REDACTED]"
     assert report["usage"]["pipeline_ps"] == "uv run gcb-dev pipeline-ps"
     assert report["usage"]["app_up"] == "uv run gcb-dev app-up"
     assert report["usage"]["observability_up"] == "uv run gcb-dev observability-up"

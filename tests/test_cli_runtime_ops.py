@@ -196,7 +196,7 @@ def test_cli_prints_dependency_contract_spikes(capsys, monkeypatch) -> None:
     assert output["status"] == "ok"
     assert output["summary"]["missing_dimension_count"] == 0
     assert output["summary"]["unproved_count"] == 0
-    assert "infisical-sdk" in contracts
+    assert "env-secret-loading" in contracts
     assert "singer-meltano-style-connectors" in contracts
     assert contracts["docker-compose-runtime"]["proof_commands"]
 

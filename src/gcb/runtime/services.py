@@ -118,10 +118,10 @@ def runtime_service_boundaries() -> list[RuntimeServiceBoundary]:
             ),
             RuntimeServiceBoundary(
                 name="secrets-provider",
-                current_runtime="Infisical SDK in process",
-                target_runtime="Infisical machine identity or runtime secret injection",
+                current_runtime="process env and .env",
+                target_runtime="runtime secret injection",
                 responsibilities=("connector credentials", "redacted preflight"),
-                dependencies=("Infisical",),
+                dependencies=(),
                 health_check="run_gmail_pilot.py --preflight",
                 not_yet=("policy-service secrets", "identity-service secrets"),
             ),

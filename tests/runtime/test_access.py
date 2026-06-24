@@ -13,12 +13,6 @@ def test_access_boundary_accepts_expected_loopback_ports() -> None:
             "services": {
                 "app": {},
                 "postgres": {"ports": [_port("127.0.0.1", 5432, "5432")]},
-                "cerbos": {
-                    "ports": [
-                        _port("127.0.0.1", 3592, "3592"),
-                        _port("127.0.0.1", 3593, "3593"),
-                    ]
-                },
                 "observability": {
                     "ports": [
                         _port("127.0.0.1", 3000, "3000"),
@@ -36,22 +30,6 @@ def test_access_boundary_accepts_expected_loopback_ports() -> None:
     assert report["status"] == "ok"
     assert report["violations"] == []
     assert report["exposures"] == [
-        {
-            "service": "cerbos",
-            "host_ip": "127.0.0.1",
-            "published": "3592",
-            "target": "3592",
-            "protocol": "tcp",
-            "status": "allowed",
-        },
-        {
-            "service": "cerbos",
-            "host_ip": "127.0.0.1",
-            "published": "3593",
-            "target": "3593",
-            "protocol": "tcp",
-            "status": "allowed",
-        },
         {
             "service": "dagster-webserver",
             "host_ip": "127.0.0.1",
@@ -232,7 +210,7 @@ def test_access_boundary_loads_rendered_compose_config_with_safe_env(monkeypatch
     )
     assert captured["env"]["POSTGRES_PASSWORD"] == "access-smoke"
     assert captured["env"]["DAGSTER_POSTGRES_PASSWORD"] == "access-smoke"
-    assert "INFISICAL_CLIENT_SECRET" not in captured["env"]
+    assert "SLACK_BOT_TOKEN" not in captured["env"]
 
 
 def test_access_boundary_fails_when_compose_config_cannot_render() -> None:

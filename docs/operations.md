@@ -332,7 +332,7 @@ Docker-backed local services:
 export GCB_IMAGE_TAG="$(git rev-parse --short HEAD)"
 export POSTGRES_PASSWORD="local-dev-password"
 export GCB_DATABASE_URL="postgresql+psycopg://gcb:${POSTGRES_PASSWORD}@postgres:5432/gcb"
-docker compose up -d postgres cerbos
+docker compose up -d postgres
 ```
 
 For rebuild/restart checks, start the resident app service too:
@@ -343,7 +343,7 @@ uv run gcb-dev pipeline-ps
 ```
 
 `app-up` wraps the long direct Compose form (`docker compose up --build
---force-recreate -d postgres cerbos app`) and injects the same project `.env`,
+--force-recreate -d postgres app`) and injects the same project `.env`,
 `GCB_IMAGE_TAG`, `POSTGRES_PASSWORD`, `DAGSTER_POSTGRES_PASSWORD`, and
 `GCB_DATABASE_URL` defaults used by the other `gcb-dev` Docker helpers.
 
@@ -353,7 +353,7 @@ Dagster runs under the Docker Compose `pipeline` profile. It is an internal
 operator surface, not a public service.
 
 Start the pipeline services through the local dev wrapper. It loads project
-`.env`, maps Infisical aliases for the Dagster code container, and supplies
+`.env`, maps external secret manager aliases for the Dagster code container, and supplies
 stable local-only Compose defaults so direct `docker compose` interpolation does
 not fail when password variables are absent from the shell. It derives
 `GCB_IMAGE_TAG` from the current Git commit, rebuilds tagged Dagster images, and
@@ -464,18 +464,18 @@ Use the dry-run first when checking local wiring or credentials:
 uv run gcb-dev operator-live --dry-run
 ```
 
-The command loads project `.env`, passes Infisical settings through to the
+The command loads project `.env`, passes env/.env settings through to the
 Dagster live assets, starts and checks the local Dagster Compose services, runs
 the live Slack, Twenty, Linear, and Google Drive landing/import assets, and
 prints JSON with the raw landing path, redacted GCB database URL, source-record
 counts by source system, retrieval count, and Dagster status. Output must not
 contain secret values. Live materialization requires configured source
-credentials or Infisical settings; without them, use the dry-run and connector
+credentials or env/.env settings; without them, use the dry-run and connector
 contract checks below.
 
 The lower-level live Dagster proof remains available when debugging asset
 selection directly. Materialize live connector assets through Dagster with
-Infisical-backed credentials:
+env/.env-backed credentials:
 
 ```bash
 uv run --group pipeline python scripts/check_dagster_pipeline.py \
@@ -525,7 +525,7 @@ behavior. This is a fixture-backed tap-boundary regression proof only; live
 SaaS auth and incremental semantics are covered by the live connector proofs
 below before production credentials are wired.
 
-Check the live Slack tap contract with Infisical-backed credentials:
+Check the live Slack tap contract with env/.env-backed credentials:
 
 ```bash
 uv run --group pipeline python scripts/check_slack_live_contract.py
@@ -545,7 +545,7 @@ to each public channel, or adding a separately proved auto-join workflow with
 `channels:join`; operators can set `TAP_SLACK_CHANNEL_TYPES` explicitly to
 override the default.
 
-Check the live Twenty connector contract with Infisical-backed credentials:
+Check the live Twenty connector contract with env/.env-backed credentials:
 
 ```bash
 uv run --group pipeline python scripts/check_twenty_live_contract.py
@@ -558,7 +558,7 @@ lands raw JSONL, verifies state, and adapts landed records into GCB
 `SourceRecord`s. Output reports counts and stream names only; it must not print
 CRM field values or credential values.
 
-Check the live Linear connector contract with Infisical-backed credentials:
+Check the live Linear connector contract with env/.env-backed credentials:
 
 ```bash
 uv run --group pipeline python scripts/check_linear_live_contract.py
@@ -572,7 +572,7 @@ the extractor through Meltano, lands raw JSONL, verifies state, and adapts
 landed records into GCB `SourceRecord`s. Output reports counts and stream names
 only; it must not print Linear field values or credential values.
 
-Check the live Google Drive connector contract with Infisical-backed OAuth
+Check the live Google Drive connector contract with env/.env-backed OAuth
 credentials:
 
 ```bash
@@ -663,13 +663,12 @@ bad candidate. It uses:
 - `fixtures/context_substrate/source_snapshot_eval.json`
 - `fixtures/context_substrate/evidence_baseline_cases.json`
 
-To evaluate a bounded live source snapshot instead, use Infisical-backed
+To evaluate a bounded live source snapshot instead, use env/.env-backed
 credentials and pass `--live-sources`:
 
 ```bash
 uv run gcb eval-retrieval \
   --live-sources \
-  --infisical-project-id "$INFISICAL_PROJECT_ID" \
   --sources linear,twenty,slack
 ```
 
@@ -907,7 +906,7 @@ sudo systemctl enable --now gcb-postgres-backup.timer
 ```
 
 The timer runs the Docker Compose app image and writes timestamped dumps under
-`/var/lib/gcb/backups`. Systemd services read database and Infisical settings
+`/var/lib/gcb/backups`. Systemd services read database and env/.env settings
 from `/etc/gcb/gcb.env`; do not put real passwords into committed unit files.
 Backup retention, encryption, and off-host copy policy remain operator
 decisions for this internal stage.
@@ -1012,28 +1011,18 @@ schema versions, roll back source records, or recover deleted raw data.
 
 ## Secrets
 
-Use Infisical for connector credentials.
+Use external secret manager for connector credentials.
 
 Dagster/Meltano runtime secret injection is controlled by non-committed
 environment variables on the host or service manager:
 
-- `GCB_INFISICAL_ENABLED`: set to `true` to force Infisical lookup.
-- `GCB_INFISICAL_PROJECT_ID`: Infisical project id. If set, lookup is enabled.
-- `GCB_INFISICAL_ENV`: Infisical environment, default `runtime`.
-- `GCB_INFISICAL_PATH`: Infisical secret path, default `/`.
-- `GCB_INFISICAL_DOMAIN`: optional Infisical host/domain.
 
 Supported auth:
 
-- `INFISICAL_TOKEN`
 - Universal Auth:
-  - `INFISICAL_UNIVERSAL_AUTH_CLIENT_ID`
-  - `INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET`
-  - `INFISICAL_CLIENT_ID`
-  - `INFISICAL_CLIENT_SECRET`
 
 The Dagster code container receives these variables from Compose and uses the
-Python Infisical SDK in process. Fetched key/value secrets are merged into the
+Python env/.env loader in process. Fetched key/value secrets are merged into the
 environment of the `meltano run ...` subprocess only. Dagster materialization
 metadata exposes only the count of injected secret keys, never values.
 
@@ -1049,7 +1038,6 @@ portable between direct Meltano runs and Dagster-triggered runs:
   `GOOGLE_SERVICE_ACCOUNT_JSON`, or selected tap-specific `TAP_GOOGLE_*` /
   `TAP_GOOGLE_DRIVE_*` keys depending on the chosen tap.
 
-If `INFISICAL_API_URL` comes from the 4ok self-hosted host and includes a
 trailing `/api`, the Gmail pilot preflight normalizes it before calling the
 Python SDK.
 
@@ -1065,9 +1053,8 @@ Preflight:
 ```bash
 uv run python scripts/run_gmail_pilot.py \
   --preflight \
-  --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
-  --infisical-env dev \
-  --infisical-path /gmail-pilot
+  --external-secret-manager-env dev \
+  --external-secret-manager-path /gmail-pilot
 ```
 
 Never print or commit secrets, raw connector output, local DBs, generated
@@ -1080,7 +1067,6 @@ Run after preflight:
 ```bash
 uv run python scripts/run_gmail_pilot.py \
   --inspect-output \
-  --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
   --state-path .local/gmail-pilot/gmail-pilot.sqlite
 ```
 
@@ -1105,7 +1091,6 @@ Retry a failed Gmail pilot job:
 ```bash
 uv run python scripts/run_gmail_pilot.py \
   --inspect-output \
-  --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
   --state-path .local/gmail-pilot/gmail-pilot.sqlite \
   --retry-failed
 ```
@@ -1115,7 +1100,6 @@ Tune the retry backoff base delay:
 ```bash
 uv run python scripts/run_gmail_pilot.py \
   --inspect-output \
-  --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
   --state-path .local/gmail-pilot/gmail-pilot.sqlite \
   --retry-failed \
   --retry-base-delay-seconds 300

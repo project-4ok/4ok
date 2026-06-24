@@ -25,7 +25,7 @@ already has:
   - `clusters/prod/customers/4ok/etl`
   - `clusters/prod/customers/4ok/openviking`
   - `clusters/prod/customers/4ok/n8n`
-- Infisical operator-based secret sync patterns
+- external secret operator-based secret sync patterns
 
 ## GCB Runtime Surfaces
 
@@ -48,9 +48,8 @@ Pipeline image:
 Local proof topology:
 
 - `docker-compose.yml`
-- `app` depends on PostgreSQL and Cerbos
+- `app` depends on PostgreSQL
 - `postgres` uses `pgvector/pgvector:pg16`
-- `cerbos` uses `ghcr.io/cerbos/cerbos:0.53.0`
 - optional observability uses `grafana/otel-lgtm:0.28.0`
 - Dagster pipeline profile uses separate Dagster PostgreSQL, code, webserver,
   and daemon services
@@ -85,12 +84,6 @@ Required non-secret or secret-backed environment variables:
 - `GCB_DATABASE_URL`
 - `GCB_CONFIG_PATH`
 - `POSTGRES_PASSWORD` if PostgreSQL is provisioned by the same release path
-- `GCB_INFISICAL_PROJECT_ID`
-- `GCB_INFISICAL_ENV`
-- `GCB_INFISICAL_PATH`
-- `GCB_INFISICAL_DOMAIN` or `INFISICAL_API_URL`, depending on the runtime path
-- `INFISICAL_CLIENT_ID`
-- `INFISICAL_CLIENT_SECRET`
 - `OTEL_EXPORTER_OTLP_ENDPOINT` when telemetry is enabled
 - `OTEL_SERVICE_NAME`
 
@@ -128,9 +121,9 @@ Expected first-pass NetworkPolicy posture:
 
 - default deny for GCB namespaces
 - egress to DNS
-- egress to Infisical API
+- egress to external secret manager API
 - egress to approved source APIs for enabled connectors
-- egress from GCB to PostgreSQL and Cerbos
+- egress from GCB to PostgreSQL
 - optional egress from GCB to OTLP collector
 - no public ingress for `gcb-app`
 - private/admin-only ingress for Dagster UI only if explicitly approved
@@ -141,24 +134,24 @@ and `clusters/prod/customers/4ok/n8n`.
 
 ## Secrets
 
-Use the infra repo's existing `InfisicalSecret` pattern rather than committing
+Use the infra repo's existing `ExternalSecret` pattern rather than committing
 Kubernetes Secret values.
 
 Relevant infra pointers:
 
-- `clusters/prod/customers/4ok/etl/infisical-secret.yaml`
-- `docs/reference/infisical-operator-bootstrap.md`
+- `clusters/prod/customers/4ok/etl/external-secret.yaml`
+- `docs/reference/external-secret-operator-bootstrap.md`
 - `docs/runbooks/customer-secret-sync-validation.md`
 - `docs/reference/4ok-etl-secret-contract-v1.md`
 
 Infrastructure engineer checklist:
 
-- confirm the Infisical source path for GCB runtime secrets
+- confirm the env/.env source path for GCB runtime secrets
 - confirm whether GCB shares an existing customer path or receives a dedicated
   path
 - create the bootstrap Universal Auth Kubernetes Secret out-of-band
-- verify the Infisical operator watches the target namespace
-- verify the `InfisicalSecret` object reconciles before enabling GCB workloads
+- verify the external secret operator watches the target namespace
+- verify the `ExternalSecret` object reconciles before enabling GCB workloads
 - validate secret availability by workload readiness/errors, not by printing
   values
 
@@ -217,10 +210,9 @@ connector checkpoints needs a separate retention/deletion decision.
       cut or deferred.
 - [ ] Confirm PostgreSQL location: in-cluster StatefulSet, existing managed
       service, or external host.
-- [ ] Confirm Cerbos location and policy mount/update path.
 - [ ] Create GCB config as a ConfigMap or secret-backed rendered file without
       embedding credentials.
-- [ ] Wire `InfisicalSecret` for GCB runtime secrets.
+- [ ] Wire `ExternalSecret` for GCB runtime secrets.
 - [ ] Add PVCs for `/var/lib/gcb/raw` and `/var/lib/gcb/backups`.
 - [ ] Add health probes using `gcb health`.
 - [ ] Add CronJobs for imports, backups, and retention with
@@ -239,6 +231,6 @@ Open deployment questions:
 - image publication path and immutable digest/tag convention
 - PostgreSQL deployment target and backup restore drill location
 - whether Dagster moves to K3s immediately or stays Compose/host-operated
-- exact Infisical path and key names for the GCB runtime
+- exact external secret manager path and key names for the GCB runtime
 - private operator access path for Dagster, if enabled
 - retention policy for PVC-backed raw stores and backups

@@ -3,7 +3,7 @@
 Status: historical/deferred experiment.
 
 Purpose: run the internal Linear + Slack-identity Honcho experiment using
-Infisical-backed source credentials and an externally supplied Honcho service.
+env/.env-backed source credentials and an externally supplied Honcho service.
 The project Docker Compose file no longer starts Honcho; active Compose is kept
 focused on the GCB runtime.
 
@@ -13,8 +13,8 @@ tokenization, reveal policy, and Slack message ingestion.
 ## Prerequisites
 
 - Docker engine available
-- Infisical machine identity in the environment
-- source secrets available in Infisical:
+- external secret manager machine identity in the environment
+- source secrets available in external secret manager:
   - `LINEAR_API_KEY`
   - `SLACK_BOT_TOKEN`
   - `TWENTY_API_KEY`
@@ -22,9 +22,6 @@ tokenization, reveal policy, and Slack message ingestion.
 Set runtime environment without printing secret values:
 
 ```bash
-export INFISICAL_PROJECT_ID="<project-id>"
-export INFISICAL_ENV="dev"
-export INFISICAL_PATH="/customer-consumable/customers/4ok/runtime"
 export HONCHO_WORKSPACE_ID="gcb-internal"
 export HONCHO_SYNC_SOURCES="linear,slack"
 export HONCHO_SOURCE_LIMIT="20"
@@ -43,7 +40,6 @@ Validate Compose config:
 GCB_IMAGE_TAG=$(git rev-parse --short HEAD) \
 POSTGRES_PASSWORD=local-check \
 GCB_DATABASE_URL=postgresql+psycopg://gcb:local-check@postgres:5432/gcb \
-INFISICAL_PROJECT_ID=dummy \
 docker compose config >/dev/null
 ```
 
@@ -51,7 +47,7 @@ Build the app image and start only the active GCB dependencies:
 
 ```bash
 docker compose build app
-docker compose up -d postgres cerbos
+docker compose up -d postgres
 ```
 
 Provide `HONCHO_URL` from a separately managed local or remote Honcho runtime.
@@ -61,9 +57,6 @@ Run source preflight without printing secrets:
 ```bash
 docker compose run --rm app \
   honcho-preflight \
-    --infisical-project-id "$INFISICAL_PROJECT_ID" \
-    --infisical-env "$INFISICAL_ENV" \
-    --infisical-path "$INFISICAL_PATH" \
     --check-sources \
     --sources "$HONCHO_SYNC_SOURCES"
 ```
