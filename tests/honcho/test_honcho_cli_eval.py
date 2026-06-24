@@ -404,33 +404,6 @@ def test_cli_evidence_baseline_eval_runs_context_substrate_cases(capsys, monkeyp
     assert all("failure_reason" in case for case in output["cases"])
 
 
-def test_cli_graphiti_episodes_dry_run_prints_episode_contract(capsys, monkeypatch) -> None:
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "fourok",
-            "graphiti-episodes",
-            "--fixture",
-            str(FIXTURE),
-            "--group-id",
-            "fourok-fixture",
-        ],
-    )
-
-    main()
-
-    output = json.loads(capsys.readouterr().out)
-    assert output["mode"] == "dry-run"
-    assert output["substrate"] == "graphiti"
-    assert output["summary"] == {
-        "episodes": 6,
-        "message_episodes": 1,
-        "json_episodes": 5,
-    }
-    assert output["episodes"][0]["uuid"] == "fourok:graphiti:linear:issue:ABC-123"
-    assert output["episodes"][0]["metadata"]["source_ref"] == "linear:issue:ABC-123"
-
-
 def test_cli_honcho_eval_can_scope_to_peer_search(capsys, monkeypatch, tmp_path: Path) -> None:
     eval_path = tmp_path / "eval.json"
     eval_path.write_text(

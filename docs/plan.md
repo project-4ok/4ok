@@ -59,7 +59,7 @@ Owning docs:
 - production broker choice
 - Kubernetes or multi-host deployment
 - OCR/image PDF/layout/table extraction
-- Honcho or Graphiti as the primary company context substrate
+- Honcho as the primary company context substrate
 
 ## Deferred Backlog
 

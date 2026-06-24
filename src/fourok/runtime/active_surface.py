@@ -55,7 +55,6 @@ ACTIVE_CLI_COMMANDS = frozenset(
 HIDDEN_EXPERIMENT_COMMANDS = frozenset(
     {
         "evidence-baseline-eval",
-        "graphiti-episodes",
         "honcho-eval",
         "honcho-preflight",
         "honcho-receipt",
@@ -72,7 +71,6 @@ DEFERRED_MODULE_PREFIXES = frozenset(
         "fourok.honcho",
         "fourok.evaluation",
         "fourok.retrieval.evidence_baseline",
-        "fourok.retrieval.graphiti_episodes",
         "fourok.etl.transform.pii",
         "fourok.etl.transform.tokens",
     }

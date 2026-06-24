@@ -150,6 +150,25 @@ def test_cli_reveal_command_is_not_active(monkeypatch) -> None:
         raise AssertionError("inactive reveal command should fail argument parsing")
 
 
+def test_cli_graphiti_episodes_command_is_not_registered(monkeypatch) -> None:
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "graphiti-episodes",
+            "--fixture",
+            str(CONTEXT_FIXTURES / "source_snapshot_eval.json"),
+        ],
+    )
+
+    try:
+        main()
+    except SystemExit as exc:
+        assert exc.code == 2
+    else:
+        raise AssertionError("retired graphiti command should fail argument parsing")
+
+
 def test_cli_help_hides_research_experiment_commands(capsys, monkeypatch) -> None:
     monkeypatch.setattr("sys.argv", ["fourok", "--help"])
 
@@ -205,7 +224,7 @@ def test_fixture_cli_help_marks_fixture_paths_as_test_only(capsys, monkeypatch) 
 def test_cli_import_does_not_load_hidden_experiment_modules() -> None:
     script = (
         "import sys; import fourok.cli; "
-        "print(any(name.startswith(('fourok.honcho', 'fourok.retrieval.graphiti_episodes')) "
+        "print(any(name.startswith('fourok.honcho') "
         "for name in sys.modules))"
     )
 

@@ -10,7 +10,7 @@ def test_compose_declares_app_context_cli_runtime() -> None:
 
     assert "  app:" in compose
     assert "fourok-app:${FOUROK_IMAGE_TAG:-local-check}" in compose
-    assert "docker/app.Dockerfile" in compose
+    assert "deploy/docker/app.Dockerfile" in compose
     assert "FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:-" in app_service
     assert "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-local-check}" in _compose_service_block(
         compose, "postgres"
@@ -21,7 +21,7 @@ def test_compose_declares_app_context_cli_runtime() -> None:
     assert "cerbos:" not in app_service
     assert '"honcho-sync"' not in app_service
     assert '"runtime-monitor"' in app_service
-    assert '"/app/.venv/bin/fourok", "health"' in app_service
+    assert '"/app/.venv/bin/fourok", "health", "--database-only"' in app_service
     assert "FOUROK_OBSERVABILITY_ENABLED" in app_service
     assert "OTEL_EXPORTER_OTLP_ENDPOINT" in app_service
     assert "http://observability:4318" in app_service
@@ -51,7 +51,8 @@ def test_compose_active_services_have_health_checks() -> None:
 
     app_service = _compose_service_block(compose, "app")
     healthcheck = _compose_healthcheck_block(app_service)
-    assert '["CMD", "/app/.venv/bin/fourok", "health"]' in healthcheck
+
+    assert '["CMD", "/app/.venv/bin/fourok", "health", "--database-only"]' in healthcheck
     assert '"--config"' not in healthcheck
     assert '"--database-url"' not in healthcheck
 
@@ -63,6 +64,7 @@ def test_compose_app_command_is_long_running_when_restart_policy_is_enabled() ->
     assert "restart: unless-stopped" in app_service
     assert "command:" in app_service
     assert '"runtime-monitor"' in app_service
+    assert '"--database-only"' in app_service
     assert not re.search(
         r"command:\s*\[\s*\"health\",\s*\"--config\",\s*\"/etc/fourok/fourok\.toml\",\s*\]",
         app_service,
@@ -118,7 +120,7 @@ def test_compose_starts_streamable_http_mcp_service_by_default() -> None:
 
 
 def test_app_image_runs_installed_cli_without_runtime_uv_sync() -> None:
-    dockerfile = Path("docker/app.Dockerfile").read_text(encoding="utf-8")
+    dockerfile = Path("deploy/docker/app.Dockerfile").read_text(encoding="utf-8")
 
     assert dockerfile.startswith("# syntax=docker/dockerfile:")
     assert "apt.postgresql.org" in dockerfile
@@ -129,6 +131,14 @@ def test_app_image_runs_installed_cli_without_runtime_uv_sync() -> None:
     assert "COPY src ./src" in dockerfile
     assert 'ENTRYPOINT ["/app/.venv/bin/fourok"]' in dockerfile
     assert 'ENTRYPOINT ["uv", "run", "fourok"]' not in dockerfile
+
+
+def test_deployment_dockerfiles_live_under_deploy_directory() -> None:
+    assert not Path("docker").exists()
+    assert Path("deploy/docker/app.Dockerfile").exists()
+    assert Path("deploy/docker/dagster.Dockerfile").exists()
+    assert Path("deploy/docker/docling-worker.Dockerfile").exists()
+    assert not Path("deploy/docker/graphiti-runner.Dockerfile").exists()
 
 
 def test_dockerignore_keeps_local_artifacts_out_of_build_context() -> None:
@@ -151,8 +161,8 @@ def test_compose_excludes_deferred_experiment_runtimes() -> None:
     assert "context: ./.reference/graphiti" not in compose
     assert "NEO4J_URI:" not in compose
     assert "GRAPHITI_NEO4J_PASSWORD" not in compose
-    assert "docker/docling-worker.Dockerfile" not in compose
-    assert "docker/graphiti-runner.Dockerfile" not in compose
+    assert "deploy/docker/docling-worker.Dockerfile" not in compose
+    assert "deploy/docker/graphiti-runner.Dockerfile" not in compose
     assert 'profiles: ["experiments"]' not in compose
 
 
@@ -457,7 +467,7 @@ def test_compose_declares_fourok_metrics_exporter_for_prometheus() -> None:
     assert "fourok-dagster-runtime" in prometheus
 
 
-def test_compose_declares_dagster_pipeline_profile() -> None:
+def test_compose_starts_dagster_pipeline_by_default() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
 
     for service_name in [
@@ -467,7 +477,7 @@ def test_compose_declares_dagster_pipeline_profile() -> None:
         "dagster-daemon",
     ]:
         service = _compose_service_block(compose, service_name)
-        assert 'profiles: ["pipeline"]' in service
+        assert "profiles:" not in service
         assert "restart: unless-stopped" in service
         assert "healthcheck:" in service
 
@@ -477,7 +487,7 @@ def test_compose_declares_dagster_pipeline_profile() -> None:
     )
     assert f"${{FOUROK_DAGSTER_RUNTIME_IMAGE:-{public_dagster_runtime_image}}}" in compose
     assert "fourok-dagster-code:${FOUROK_IMAGE_TAG:-local-check}" in compose
-    assert "docker/dagster.Dockerfile" in compose
+    assert "deploy/docker/dagster.Dockerfile" in compose
     assert "target: dagster-code" in _compose_service_block(compose, "dagster-code")
     assert "target: dagster-runtime" not in _compose_service_block(compose, "dagster-webserver")
     assert "target: dagster-runtime" not in _compose_service_block(compose, "dagster-daemon")
@@ -490,7 +500,7 @@ def test_compose_declares_dagster_pipeline_profile() -> None:
         ("dagster-daemon", "fourok-dagster-daemon"),
     ]:
         service = _compose_service_block(compose, service_name)
-        assert "FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}" in service
+        assert "FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}" in service
         assert (
             "OTEL_EXPORTER_OTLP_ENDPOINT: "
             "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}" in service

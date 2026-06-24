@@ -142,6 +142,11 @@ def add_runtime_commands(subparsers) -> None:
         action=StoreExplicitState,
     )
     health_parser.add_argument("--database-url")
+    health_parser.add_argument(
+        "--database-only",
+        action="store_true",
+        help="Only require database connectivity; intended for container readiness checks.",
+    )
 
     monitor_parser = subparsers.add_parser(
         "runtime-monitor",
@@ -169,6 +174,11 @@ def add_runtime_commands(subparsers) -> None:
         "--max-checks",
         type=int,
         help="Exit after this many checks. Omit for the container runtime.",
+    )
+    monitor_parser.add_argument(
+        "--database-only",
+        action="store_true",
+        help="Only require database connectivity in periodic reports.",
     )
 
     subparsers.add_parser(

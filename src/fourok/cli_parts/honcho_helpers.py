@@ -16,7 +16,6 @@ SourceClientError = None
 collect_source_snapshot = None
 HonchoSyncState = None
 execute_honcho_sync = None
-graphiti_episodes_from_source_snapshot = None
 evaluate_evidence_baseline = None
 
 
@@ -72,13 +71,6 @@ def _ensure_honcho_sync_symbol() -> None:
     if execute_honcho_sync is None:
         module = importlib.import_module("fourok.honcho.sync")
         execute_honcho_sync = module.execute_honcho_sync
-
-
-def _ensure_graphiti_episode_symbol() -> None:
-    global graphiti_episodes_from_source_snapshot
-    if graphiti_episodes_from_source_snapshot is None:
-        module = importlib.import_module("fourok.retrieval.graphiti_episodes")
-        graphiti_episodes_from_source_snapshot = module.graphiti_episodes_from_source_snapshot
 
 
 def _ensure_evidence_baseline_symbol() -> None:

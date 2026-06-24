@@ -6,7 +6,7 @@ from sqlalchemy import create_engine
 from fourok.etl.extract.source_records import SourceRecord
 from fourok.governance import GovernedContext
 from fourok.governance.state import create_governed_context_state
-from fourok.storage.health import check_runtime_health
+from fourok.storage.health import check_database_health, check_runtime_health
 
 
 def test_check_runtime_health_reports_database_without_records_as_failed(tmp_path: Path) -> None:
@@ -39,6 +39,30 @@ def test_check_runtime_health_reports_database_without_records_as_failed(tmp_pat
                 "detail": "no current retrieval records found",
                 "count": 0,
             },
+        ],
+    }
+
+
+def test_check_database_health_reports_ok_without_requiring_imported_records(
+    tmp_path: Path,
+) -> None:
+    state = create_governed_context_state(
+        state_path=tmp_path / "state.sqlite",
+        database_url=None,
+        raw_store_path=None,
+    )
+
+    report = check_database_health(state)
+
+    assert report == {
+        "status": "ok",
+        "checks": [
+            {
+                "name": "database",
+                "status": "ok",
+                "detail": "connected",
+                "dialect": "sqlite",
+            }
         ],
     }
 

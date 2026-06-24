@@ -241,8 +241,8 @@ Call out new dependencies in the final response.
 - Let slow image pulls or dependency downloads continue when they are making
   progress; do not abort them just because they take several minutes.
 - Before adding a custom Docker build, check whether an upstream image can be
-  used directly or as a base; for external runtimes such as Graphiti, research
-  available public images before writing or extending a Dockerfile.
+  used directly or as a base; for external runtimes, research available public
+  images before writing or extending a Dockerfile.
 - Never build or tag project Docker images as `latest`.
 - Tag images with the current commit hash so runtime state is identifiable.
 - If a Docker image would include uncommitted changes, commit the slice first or

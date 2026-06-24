@@ -22,7 +22,7 @@ from fourok.runtime.readiness import internal_prod_readiness_report
 from fourok.runtime.rebuild import rebuild_retrieval_units
 from fourok.runtime.services import runtime_service_boundaries
 from fourok.runtime.stage1_acceptance import run_stage1_acceptance
-from fourok.storage.health import check_runtime_health
+from fourok.storage.health import check_database_health, check_runtime_health
 
 
 def dispatch_runtime_commands(args: argparse.Namespace) -> bool:
@@ -144,7 +144,7 @@ def dispatch_runtime_commands(args: argparse.Namespace) -> bool:
             database_url=args.database_url,
             raw_store_path=None,
         )
-        report = check_runtime_health(state)
+        report = check_database_health(state) if args.database_only else check_runtime_health(state)
         print(json.dumps(report, indent=2, sort_keys=True))
         if report["status"] != "ok":
             raise SystemExit(1)
@@ -340,7 +340,7 @@ def run_runtime_monitor(args: argparse.Namespace) -> None:
     )
     checks_run = 0
     while args.max_checks is None or checks_run < args.max_checks:
-        report = check_runtime_health(state)
+        report = check_database_health(state) if args.database_only else check_runtime_health(state)
         print(
             json.dumps(
                 {

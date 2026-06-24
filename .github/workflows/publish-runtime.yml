@@ -65,7 +65,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: docker/app.Dockerfile
+          file: deploy/docker/app.Dockerfile
           push: true
           tags: |
             ghcr.io/${{ github.repository_owner }}/fourok-app:sha-${{ github.sha }}
@@ -79,7 +79,7 @@ jobs:
         uses: docker/build-push-action@v7
         with:
           context: .
-          file: docker/dagster.Dockerfile
+          file: deploy/docker/dagster.Dockerfile
           target: dagster-code
           push: true
           tags: |

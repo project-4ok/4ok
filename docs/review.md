@@ -83,13 +83,7 @@ Append audit-relevant open questions here. Keep this file short.
 - Honcho entity catalog: Slack email changes move the active peer mapping, but
   source identity history is still a flat list. Decide whether production needs
   explicit active vs historical identity records.
-- Graphiti ingestion path: packaged REST `/messages` only accepts
-  conversation-style messages and does not expose the full source metadata
-  contract needed for source refs, timestamps, and filtering. The Python
-  `add_episode` and `add_episode_bulk` paths also do not pass
-  `episode_metadata` into `EpisodicNode` despite the model having that field.
-  For the experiment, source refs must be encoded into uuid/name/body or we must
-  patch/wrap Graphiti/write episodic nodes ourselves.
+
 - Local observability: OpenTelemetry/Grafana LGTM is approved for local
   debugging only. Before exporting telemetry outside localhost, define and test
   collector-side redaction for PII, raw source text, connector payloads, and

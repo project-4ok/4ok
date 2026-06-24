@@ -372,7 +372,7 @@ export POSTGRES_PASSWORD="local-check"
 export DAGSTER_POSTGRES_PASSWORD="local-check"
 export FOUROK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
 
-docker compose --profile pipeline up -d \
+docker compose up -d \
   --build \
   --force-recreate \
   postgres \
@@ -599,7 +599,7 @@ uv run --group pipeline dagster asset materialize \
 
 Use the UI to view the asset graph, inspect materialization metadata, read run
 logs, rerun failed assets, and trigger manual materializations. Use
-`docker compose --profile pipeline logs dagster-code dagster-webserver
+`docker compose logs dagster-code dagster-webserver
 dagster-daemon` when the UI cannot load a code location.
 
 ## Source-Record Fixture Regression

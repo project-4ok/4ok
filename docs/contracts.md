@@ -104,7 +104,7 @@ OpenClaw plugin RAG hook:
 - records which source refs were injected and keeps normal search/source-access
   audit behavior
 - can be disabled independently from chat capture and explicit search tools
-- does not depend on Honcho, Graphiti, or `.reference` runtime code
+- does not depend on Honcho or `.reference` runtime code
 
 Optional explicit tool surface:
 

@@ -130,9 +130,9 @@ def test_access_boundary_ignores_experiment_profile_services_by_default() -> Non
                     "profiles": ["experiments"],
                     "ports": [_port("0.0.0.0", 8000, "8000")],
                 },
-                "graphiti-neo4j": {
+                "docling-worker": {
                     "profiles": ["experiments"],
-                    "ports": [_port("", 7474, "7474")],
+                    "ports": [_port("", 8080, "8080")],
                 },
             }
         },
@@ -141,7 +141,7 @@ def test_access_boundary_ignores_experiment_profile_services_by_default() -> Non
     assert report["status"] == "ok"
     assert report["violations"] == []
     assert report["skipped_services"] == [
-        {"service": "graphiti-neo4j", "profiles": ["experiments"]},
+        {"service": "docling-worker", "profiles": ["experiments"]},
         {"service": "honcho", "profiles": ["experiments"]},
     ]
 

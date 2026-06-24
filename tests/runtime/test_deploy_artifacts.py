@@ -16,8 +16,8 @@ def test_publish_runtime_workflow_builds_wheel_and_pinned_images() -> None:
 
     assert "uv build --wheel" in text
     assert "docker/build-push-action" in text
-    assert "docker/app.Dockerfile" in text
-    assert "docker/dagster.Dockerfile" in text
+    assert "deploy/docker/app.Dockerfile" in text
+    assert "deploy/docker/dagster.Dockerfile" in text
     assert "target: dagster-code" in text
     assert "target: dagster-runtime" not in text
     assert "fourok-app" in text

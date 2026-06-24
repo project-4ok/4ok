@@ -164,42 +164,6 @@ def add_honcho_commands(subparsers) -> None:
     _add_source_snapshot_args(evidence_baseline_eval_parser)
     evidence_baseline_eval_parser.add_argument("--limit", type=int, default=5)
 
-    graphiti_episodes_parser = subparsers.add_parser(
-        "graphiti-episodes",
-        help=argparse.SUPPRESS,
-    )
-    _hide_subparser(subparsers, "graphiti-episodes")
-    graphiti_episode_source = graphiti_episodes_parser.add_mutually_exclusive_group(required=True)
-    graphiti_episode_source.add_argument(
-        "--fixture",
-        type=Path,
-        help="Fixture JSON containing Twenty, Slack identity, Linear, and issue records.",
-    )
-    graphiti_episode_source.add_argument(
-        "--live-sources",
-        action="store_true",
-        help="Collect a bounded live source snapshot using env/.env credentials.",
-    )
-    graphiti_episodes_parser.add_argument("--group-id", default="fourok-internal")
-    graphiti_episodes_parser.add_argument(
-        "--source-limit",
-        type=int,
-        default=_int_env("HONCHO_SOURCE_LIMIT", 20),
-    )
-    graphiti_episodes_parser.add_argument(
-        "--catalog-limit",
-        type=int,
-        default=_int_env("HONCHO_CATALOG_LIMIT", 100),
-    )
-    graphiti_episodes_parser.add_argument(
-        "--sources",
-        default=os.environ.get("HONCHO_SYNC_SOURCES", "linear,twenty,slack"),
-    )
-    graphiti_episodes_parser.add_argument(
-        "--checkpoint-overlap-minutes",
-        type=int,
-        default=_int_env("HONCHO_CHECKPOINT_OVERLAP_MINUTES", 5),
-    )
     honcho_preflight_parser = subparsers.add_parser(
         "honcho-preflight",
         help=argparse.SUPPRESS,

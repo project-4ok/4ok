@@ -31,7 +31,7 @@ already has:
 
 Application image:
 
-- `docker/app.Dockerfile`
+- `deploy/docker/app.Dockerfile`
 - entrypoint: `/app/.venv/bin/fourok`
 - required command surface: `health`, `dashboard`, `run-live-ingestion`,
   `live-ingestion-status`, `postgres-backup`, `retention-status`,
@@ -40,7 +40,7 @@ Application image:
 
 Pipeline image:
 
-- `docker/dagster.Dockerfile`
+- `deploy/docker/dagster.Dockerfile`
 - Dagster definitions and config: `deploy/dagster/`
 - code-server port in Compose: `4000`
 - webserver port in Compose: `3001`, currently loopback-only for Compose
@@ -51,8 +51,8 @@ Local proof topology:
 - `app` depends on PostgreSQL
 - `postgres` uses `pgvector/pgvector:pg16`
 - optional observability uses `grafana/otel-lgtm:0.28.0`
-- Dagster pipeline profile uses separate Dagster PostgreSQL, code, webserver,
-  and daemon services
+- Dagster/ETL starts by default with separate Dagster PostgreSQL, code,
+  webserver, and daemon services
 
 ## K3s Service Mapping
 
@@ -203,8 +203,8 @@ connector checkpoints needs a separate retention/deletion decision.
 - [ ] Confirm the target namespace layout for fourok in the infra repo.
 - [ ] Decide whether fourok is a new customer workload group or part of existing
       `clusters/prod/customers/fourok/etl`.
-- [ ] Confirm image registry, tag, and digest policy for `docker/app.Dockerfile`.
-- [ ] Confirm whether `docker/dagster.Dockerfile` is deployed in the first K3s
+- [ ] Confirm image registry, tag, and digest policy for `deploy/docker/app.Dockerfile`.
+- [ ] Confirm whether `deploy/docker/dagster.Dockerfile` is deployed in the first K3s
       cut or deferred.
 - [ ] Confirm PostgreSQL location: in-cluster StatefulSet, existing managed
       service, or external host.

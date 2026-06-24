@@ -86,8 +86,7 @@ contribute to identity merging when the evidence type is strong enough.
 
 | Tool | Good At | Gaps For This Project | Current Use |
 |---|---|---|---|
-| Graphiti | Temporal entity/fact graph, episodes as provenance, incremental updates, custom entity/edge types, hybrid graph search | Governance and permissions remain ours; entity linking quality must be tested on our sources; public ingestion paths do not preserve arbitrary episode metadata, so source refs must be encoded or stored externally | Strong candidate for context graph experiment, but provenance fit is now a key risk |
-| Zep | Managed Graphiti-like context infrastructure, production APIs, context assembly, enterprise features | No access for this goal; managed dependency; governance fit and metadata/ACL model would still need validation | Research context only for current goal |
+| Zep | Managed temporal context infrastructure, production APIs, context assembly, enterprise features | No access for this goal; managed dependency; governance fit and metadata/ACL model would still need validation | Research context only for current goal |
 | Neo4j | Explicit entity graph, graph traversal, custom modeling, relationship queries | We build extraction, linking, indexing, governance, and retrieval orchestration ourselves | Good if we need maximum control |
 | LlamaIndex | Parsing, source nodes, retriever composition, citation-oriented synthesis, property graph helpers | Not a governed context substrate alone; entity resolution and permissions are custom | Useful orchestration/retrieval library |
 | LangGraph | Agent/workflow orchestration and stateful tool flows | Not source/evidence storage or entity linking | Useful for agent-side query workflow later |
@@ -105,8 +104,7 @@ Likely outsource:
 
 - source connector state where Singer taps are good enough
 - secret delivery through external secret manager
-- graph episode/entity/fact extraction experiment through Graphiti OSS
-- graph storage/traversal through Graphiti backend or Neo4j
+- graph storage/traversal through Neo4j or another source-record-compatible graph layer
 - retrieval orchestration pieces through LlamaIndex where useful
 - PII detection baseline through Presidio
 - agent workflow orchestration through LangGraph if needed
@@ -125,8 +123,8 @@ Product-owned surface:
 - deletion/restriction propagation across derived layers
 - operations, backup/restore, scheduler, and deployment shape
 
-Even if Graphiti or Zep handles entity extraction and deduplication, the project
-still owns whether a link is trusted enough for a governed answer.
+Even if an external graph layer handles entity extraction and deduplication, the
+project still owns whether a link is trusted enough for a governed answer.
 
 ## Current Architecture Hypothesis
 
@@ -137,7 +135,7 @@ connectors
   -> source_records
   -> source episodes
   -> entity/fact substrate experiment
-       - Graphiti OSS or Neo4j-backed custom graph
+       - Neo4j-backed custom graph or another source-record-compatible graph
   -> hybrid retrieval
   -> evidence pack
   -> answer synthesis
@@ -148,8 +146,8 @@ For now:
 
 - keep Honcho as a side experiment for OpenClaw/user continuity
 - stop designing company context around Honcho peers
-- test Graphiti against the same Linear + Twenty data
-- compare entity linking, source provenance, and retrieval quality
+- compare entity linking, source provenance, and retrieval quality using the
+  source-record-first retrieval path
 
 Current retrieval evidence:
 
@@ -163,31 +161,11 @@ Current retrieval evidence:
 - the hidden `fourok evidence-baseline-eval` command keeps the old custom baseline
   available as a comparison floor
 
-Current Graphiti wiring:
+Retired graph substrate note:
 
-- `graphiti-runner` is an isolated Dockerfile/script experiment, not an active
-  Docker Compose runtime service
-- it installs `graphiti-core==0.29.1` from PyPI outside the main app image
-- `zepai/graphiti:latest` exists but is the packaged server image, not the
-  custom evaluation runner
-- it ingests the same 15-case fixture through the Graphiti Python API
-- measured run ingested 19 episodes and returned relevant semantic facts
-- earlier default Graphiti fact search scored 0/14 on the evidence contract
-  because useful facts did not include source refs, entity refs, or permission
-  refs
-- the provenance wrapper joins returned edge episode UUIDs back to source
-  episode metadata and improved the earlier eval to 7/14
-- provenance recovery works when Graphiti returns facts with linked episode
-  UUIDs; it still fails when useful inferred facts have no usable source edge in
-  the result shape
-- adding source-record fallback improves the current eval to 15/15, but
-  fallback is used in all 15 cases; the latest report shows
-  `graphiti_only_passed: 7`, `source_fallback_cases: 15`, and
-  `source_fallback_items: 56`
-- source records are carrying the evidence contract; Graphiti contributes useful
-  semantic/fact recall in less than half of the current fixture cases
-- Graphiti is best treated as a derived semantic/fact index unless later tests
-  show it can consistently return provenance and lifecycle metadata directly
+- The Graphiti runner, Dockerfile, CLI dry-run command, and episode-conversion
+  module were removed because source records were carrying the evidence contract.
+- The source-record-first retrieval path is the active comparison floor.
 
 Current Honcho comparison:
 
@@ -210,9 +188,6 @@ Current Honcho comparison:
 3. Entity-linking quality test:
    check real Twenty CRM aliases, companies, projects, and first-name ambiguity
    against expected candidates.
-4. Graphiti value test:
-   measure whether Graphiti improves recall/ranking enough to justify running
-   it as a derived index.
-5. Live-data replay:
+4. Live-data replay:
    rerun the 15-case shape against bounded live Linear/Twenty/Slack-derived
    data and record failures by cause.

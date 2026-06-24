@@ -77,7 +77,7 @@ def test_document_extraction_experiment_writes_summary(tmp_path: Path) -> None:
 
 
 def test_docling_worker_dockerfile_keeps_docling_out_of_default_runtime() -> None:
-    dockerfile = REPO_ROOT / "docker" / "docling-worker.Dockerfile"
+    dockerfile = REPO_ROOT / "deploy" / "docker" / "docling-worker.Dockerfile"
 
     content = dockerfile.read_text(encoding="utf-8")
 
@@ -92,5 +92,5 @@ def test_compose_does_not_expose_docling_worker_experiment_service() -> None:
     compose = (REPO_ROOT / "docker-compose.yml").read_text(encoding="utf-8")
 
     assert "docling-worker:" not in compose
-    assert "dockerfile: docker/docling-worker.Dockerfile" not in compose
+    assert "dockerfile: deploy/docker/docling-worker.Dockerfile" not in compose
     assert ".local/document-extraction:/work/document-extraction" not in compose

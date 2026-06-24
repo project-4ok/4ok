@@ -52,6 +52,34 @@ loopback only by default. If a hosted client such as ChatGPT web needs to reach
 it from outside this machine, put an HTTPS tunnel/reverse proxy in front of this
 local endpoint and keep database credentials out of the client config.
 
+## Hosted ChatGPT/Claude readiness gaps
+
+The Docker Compose HTTP MCP service is enough for local MCP clients, but it is
+not yet a complete setup for web-hosted ChatGPT or Claude clients. Before
+exposing this beyond localhost, implement and verify:
+
+- Public HTTPS endpoint: terminate TLS in a maintained reverse proxy or tunnel
+  and route only the MCP path, for example `/mcp`, to the local `mcp` service.
+- Authentication: require bearer-token or OAuth-style auth at the edge before
+  any MCP request reaches the server. The current local endpoint is unauthenticated.
+- Secret handling: keep `FOUROK_DATABASE_URL`, runtime config, and connector
+  credentials server-side only. Hosted clients should receive only an MCP URL
+  and auth material, never database credentials.
+- Host allowlist / access policy: decide which hosted clients, users, and
+  workspaces may call the MCP endpoint; log denials.
+- Rate limits and request limits: cap request size, concurrency, and tool-call
+  rate so a hosted client cannot overload retrieval or the runtime database.
+- Audit trail: record remote caller identity, tool name, query length, result
+  count, and audit ref without logging raw secrets or sensitive query text.
+- CORS / protocol compatibility: verify the exact hosted-client MCP transport
+  requirements. Keep streamable HTTP compatibility tests for the client version
+  being targeted.
+- Operator smoke test: add a repeatable check that connects through the public
+  HTTPS URL, lists `search_fourok` and `operator_status`, and runs a safe
+  `operator_status` call.
+- Deployment runbook: document how to rotate tokens, disable the public endpoint,
+  inspect logs, and fall back to loopback-only local mode.
+
 Hermes can connect to the stdio server with this native MCP config shape. Set
 `cwd` to the repository checkout that contains this `pyproject.toml`:
 

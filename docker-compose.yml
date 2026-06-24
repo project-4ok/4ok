@@ -62,7 +62,7 @@ services:
     image: fourok-app:${FOUROK_IMAGE_TAG:-local-check}
     build:
       context: .
-      dockerfile: docker/app.Dockerfile
+      dockerfile: deploy/docker/app.Dockerfile
     restart: unless-stopped
     entrypoint: ["/app/.venv/bin/python"]
     command:
@@ -87,7 +87,6 @@ services:
         condition: service_healthy
 
   dagster-postgres:
-    profiles: ["pipeline"]
     image: postgres:16.10-alpine
     restart: unless-stopped
     environment:
@@ -103,12 +102,11 @@ services:
       retries: 12
 
   dagster-code:
-    profiles: ["pipeline"]
     image: fourok-dagster-code:${FOUROK_IMAGE_TAG:-local-check}
     restart: unless-stopped
     build:
       context: .
-      dockerfile: docker/dagster.Dockerfile
+      dockerfile: deploy/docker/dagster.Dockerfile
       target: dagster-code
     environment:
       DAGSTER_CURRENT_IMAGE: fourok-dagster-code:${FOUROK_IMAGE_TAG:-local-check}
@@ -124,7 +122,7 @@ services:
       FOUROK_OPENAI_EMBEDDING_MODEL: ${FOUROK_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       FOUROK_EMBEDDING_DIMENSIONS: ${FOUROK_EMBEDDING_DIMENSIONS:-256}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-code}
     depends_on:
@@ -142,7 +140,6 @@ services:
       start_period: 5s
 
   dagster-webserver:
-    profiles: ["pipeline"]
     image: ${FOUROK_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
     restart: unless-stopped
     command:
@@ -158,7 +155,7 @@ services:
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:-local-check}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-webserver}
     ports:
@@ -184,7 +181,6 @@ services:
       start_period: 15s
 
   dagster-daemon:
-    profiles: ["pipeline"]
     image: ${FOUROK_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
     restart: unless-stopped
     command:
@@ -201,7 +197,7 @@ services:
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:-local-check}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-daemon}
     volumes:
@@ -225,7 +221,7 @@ services:
     restart: unless-stopped
     build:
       context: .
-      dockerfile: docker/app.Dockerfile
+      dockerfile: deploy/docker/app.Dockerfile
     environment:
       FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:-postgresql+psycopg://fourok:${POSTGRES_PASSWORD:-local-check}@postgres:5432/fourok}
       FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}
@@ -243,19 +239,19 @@ services:
       - fourok-data:/var/lib/fourok
       - ${FOUROK_CONFIG_PATH:-./.local/fourok.toml}:/etc/fourok/fourok.toml:ro
     healthcheck:
-      test: ["CMD", "/app/.venv/bin/fourok", "health"]
+      test: ["CMD", "/app/.venv/bin/fourok", "health", "--database-only"]
       interval: 10s
       timeout: 10s
       retries: 12
       start_period: 10s
-    command: ["runtime-monitor", "--config", "/etc/fourok/fourok.toml"]
+    command: ["runtime-monitor", "--config", "/etc/fourok/fourok.toml", "--database-only"]
 
   mcp:
     image: fourok-app:${FOUROK_IMAGE_TAG:-local-check}
     restart: unless-stopped
     build:
       context: .
-      dockerfile: docker/app.Dockerfile
+      dockerfile: deploy/docker/app.Dockerfile
     entrypoint: ["/app/.venv/bin/fourok-mcp"]
     command:
       [

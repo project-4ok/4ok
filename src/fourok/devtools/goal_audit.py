@@ -44,7 +44,7 @@ ACTIVE_RUNTIME_DOCS = (
     "docs/operations.md",
 )
 
-MEMORY_EXPERIMENT_TERMS = ("Honcho", "honcho", "Graphiti", "graphiti")
+MEMORY_EXPERIMENT_TERMS = ("Honcho", "honcho")
 ACTIVE_REVEAL_TERMS = ("request_reveal", "Search, reveal", "reveal requires")
 ADD_PARSER_PATTERN = re.compile(r'add_parser\(\s*"([^"]+)"', re.DOTALL)
 PLAN_FOUROK_PROOF_PATTERN = re.compile(r"Proof: `uv run fourok ([a-z0-9-]+)(?:\s|`)")

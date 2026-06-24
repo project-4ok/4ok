@@ -27,6 +27,14 @@ def check_runtime_health(state: RuntimeHealthState) -> dict[str, Any]:
     }
 
 
+def check_database_health(state: RuntimeHealthState) -> dict[str, Any]:
+    checks = [_database_check(state)]
+    return {
+        "status": "ok" if checks[0]["status"] == "ok" else "failed",
+        "checks": checks,
+    }
+
+
 def _database_check(state: RuntimeHealthState) -> dict[str, Any]:
     try:
         with state.engine.connect() as connection:

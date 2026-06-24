@@ -181,31 +181,6 @@ def dispatch_honcho(args: argparse.Namespace) -> bool:
         print(json.dumps(report, indent=2))
         return True
 
-    if args.command == "graphiti-episodes":
-        helpers._ensure_graphiti_episode_symbol()
-        data = helpers._honcho_sync_data_from_args(args)
-        episodes = helpers.graphiti_episodes_from_source_snapshot(data, group_id=args.group_id)
-        print(
-            json.dumps(
-                {
-                    "mode": "dry-run",
-                    "substrate": "graphiti",
-                    "summary": {
-                        "episodes": len(episodes),
-                        "message_episodes": sum(
-                            1 for episode in episodes if episode["source"] == "message"
-                        ),
-                        "json_episodes": sum(
-                            1 for episode in episodes if episode["source"] == "json"
-                        ),
-                    },
-                    "episodes": episodes,
-                },
-                indent=2,
-            )
-        )
-        return True
-
     if args.command == "honcho-preflight":
         helpers._ensure_honcho_preflight_symbols()
         report = (

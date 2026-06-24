@@ -95,14 +95,13 @@ start_local_stack() {
 
   docker compose \
     --profile observability \
-    --profile pipeline \
     up \
     --build \
     --force-recreate \
     -d \
     postgres \
-    cerbos \
     app \
+    mcp \
     observability \
     dagster-postgres \
     dagster-code \
