@@ -1,8 +1,10 @@
 import json
+from argparse import Namespace
 from datetime import UTC, datetime
 from pathlib import Path
 
 from fourok.cli import main
+from fourok.cli_parts.commands_imports import _database_url_unless_explicit_state
 from fourok.cli_parts.commands_runtime import host_operator_database_url
 from fourok.cli_parts.shared import DEFAULT_STATE
 from fourok.etl.extract.source_records import SourceRecord
@@ -204,6 +206,19 @@ def test_operator_status_explicit_state_without_database_url_uses_state_file(
     )
 
     assert database_url is None
+
+
+def test_import_admin_defaults_to_host_runtime_database(monkeypatch) -> None:
+    args = Namespace(database_url=None, state_explicit=False)
+    monkeypatch.setenv(
+        "FOUROK_DATABASE_URL",
+        "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
+    )
+    monkeypatch.setattr("fourok.cli_parts.commands_imports._running_in_container", lambda: False)
+
+    assert _database_url_unless_explicit_state(args) == (
+        "postgresql+psycopg://fourok:secret@127.0.0.1:5432/fourok"
+    )
 
 
 def test_cli_health_defaults_to_host_runtime_database(capsys, monkeypatch, tmp_path: Path) -> None:

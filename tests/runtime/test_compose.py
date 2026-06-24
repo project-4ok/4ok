@@ -114,6 +114,20 @@ def test_installer_chooses_free_local_ports_for_onboarding() -> None:
     assert "while port_reserved \"$port\" || ! port_available \"$port\"" in installer
 
 
+def test_installer_installs_plain_cli_shims() -> None:
+    installer = Path("install.sh").read_text(encoding="utf-8")
+
+    assert "install_cli_shims()" in installer
+    assert 'local bin_dir="$HOME/.local/bin"' in installer
+    assert "for command in fourok fourok-dev fourok-mcp" in installer
+    assert 'exec uv --project "$project_dir" run $command "\\$@"' in installer
+    assert "install_cli_shims" in installer.split("uv sync", maxsplit=1)[1]
+    assert "Next:    fourok onboard" in installer
+    assert "Status:  fourok status" in installer
+    assert 'Try:     fourok retrieve "refund cancellation payment"' in installer
+    assert "Next:    uv run fourok onboard" not in installer
+
+
 def test_compose_starts_streamable_http_mcp_service_by_default() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
     mcp_service = _compose_service_block(compose, "mcp")
@@ -550,6 +564,27 @@ def test_compose_starts_dagster_pipeline_by_default() -> None:
         assert f"OTEL_SERVICE_NAME: ${{OTEL_SERVICE_NAME:-{service_name_env}}}" in service
     assert "dagster-postgres-data:/var/lib/postgresql/data" in compose
     assert "dagster-local:/var/lib/dagster" in compose
+
+
+def test_dagster_code_receives_connector_secret_env_names() -> None:
+    compose_files = [Path("docker-compose.yml"), Path("deploy/runtime/docker-compose.pinned.yml")]
+
+    for compose_file in compose_files:
+        compose = compose_file.read_text(encoding="utf-8")
+        dagster_code = _compose_service_block(compose, "dagster-code")
+
+        assert "SLACK_BOT_TOKEN: ${SLACK_BOT_TOKEN:-}" in dagster_code
+        assert "LINEAR_API_KEY: ${LINEAR_API_KEY:-}" in dagster_code
+        assert "TWENTY_API_KEY: ${TWENTY_API_KEY:-}" in dagster_code
+        assert (
+            "GOOGLE_WORKSPACE_OAUTH_CLIENT_SECRET_JSON: "
+            "${GOOGLE_WORKSPACE_OAUTH_CLIENT_SECRET_JSON:-}" in dagster_code
+        )
+        assert (
+            "GOOGLE_WORKSPACE_OAUTH_REFRESH_TOKEN: "
+            "${GOOGLE_WORKSPACE_OAUTH_REFRESH_TOKEN:-}" in dagster_code
+        )
+        assert "GOOGLE_WORKSPACE_DRIVE_IDS: ${GOOGLE_WORKSPACE_DRIVE_IDS:-}" in dagster_code
 
 
 def test_dagster_daemon_starts_backfill_schedule_before_running() -> None:

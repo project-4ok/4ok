@@ -208,16 +208,12 @@ def add_import_commands(subparsers) -> None:
     )
     connector_checkpoint_parser.add_argument("connector_name")
     connector_checkpoint_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    connector_checkpoint_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
-    )
+    connector_checkpoint_parser.add_argument("--database-url")
 
     connector_jobs_parser = subparsers.add_parser(
         "connector-jobs",
         help="Print stored connector job runs.",
     )
     connector_jobs_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    connector_jobs_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
-    )
+    connector_jobs_parser.add_argument("--database-url")
     connector_jobs_parser.add_argument("--connector-name")

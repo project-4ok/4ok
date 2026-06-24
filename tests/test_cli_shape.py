@@ -129,8 +129,52 @@ def test_status_json_is_available_for_agents(capsys, monkeypatch) -> None:
     )
 
     main()
-
     assert json.loads(capsys.readouterr().out)["status"] == "ok"
+
+
+def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) -> None:
+    monkeypatch.setattr("sys.argv", ["fourok", "onboard"])
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime._safe_client_status_report",
+        lambda: {
+            "status": "needs_onboarding",
+            "checks": [
+                {"name": "database", "status": "ok"},
+                {"name": "source_records", "status": "ok", "count": 14},
+                {"name": "retrieval_records", "status": "ok", "count": 14},
+            ],
+            "source_system_counts": {"local_email": 14},
+        },
+    )
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime._connector_secret_report",
+        lambda: {
+            "status": "missing",
+            "connectors": {
+                "slack": {"status": "ok", "missing": []},
+                "linear": {"status": "ok", "missing": []},
+                "twenty": {"status": "ok", "missing": []},
+                "google_drive": {
+                    "status": "missing",
+                    "missing": ["GOOGLE_WORKSPACE_DRIVE_IDS"],
+                },
+            },
+        },
+    )
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime._dagster_code_secret_presence",
+        lambda: {"status": "missing", "missing": ["SLACK_BOT_TOKEN"]},
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "Current state" in output
+    assert "only demo context is present" in output
+    assert "google_drive: missing GOOGLE_WORKSPACE_DRIVE_IDS" in output
+    assert "dagster-code is not receiving connector credentials" in output
+    assert "docker compose up -d --build dagster-code" in output
+    assert "fourok status" in output
 
 
 def test_onboard_connectors_is_guidance_not_secret_collection(capsys, monkeypatch) -> None:

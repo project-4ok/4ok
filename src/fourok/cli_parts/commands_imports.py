@@ -22,6 +22,7 @@ from fourok.etl.extract.context_snapshot import load_context_snapshot_source_rec
 from fourok.etl.extract.document_extraction import DocumentConversionError, pdf_source_record
 from fourok.etl.extract.openviking_adapter import load_openviking_messages_jsonl_source_records
 from fourok.etl.extract.sync_jobs import connector_checkpoint, connector_job_runs
+from fourok.runtime.operator_live import host_database_url
 from fourok.runtime.recurring_live_ingestion import (
     live_ingestion_status,
     run_live_ingestion_backfill,
@@ -205,6 +206,7 @@ def dispatch_import_commands(args: argparse.Namespace) -> bool:
         return True
 
     if args.command == "connector-checkpoint":
+        args.database_url = _database_url_unless_explicit_state(args)
         state = _context_state_from_args(args)
         print(
             json.dumps(
@@ -222,6 +224,7 @@ def dispatch_import_commands(args: argparse.Namespace) -> bool:
         return True
 
     if args.command == "connector-jobs":
+        args.database_url = _database_url_unless_explicit_state(args)
         state = _context_state_from_args(args)
         jobs = connector_job_runs(state.engine, state.connector_job_runs)
         if args.connector_name:
@@ -252,4 +255,11 @@ def _database_url_unless_explicit_state(args: argparse.Namespace) -> str | None:
         return args.database_url
     if getattr(args, "state_explicit", False):
         return None
-    return os.environ.get("FOUROK_DATABASE_URL")
+    database_url = os.environ.get("FOUROK_DATABASE_URL")
+    if database_url and not _running_in_container():
+        return host_database_url(database_url)
+    return database_url
+
+
+def _running_in_container() -> bool:
+    return Path("/.dockerenv").exists() or bool(os.environ.get("KUBERNETES_SERVICE_HOST"))

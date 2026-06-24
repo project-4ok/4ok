@@ -293,37 +293,139 @@ def _format_client_status(report: dict) -> str:
     )
 
 
+_REQUIRED_CONNECTOR_SECRETS = {
+    "slack": ("SLACK_BOT_TOKEN",),
+    "linear": ("LINEAR_API_KEY",),
+    "twenty": ("TWENTY_API_KEY",),
+    "google_drive": (
+        "GOOGLE_WORKSPACE_OAUTH_CLIENT_SECRET_JSON",
+        "GOOGLE_WORKSPACE_OAUTH_REFRESH_TOKEN",
+        "GOOGLE_WORKSPACE_DRIVE_IDS",
+    ),
+}
+
+
 def _onboard_message(args: argparse.Namespace) -> str:
     if args.onboard_step == "connectors":
+        secret_report = _connector_secret_report()
         return "\n".join(
             [
                 "Connector onboarding",
                 "",
                 "This command does not collect or store secrets.",
-                "Use it as a safe guide, then run operator commands when you are ready.",
+                "Add connector credentials to .env, then recreate dagster-code",
+                "so imports can use them.",
+                "",
+                *_connector_lines(secret_report),
                 "",
                 "Next:",
-                "  fourok admin connector-jobs",
-                "  fourok admin connector-checkpoint <source>",
+                "  docker compose up -d --build dagster-code",
                 "  fourok status",
+                "  fourok admin connector-jobs",
             ]
         )
+
+    status_report = _safe_client_status_report()
+    secret_report = _connector_secret_report()
+    dagster_secret_presence = _dagster_code_secret_presence()
+    checks = status_report.get("checks", [])
+    counts = {check.get("name"): check.get("count") for check in checks if isinstance(check, dict)}
+    source_count = counts.get("source_records") or 0
+    retrieval_count = counts.get("retrieval_records") or 0
     lines = [
         "fourok onboarding",
         "",
-        "1. Check Docker and local runtime prerequisites.",
-        "2. Start or verify the local stack from install.sh.",
-        "3. Run a client-safe status check.",
-        "4. Try one retrieval query.",
-        "",
-        "Next:",
-        "  fourok status",
-        '  fourok retrieve "What changed this week?"',
-        "  fourok onboard connectors",
+        "Current state:",
+        f"  runtime: {status_report.get('status', 'unknown')}",
+        f"  context: {source_count} source records, {retrieval_count} retrieval units",
     ]
+    if status_report.get("status") == "needs_onboarding":
+        lines.append(
+            "  data: only demo context is present; no connector data has been imported yet"
+        )
+    lines.extend(["", "Connector credentials:", *_connector_lines(secret_report)])
+    if dagster_secret_presence.get("status") == "missing":
+        lines.extend(
+            [
+                "",
+                "Pipeline issue:",
+                "  dagster-code is not receiving connector credentials from the local environment.",
+                "  Recreate it after updating this checkout:",
+                "    docker compose up -d --build dagster-code",
+            ]
+        )
+    lines.extend(["", "Next:", "  fourok status", "  fourok onboard connectors"])
+    if status_report.get("status") == "ok":
+        lines.append('  fourok retrieve "What changed this week?"')
     if args.demo:
         lines.extend(["", "Demo:", '  fourok retrieve "refund cancellation payment"'])
     return "\n".join(lines)
+
+
+def _safe_client_status_report() -> dict:
+    try:
+        database_url = health_database_url(
+            state=DEFAULT_STATE,
+            state_explicit=False,
+            explicit_database_url=None,
+        )
+        state = create_governed_context_state(
+            state_path=DEFAULT_STATE,
+            database_url=database_url,
+            raw_store_path=None,
+        )
+        return _client_status_report(state, check_runtime_health(state))
+    except Exception as error:
+        return {"status": "failed", "detail": str(error), "checks": []}
+
+
+def _connector_secret_report() -> dict[str, object]:
+    env = _dotenv_values(Path(".env"))
+    env.update({key: value for key, value in os.environ.items() if value})
+    connectors: dict[str, dict[str, object]] = {}
+    missing_any = False
+    for connector, required_keys in _REQUIRED_CONNECTOR_SECRETS.items():
+        missing = [key for key in required_keys if not env.get(key)]
+        if missing:
+            missing_any = True
+        connectors[connector] = {"status": "missing" if missing else "ok", "missing": missing}
+    return {"status": "missing" if missing_any else "ok", "connectors": connectors}
+
+
+def _connector_lines(secret_report: dict[str, object]) -> list[str]:
+    connectors = secret_report.get("connectors", {})
+    if not isinstance(connectors, dict):
+        return ["  unknown"]
+    lines = []
+    for connector in sorted(connectors):
+        data = connectors[connector]
+        if not isinstance(data, dict):
+            continue
+        missing = data.get("missing", [])
+        if missing:
+            lines.append(f"  {connector}: missing {', '.join(str(item) for item in missing)}")
+        else:
+            lines.append(f"  {connector}: configured")
+    return lines or ["  none configured"]
+
+
+def _dagster_code_secret_presence() -> dict[str, object]:
+    keys = sorted({key for keys in _REQUIRED_CONNECTOR_SECRETS.values() for key in keys})
+    try:
+        result = subprocess.run(
+            ["docker", "compose", "exec", "-T", "dagster-code", "printenv"],
+            check=False,
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+    except (OSError, subprocess.TimeoutExpired):
+        return {"status": "unknown", "missing": keys}
+    if result.returncode != 0:
+        return {"status": "unknown", "missing": keys}
+    present = {line.split("=", 1)[0] for line in result.stdout.splitlines() if "=" in line}
+    missing = [key for key in keys if key not in present]
+    return {"status": "missing" if missing else "ok", "missing": missing}
 
 
 def host_operator_database_url(
