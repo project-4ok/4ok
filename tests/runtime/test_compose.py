@@ -110,6 +110,8 @@ def test_installer_chooses_free_local_ports_for_onboarding() -> None:
     assert "choose_host_port FOUROK_DAGSTER_PORT 3001" in installer
     assert "choose_host_port FOUROK_MCP_PORT 8010" in installer
     assert "Port $preferred_port is busy" in installer
+    assert "FOUROK_RESERVED_HOST_PORTS" in installer
+    assert "while port_reserved \"$port\" || ! port_available \"$port\"" in installer
 
 
 def test_compose_starts_streamable_http_mcp_service_by_default() -> None:
