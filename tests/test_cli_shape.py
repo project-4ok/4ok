@@ -18,6 +18,39 @@ def test_public_help_shows_small_client_surface() -> None:
     assert "postgres-backup" not in help_text
 
 
+def test_invalid_public_command_hints_only_public_surface(capsys) -> None:
+    parser = build_parser()
+
+    with pytest.raises(SystemExit) as exc:
+        parser.parse_args(["onboardingg"])
+
+    error = capsys.readouterr().err
+    assert exc.value.code == 2
+    assert "choose from retrieve, status, onboard, admin" in error
+    assert "search-state" not in error
+    assert "runtime-monitor" not in error
+
+
+def test_onboarding_alias_runs_onboard(capsys, monkeypatch) -> None:
+    monkeypatch.setattr("sys.argv", ["fourok", "onboarding"])
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime._safe_client_status_report",
+        lambda: {"status": "ok", "checks": []},
+    )
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime._connector_secret_report",
+        lambda: {"status": "ok", "connectors": {}},
+    )
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime._dagster_code_secret_presence",
+        lambda: {"status": "ok", "missing": []},
+    )
+
+    main()
+
+    assert "fourok onboarding" in capsys.readouterr().out
+
+
 def test_admin_help_contains_operator_surface() -> None:
     parser = build_parser()
     with pytest.raises(SystemExit) as exc:
@@ -174,6 +207,7 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
     assert "google_drive: missing GOOGLE_WORKSPACE_DRIVE_IDS" in output
     assert "dagster-code is not receiving connector credentials" in output
     assert "docker compose up -d --build dagster-code" in output
+    assert "fourok admin run-live-ingestion --source all --verify-live-db" in output
     assert "fourok status" in output
 
 
@@ -186,3 +220,4 @@ def test_onboard_connectors_is_guidance_not_secret_collection(capsys, monkeypatc
     assert "Connector onboarding" in output
     assert "does not collect or store secrets" in output
     assert "fourok admin connector-jobs" in output
+    assert "fourok admin run-live-ingestion --source all --verify-live-db" in output

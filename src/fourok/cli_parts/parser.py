@@ -13,10 +13,19 @@ from fourok.cli_parts.shared import _hide_subparser
 from fourok.retrieval.cli import add_search_commands
 
 PUBLIC_COMMANDS = {"retrieve", "status", "onboard", "admin"}
+PUBLIC_COMMAND_HINT = "retrieve, status, onboard, admin"
+
+
+class FourokArgumentParser(argparse.ArgumentParser):
+    def _check_value(self, action, value):
+        if action.dest == "command" and action.choices is not None and value not in action.choices:
+            message = f"invalid choice: {value!r} (choose from {PUBLIC_COMMAND_HINT})"
+            raise argparse.ArgumentError(action, message)
+        super()._check_value(action, value)
 
 
 def build_parser() -> argparse.ArgumentParser:
-    parser = argparse.ArgumentParser(
+    parser = FourokArgumentParser(
         prog="fourok",
         description="Governed company context retrieval for AI agents.",
     )
@@ -43,6 +52,7 @@ def build_parser() -> argparse.ArgumentParser:
 def add_onboard_command(subparsers) -> None:
     onboard_parser = subparsers.add_parser(
         "onboard",
+        aliases=["onboarding"],
         help="Set up or verify a local fourok environment.",
         description="Set up or verify a local fourok environment without collecting secrets.",
     )

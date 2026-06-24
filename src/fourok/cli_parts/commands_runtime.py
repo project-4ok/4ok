@@ -303,6 +303,7 @@ _REQUIRED_CONNECTOR_SECRETS = {
         "GOOGLE_WORKSPACE_DRIVE_IDS",
     ),
 }
+_MANUAL_BACKFILL_COMMAND = "fourok admin run-live-ingestion --source all --verify-live-db"
 
 
 def _onboard_message(args: argparse.Namespace) -> str:
@@ -320,6 +321,7 @@ def _onboard_message(args: argparse.Namespace) -> str:
                 "",
                 "Next:",
                 "  docker compose up -d --build dagster-code",
+                f"  {_MANUAL_BACKFILL_COMMAND}",
                 "  fourok status",
                 "  fourok admin connector-jobs",
             ]
@@ -354,7 +356,15 @@ def _onboard_message(args: argparse.Namespace) -> str:
                 "    docker compose up -d --build dagster-code",
             ]
         )
-    lines.extend(["", "Next:", "  fourok status", "  fourok onboard connectors"])
+    lines.extend(
+        [
+            "",
+            "Next:",
+            "  fourok status",
+            "  fourok onboard connectors",
+            f"  {_MANUAL_BACKFILL_COMMAND}",
+        ]
+    )
     if status_report.get("status") == "ok":
         lines.append('  fourok retrieve "What changed this week?"')
     if args.demo:
