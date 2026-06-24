@@ -132,6 +132,29 @@ def test_retrieve_rewrites_container_database_url_for_host_cli(capsys, monkeypat
     )
 
 
+def test_retrieve_uses_same_default_runtime_database_as_status(capsys, monkeypatch) -> None:
+    captured: dict[str, str | None] = {}
+
+    def fake_retrieve_block(*_args, **kwargs):
+        captured["database_url"] = kwargs["database_url"]
+        return "ok\n"
+
+    monkeypatch.delenv("FOUROK_DATABASE_URL", raising=False)
+    monkeypatch.setattr(
+        "fourok.retrieval.cli.health_database_url",
+        lambda **_kwargs: "postgresql+psycopg://fourok:local-check@127.0.0.1:5432/fourok",
+    )
+    monkeypatch.setattr("fourok.retrieval.clients.cli.retrieve_block", fake_retrieve_block)
+    monkeypatch.setattr("sys.argv", ["fourok", "retrieve", "refund"])
+
+    main()
+
+    assert capsys.readouterr().out == "ok\n"
+    assert captured["database_url"] == (
+        "postgresql+psycopg://fourok:local-check@127.0.0.1:5432/fourok"
+    )
+
+
 def test_retrieve_json_returns_stable_machine_shape_without_echoing_query(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:

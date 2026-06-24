@@ -5,6 +5,7 @@ import json
 import os
 from pathlib import Path
 
+from fourok.cli_parts.commands_runtime import health_database_url
 from fourok.cli_parts.runtime_helpers import _database_url_from_args
 from fourok.cli_parts.shared import DEFAULT_STATE, _principal_from_args
 from fourok.etl.extract.email_parser import load_email_dir_with_report
@@ -271,7 +272,13 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
 
 def _retrieval_database_url(args: argparse.Namespace, database_url: str | None) -> str | None:
     if not database_url:
-        return None
+        if _running_in_container():
+            return None
+        return health_database_url(
+            state=getattr(args, "state", DEFAULT_STATE),
+            state_explicit=getattr(args, "state_explicit", False),
+            explicit_database_url=None,
+        )
     if _running_in_container():
         return database_url
     if getattr(args, "state", DEFAULT_STATE) != DEFAULT_STATE:
