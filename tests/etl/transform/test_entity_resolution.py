@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from gcb.etl.transform.entity_resolution import (
+from fourok.etl.transform.entity_resolution import (
     display_name_email_alias_clusters,
     evaluate_clusters,
     exact_email_clusters,

@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.governance import GovernedContext, SourceChange
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.governance import GovernedContext, SourceChange
 
 
 def test_snapshot_deleted_source_is_restored_when_present_in_later_active_import(

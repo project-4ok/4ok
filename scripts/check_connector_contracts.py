@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import sys
 
-from gcb.runtime.connector_contracts import connector_contract_report
+from fourok.runtime.connector_contracts import connector_contract_report
 
 
 def main() -> int:

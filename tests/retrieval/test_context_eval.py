@@ -1,5 +1,5 @@
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.retrieval.context_eval import evaluate_governed_context_retrieval
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.retrieval.context_eval import evaluate_governed_context_retrieval
 
 
 def test_governed_context_eval_fails_on_unacceptable_source_refs() -> None:

@@ -8,7 +8,7 @@ Telegraphic style. Root rules only. Keep this file short, scannable, and project
 - Read relevant docs only; avoid broad context loading.
 - Verify dependency-backed behavior from upstream docs/source/types before relying on it.
 - Never print secrets.
-- Do not use in-repository worktrees. For orchestrated GCB Codex implementation, use only project-adjacent worktrees such as `../4ok.worktrees/<task-slug>/`.
+- Do not use in-repository worktrees. For orchestrated 4OK Codex implementation, use only project-adjacent worktrees such as `../4ok.worktrees/<task-slug>/`.
 - Do not use `/tmp` for project artifacts, datasets, state, or experiment outputs; use a project-local ignored scratch directory.
 - Use `.reference` only as a local, read-only research shelf for external repositories.
 - Never import code from `.reference`, copy files from it into the product, mount it
@@ -23,10 +23,10 @@ Telegraphic style. Root rules only. Keep this file short, scannable, and project
 acceptance criterion -> failing test/check -> smallest change -> refactor -> live/operator proof -> summarize
 ```
 
-- For non-trivial GCB coding, Hermes may implement small/medium changes directly.
+- For non-trivial 4OK coding, Hermes may implement small/medium changes directly.
 - Use Codex when 2-4 independent slices can run in parallel, or when one task is large enough to justify worktree/prompt/review overhead.
 - Spawn supervised Codex worker processes/sessions for large independent implementation; use Hermes subagents for parallel research/review.
-- Launch Codex workers with explicit model `gpt-5.3-codex-spark`; do not use fast mode/service-tier fast or the Codex default model for GCB implementation work.
+- Launch Codex workers with explicit model `gpt-5.3-codex-spark`; do not use fast mode/service-tier fast or the Codex default model for 4OK implementation work.
 - Codex worker prompts must include scope, TDD/proof command, commit policy, and a durable `.local/codex-runs/<slug>/` report path.
 - Keep adjacent Codex worktrees tidy: after integrating or rejecting a worker, remove its worktree/branch once evidence is preserved; before launching more than a few workers, run `git worktree list` and prune stale directories under `../4ok.worktrees/`.
 
@@ -46,13 +46,13 @@ acceptance criterion -> failing test/check -> smallest change -> refactor -> liv
 
 Use these ownership lanes to run multiple agents with minimal conflicts:
 
-- Import pipeline agent: `src/gcb/etl/extract/`, connector fixtures/tests, live-contract scripts. Output valid `SourceRecord`s; avoid retrieval/ranking changes.
-- Source-record/storage agent: `src/gcb/storage/`, source-record schemas, migrations/contracts. Coordinate before changing shared columns or table semantics.
-- Entity-linking/context agent: `src/gcb/etl/load/context_objects.py`, canonical object/entity-link tests, future `src/gcb/context_graph/`. Consume source records; avoid connector code.
-- Retrieval/reranker agent: `src/gcb/retrieval/`, `tests/retrieval/`, retrieval CLI/eval tests. Consume retrieval records; avoid import adapters and Dagster wiring unless needed for proof.
-- Runtime/orchestration agent: `src/gcb/runtime/`, `src/gcb/orchestration/`, `deploy/dagster/`, `deploy/observability/`, `docker-compose.yml`, operator scripts. Keep orchestration thin; avoid domain algorithm changes.
-- CLI/agent-experience agent: `src/gcb/cli_parts/`, CLI tests, OpenClaw-facing docs/tools. Do not change storage/retrieval internals without a domain owner.
-- Governance/security agent: `src/gcb/governance/`, permission/retention/audit tests. Review any cross-domain permission or sensitive-data change.
+- Import pipeline agent: `src/fourok/etl/extract/`, connector fixtures/tests, live-contract scripts. Output valid `SourceRecord`s; avoid retrieval/ranking changes.
+- Source-record/storage agent: `src/fourok/storage/`, source-record schemas, migrations/contracts. Coordinate before changing shared columns or table semantics.
+- Entity-linking/context agent: `src/fourok/etl/load/context_objects.py`, canonical object/entity-link tests, future `src/fourok/context_graph/`. Consume source records; avoid connector code.
+- Retrieval/reranker agent: `src/fourok/retrieval/`, `tests/retrieval/`, retrieval CLI/eval tests. Consume retrieval records; avoid import adapters and Dagster wiring unless needed for proof.
+- Runtime/orchestration agent: `src/fourok/runtime/`, `src/fourok/orchestration/`, `deploy/dagster/`, `deploy/observability/`, `docker-compose.yml`, operator scripts. Keep orchestration thin; avoid domain algorithm changes.
+- CLI/agent-experience agent: `src/fourok/cli_parts/`, CLI tests, OpenClaw-facing docs/tools. Do not change storage/retrieval internals without a domain owner.
+- Governance/security agent: `src/fourok/governance/`, permission/retention/audit tests. Review any cross-domain permission or sensitive-data change.
 
 If two agents need the same lane, shrink the slice or serialize. Schema/storage and Dagster orchestration are shared choke points; treat them as coordination gates.
 
@@ -83,7 +83,7 @@ If two agents need the same lane, shrink the slice or serialize. Schema/storage 
   3. live-data evidence when credentials/runtime access are expected to work.
 - Fixture or synthetic tests may prove edge cases, but they do not replace live
   connector/import/retrieval proof when the claim is about real local data.
-- For GCB runtime work, prove the same surface a human or agent will use:
+- For 4OK runtime work, prove the same surface a human or agent will use:
   Dagster, operator CLI/status, Grafana/Loki/Tempo/Prometheus, MCP tools, and
   permission allow/deny paths as applicable.
 - Keep acceptance data current. If a live case fails because expected source refs

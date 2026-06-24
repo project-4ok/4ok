@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from gcb.storage.config import (
+from fourok.storage.config import (
     BackupConfig,
     ConnectorConfig,
     RawStoreConfig,
@@ -17,7 +17,7 @@ from gcb.storage.config import (
 
 
 def test_load_runtime_config_reads_retention_and_raw_store(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     raw_store_path = tmp_path / "raw-source-objects"
     config_path.write_text(
         "\n".join(
@@ -53,7 +53,7 @@ def test_load_runtime_config_reads_retention_and_raw_store(tmp_path: Path) -> No
                 "[telemetry]",
                 "enabled = true",
                 'endpoint = "http://otel.example:4318"',
-                'service_name = "gcb-internal"',
+                'service_name = "fourok-internal"',
                 "",
                 "[connectors]",
                 'enabled = ["gmail-singer", "context-fixture"]',
@@ -87,7 +87,7 @@ def test_load_runtime_config_reads_retention_and_raw_store(tmp_path: Path) -> No
         telemetry=TelemetryConfig(
             enabled=True,
             endpoint="http://otel.example:4318",
-            service_name="gcb-internal",
+            service_name="fourok-internal",
         ),
         connectors=ConnectorConfig(
             enabled=("gmail-singer", "context-fixture"),
@@ -99,7 +99,7 @@ def test_load_runtime_config_reads_retention_and_raw_store(tmp_path: Path) -> No
 def test_load_runtime_config_resolves_relative_raw_store_path_from_config_file(
     tmp_path: Path,
 ) -> None:
-    config_path = tmp_path / "config" / "gcb.toml"
+    config_path = tmp_path / "config" / "fourok.toml"
     config_path.parent.mkdir()
     config_path.write_text(
         "\n".join(
@@ -118,7 +118,7 @@ def test_load_runtime_config_resolves_relative_raw_store_path_from_config_file(
 
 
 def test_load_runtime_config_rejects_invalid_raw_store_table(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text('raw_store = "filesystem"\n', encoding="utf-8")
 
     with pytest.raises(ValueError, match=r"\[raw_store\] must be a TOML table"):
@@ -126,7 +126,7 @@ def test_load_runtime_config_rejects_invalid_raw_store_table(tmp_path: Path) -> 
 
 
 def test_load_runtime_config_rejects_invalid_audit_retention(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text("[retention]\naudit_event_days = -1\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="retention.audit_event_days"):
@@ -134,7 +134,7 @@ def test_load_runtime_config_rejects_invalid_audit_retention(tmp_path: Path) -> 
 
 
 def test_load_runtime_config_rejects_invalid_backup_retention(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text("[retention]\nbackup_days = -1\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="retention.backup_days"):
@@ -142,7 +142,7 @@ def test_load_runtime_config_rejects_invalid_backup_retention(tmp_path: Path) ->
 
 
 def test_load_runtime_config_rejects_invalid_webhook_retention(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text("[retention]\nwebhook_backlog_days = -1\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="retention.webhook_backlog_days"):
@@ -150,7 +150,7 @@ def test_load_runtime_config_rejects_invalid_webhook_retention(tmp_path: Path) -
 
 
 def test_load_runtime_config_rejects_invalid_raw_store_path(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text("[raw_store]\npath = 12\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="raw_store.path must be a string"):
@@ -158,7 +158,7 @@ def test_load_runtime_config_rejects_invalid_raw_store_path(tmp_path: Path) -> N
 
 
 def test_load_runtime_config_rejects_invalid_retrieval_overlap(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text("[retrieval]\nmax_words = 10\noverlap_words = 10\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="retrieval.max_words must be greater"):
@@ -166,7 +166,7 @@ def test_load_runtime_config_rejects_invalid_retrieval_overlap(tmp_path: Path) -
 
 
 def test_load_runtime_config_rejects_invalid_scheduler_interval(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text(
         "[scheduler]\nimport_interval_minutes = 0\n",
         encoding="utf-8",
@@ -177,7 +177,7 @@ def test_load_runtime_config_rejects_invalid_scheduler_interval(tmp_path: Path) 
 
 
 def test_load_runtime_config_rejects_invalid_webhook_process_limit(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text("[webhooks]\nprocess_limit = 0\n", encoding="utf-8")
 
     with pytest.raises(ValueError, match="webhooks.process_limit"):
@@ -185,7 +185,7 @@ def test_load_runtime_config_rejects_invalid_webhook_process_limit(tmp_path: Pat
 
 
 def test_load_runtime_config_rejects_invalid_telemetry_enabled(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text('[telemetry]\nenabled = "yes"\n', encoding="utf-8")
 
     with pytest.raises(ValueError, match="telemetry.enabled must be a boolean"):
@@ -193,7 +193,7 @@ def test_load_runtime_config_rejects_invalid_telemetry_enabled(tmp_path: Path) -
 
 
 def test_load_runtime_config_rejects_invalid_connector_enabled_list(tmp_path: Path) -> None:
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text('[connectors]\nenabled = ["gmail", 12]\n', encoding="utf-8")
 
     with pytest.raises(ValueError, match="connectors.enabled must be a list of strings"):

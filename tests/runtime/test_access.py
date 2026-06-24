@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from gcb.runtime.access import check_compose_access_boundary
+from fourok.runtime.access import check_compose_access_boundary
 
 
 def test_access_boundary_accepts_expected_loopback_ports() -> None:
@@ -13,12 +13,6 @@ def test_access_boundary_accepts_expected_loopback_ports() -> None:
             "services": {
                 "app": {},
                 "postgres": {"ports": [_port("127.0.0.1", 5432, "5432")]},
-                "cerbos": {
-                    "ports": [
-                        _port("127.0.0.1", 3592, "3592"),
-                        _port("127.0.0.1", 3593, "3593"),
-                    ]
-                },
                 "observability": {
                     "ports": [
                         _port("127.0.0.1", 3000, "3000"),
@@ -36,22 +30,6 @@ def test_access_boundary_accepts_expected_loopback_ports() -> None:
     assert report["status"] == "ok"
     assert report["violations"] == []
     assert report["exposures"] == [
-        {
-            "service": "cerbos",
-            "host_ip": "127.0.0.1",
-            "published": "3592",
-            "target": "3592",
-            "protocol": "tcp",
-            "status": "allowed",
-        },
-        {
-            "service": "cerbos",
-            "host_ip": "127.0.0.1",
-            "published": "3593",
-            "target": "3593",
-            "protocol": "tcp",
-            "status": "allowed",
-        },
         {
             "service": "dagster-webserver",
             "host_ip": "127.0.0.1",
@@ -226,13 +204,12 @@ def test_access_boundary_loads_rendered_compose_config_with_safe_env(monkeypatch
         "--format",
         "json",
     ]
-    assert captured["env"]["GCB_IMAGE_TAG"] == "access-smoke"
-    assert captured["env"]["GCB_DATABASE_URL"] == (
-        "postgresql+psycopg://gcb:access-smoke@postgres:5432/gcb"
+    assert captured["env"]["FOUR_OK_IMAGE_TAG"] == "access-smoke"
+    assert captured["env"]["FOUR_OK_DATABASE_URL"] == (
+        "postgresql+psycopg://fourok:access-smoke@postgres:5432/fourok"
     )
     assert captured["env"]["POSTGRES_PASSWORD"] == "access-smoke"
     assert captured["env"]["DAGSTER_POSTGRES_PASSWORD"] == "access-smoke"
-    assert "INFISICAL_CLIENT_SECRET" not in captured["env"]
 
 
 def test_access_boundary_fails_when_compose_config_cannot_render() -> None:

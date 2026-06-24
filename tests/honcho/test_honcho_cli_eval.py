@@ -2,7 +2,7 @@ import json
 from pathlib import Path
 from urllib.error import URLError
 
-from gcb.cli import main
+from fourok.cli import main
 
 FIXTURE = (
     Path(__file__).parent.parent.parent / "fixtures" / "honcho" / "linear_twenty_slack_sample.json"
@@ -32,7 +32,7 @@ class _FakeHonchoHttpClient:
 def test_cli_honcho_sync_dry_run_prints_planned_messages(capsys, monkeypatch) -> None:
     monkeypatch.setattr(
         "sys.argv",
-        ["gcb", "honcho-sync", "--dry-run", "--fixture", str(FIXTURE)],
+        ["fourok", "honcho-sync", "--dry-run", "--fixture", str(FIXTURE)],
     )
 
     main()
@@ -71,7 +71,7 @@ def test_cli_honcho_sync_summary_only_omits_message_content(capsys, monkeypatch)
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "honcho-sync",
             "--dry-run",
             "--summary-only",
@@ -105,11 +105,11 @@ def test_cli_honcho_smoke_skips_when_honcho_is_unavailable(capsys, monkeypatch) 
     def fake_health(self):
         raise URLError("connection refused")
 
-    monkeypatch.setattr("gcb.honcho.client.HonchoHttpClient.health", fake_health)
+    monkeypatch.setattr("fourok.honcho.client.HonchoHttpClient.health", fake_health)
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "honcho-smoke",
             "--honcho-url",
             "http://honcho:8000",
@@ -159,16 +159,16 @@ def test_cli_honcho_smoke_proves_source_ref_readback(capsys, monkeypatch) -> Non
                 }
             ]
 
-    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.HonchoHttpClient", FakeHonchoHttpClient)
+    monkeypatch.setattr("fourok.cli_parts.honcho_helpers.HonchoHttpClient", FakeHonchoHttpClient)
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "honcho-smoke",
             "--honcho-url",
             "http://honcho:8000",
             "--workspace-id",
-            "gcb-internal",
+            "fourok-internal",
             "--fixture",
             str(FIXTURE),
         ],
@@ -233,16 +233,16 @@ def test_cli_honcho_eval_scores_expected_source_refs(capsys, monkeypatch, tmp_pa
                 ]
             return []
 
-    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.HonchoHttpClient", FakeHonchoHttpClient)
+    monkeypatch.setattr("fourok.cli_parts.honcho_helpers.HonchoHttpClient", FakeHonchoHttpClient)
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "honcho-eval",
             "--cases",
             str(eval_path),
             "--workspace-id",
-            "gcb-internal",
+            "fourok-internal",
             "--limit",
             "3",
         ],
@@ -310,8 +310,8 @@ def test_cli_honcho_eval_scores_entities_and_permissions_from_dict_items(
                 ]
             }
 
-    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.HonchoHttpClient", FakeHonchoHttpClient)
-    monkeypatch.setattr("sys.argv", ["gcb", "honcho-eval", "--cases", str(eval_path)])
+    monkeypatch.setattr("fourok.cli_parts.honcho_helpers.HonchoHttpClient", FakeHonchoHttpClient)
+    monkeypatch.setattr("sys.argv", ["fourok", "honcho-eval", "--cases", str(eval_path)])
 
     main()
 
@@ -345,7 +345,7 @@ def test_cli_evidence_baseline_eval_scores_fixture_source_refs(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "evidence-baseline-eval",
             "--cases",
             str(eval_path),
@@ -371,7 +371,7 @@ def test_cli_evidence_baseline_eval_runs_context_substrate_cases(capsys, monkeyp
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "evidence-baseline-eval",
             "--cases",
             str(CONTEXT_SUBSTRATE_CASES),
@@ -408,12 +408,12 @@ def test_cli_graphiti_episodes_dry_run_prints_episode_contract(capsys, monkeypat
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "graphiti-episodes",
             "--fixture",
             str(FIXTURE),
             "--group-id",
-            "gcb-fixture",
+            "fourok-fixture",
         ],
     )
 
@@ -427,7 +427,7 @@ def test_cli_graphiti_episodes_dry_run_prints_episode_contract(capsys, monkeypat
         "message_episodes": 1,
         "json_episodes": 5,
     }
-    assert output["episodes"][0]["uuid"] == "gcb:graphiti:linear:issue:ABC-123"
+    assert output["episodes"][0]["uuid"] == "fourok:graphiti:linear:issue:ABC-123"
     assert output["episodes"][0]["metadata"]["source_ref"] == "linear:issue:ABC-123"
 
 
@@ -455,8 +455,8 @@ def test_cli_honcho_eval_can_scope_to_peer_search(capsys, monkeypatch, tmp_path:
             assert peer_id == "slack_U123456"
             return [{"metadata": {"source_ref": "linear:issue:ABC-123"}}]
 
-    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.HonchoHttpClient", FakeHonchoHttpClient)
-    monkeypatch.setattr("sys.argv", ["gcb", "honcho-eval", "--cases", str(eval_path)])
+    monkeypatch.setattr("fourok.cli_parts.honcho_helpers.HonchoHttpClient", FakeHonchoHttpClient)
+    monkeypatch.setattr("sys.argv", ["fourok", "honcho-eval", "--cases", str(eval_path)])
 
     main()
 
@@ -464,144 +464,12 @@ def test_cli_honcho_eval_can_scope_to_peer_search(capsys, monkeypatch, tmp_path:
     assert output["summary"]["passed"] == 1
 
 
-def test_cli_honcho_preflight_uses_infisical_and_redacts_values(capsys, monkeypatch) -> None:
-    def fake_fetch(config, **kwargs):
-        assert config.project_id == "project-123"
-        assert config.environment == "runtime"
-        assert config.path == "/customer-consumable/customers/4ok/runtime"
-        return {
-            "LINEAR_API_KEY": "linear-secret",
-            "TWENTY_API_KEY": "twenty-secret",
-            "SLACK_BOT_TOKEN": "slack-secret",
-        }
-
-    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.fetch_infisical_secrets", fake_fetch)
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "gcb",
-            "honcho-preflight",
-            "--infisical-project-id",
-            "project-123",
-            "--infisical-env",
-            "runtime",
-            "--infisical-path",
-            "/customer-consumable/customers/4ok/runtime",
-        ],
-    )
-
-    main()
-
-    output_text = capsys.readouterr().out
-    output = json.loads(output_text)
-    assert output["status"] == "ok"
-    assert output["available"] == {
-        "LINEAR_API_KEY": True,
-        "TWENTY_API_KEY": True,
-        "SLACK_BOT_TOKEN": True,
-    }
-    assert "linear-secret" not in output_text
-    assert "twenty-secret" not in output_text
-    assert "slack-secret" not in output_text
 
 
-def test_cli_honcho_preflight_reports_secret_provider_errors_without_traceback(
-    capsys, monkeypatch
-) -> None:
-    def fake_fetch(config, **kwargs):
-        raise RuntimeError("provider unavailable")
-
-    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.fetch_infisical_secrets", fake_fetch)
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "gcb",
-            "honcho-preflight",
-            "--infisical-project-id",
-            "project-123",
-        ],
-    )
-
-    try:
-        main()
-    except SystemExit as exc:
-        assert exc.code == "provider unavailable"
-    else:
-        raise AssertionError("expected SystemExit")
 
 
-def test_cli_honcho_preflight_can_check_selected_source_connections(capsys, monkeypatch) -> None:
-    def fake_fetch(config, **kwargs):
-        return {
-            "LINEAR_API_KEY": "linear-secret",
-            "TWENTY_API_KEY": "twenty-secret",
-            "SLACK_BOT_TOKEN": "slack-secret",
-        }
-
-    def fake_source_preflight(secrets, *, sources):
-        assert sources == {"linear", "slack"}
-        assert secrets["LINEAR_API_KEY"] == "linear-secret"
-        return {
-            "status": "ok",
-            "sources": {
-                "linear": {"status": "ok"},
-                "slack": {"status": "ok"},
-            },
-        }
-
-    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.fetch_infisical_secrets", fake_fetch)
-    monkeypatch.setattr(
-        "gcb.cli_parts.honcho_helpers.source_connection_preflight",
-        fake_source_preflight,
-    )
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "gcb",
-            "honcho-preflight",
-            "--check-sources",
-            "--sources",
-            "linear,slack",
-            "--infisical-project-id",
-            "project-123",
-        ],
-    )
-
-    main()
-
-    output_text = capsys.readouterr().out
-    output = json.loads(output_text)
-    assert output["status"] == "ok"
-    assert output["sources"] == {
-        "linear": {"status": "ok"},
-        "slack": {"status": "ok"},
-    }
-    assert "linear-secret" not in output_text
 
 
-def test_cli_honcho_preflight_uses_infisical_env_defaults(capsys, monkeypatch) -> None:
-    def fake_fetch(config, **kwargs):
-        assert config.project_id == "project-from-env"
-        assert config.environment == "dev"
-        assert config.path == "/customer-consumable/customers/4ok/runtime"
-        assert config.domain == "https://infisical.example"
-        return {
-            "LINEAR_API_KEY": "linear-secret",
-            "TWENTY_API_KEY": "twenty-secret",
-            "SLACK_BOT_TOKEN": "slack-secret",
-        }
-
-    monkeypatch.setenv("INFISICAL_PROJECT_ID", "project-from-env")
-    monkeypatch.setenv("INFISICAL_ENV", "dev")
-    monkeypatch.setenv("INFISICAL_PATH", "/customer-consumable/customers/4ok/runtime")
-    monkeypatch.setenv("INFISICAL_DOMAIN", "https://infisical.example")
-    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.fetch_infisical_secrets", fake_fetch)
-    monkeypatch.setattr("sys.argv", ["gcb", "honcho-preflight"])
-
-    main()
-
-    output = json.loads(capsys.readouterr().out)
-    assert output["status"] == "ok"
 
 
 def test_cli_honcho_sync_dry_run_classifies_already_imported_source_refs(
@@ -620,7 +488,7 @@ def test_cli_honcho_sync_dry_run_classifies_already_imported_source_refs(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "honcho-sync",
             "--dry-run",
             "--fixture",
@@ -661,7 +529,7 @@ def test_cli_honcho_sync_dry_run_reports_changed_source_refs(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "honcho-sync",
             "--dry-run",
             "--fixture",
@@ -710,7 +578,7 @@ def test_cli_honcho_receipt_prints_stored_source_receipt(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "honcho-receipt",
             "linear:issue:ABC-123",
             "--state",

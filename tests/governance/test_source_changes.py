@@ -1,8 +1,8 @@
-from gcb.etl.extract.source_records import SourceIdentity, SourceRecord
-from gcb.etl.load.retrieval_records import retrieval_record_rows
-from gcb.governance import GovernedContext, SourceChange
-from gcb.governance.state import create_governed_context_state
-from gcb.storage.config import RetrievalConfig
+from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
+from fourok.etl.load.retrieval_records import retrieval_record_rows
+from fourok.governance import GovernedContext, SourceChange
+from fourok.governance.state import create_governed_context_state
+from fourok.storage.config import RetrievalConfig
 
 
 def test_source_change_restriction_hides_non_email_record_and_keeps_lifecycle_state() -> None:

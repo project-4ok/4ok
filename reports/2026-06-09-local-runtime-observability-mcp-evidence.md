@@ -1,4 +1,4 @@
-# GCB local runtime, observability, import counts, and MCP retrieval evidence
+# 4OK local runtime, observability, import counts, and MCP retrieval evidence
 
 Goal prompt: `reports/2026-06-09-local-runtime-observability-mcp-goal.md`
 
@@ -35,32 +35,32 @@ Freshly inspected state:
   - `4ok-dagster-daemon-1` healthy
   - `4ok-observability-1` healthy
   - `4ok-promtail-1` running
-  - `4ok-gcb-metrics-exporter-1` running
-- `uv run gcb-dev dagster-status` reported repository `ok`, schedule `gcb_hourly_live_backfill_schedule=RUNNING`, sensor `gcb_webhook_backlog_sensor=RUNNING`.
-- Latest inspected `gcb_hourly_live_backfill` run:
+  - `4ok-fourok-metrics-exporter-1` running
+- `uv run fourok-dev dagster-status` reported repository `ok`, schedule `fourok_hourly_live_backfill_schedule=RUNNING`, sensor `fourok_webhook_backlog_sensor=RUNNING`.
+- Latest inspected `fourok_hourly_live_backfill` run:
   - run ID `de36c858-93ec-4e2d-9cbb-fe890b21812b`
   - status `SUCCESS`
-  - successful steps included all live raw landing assets, all live source-record conversion assets, `gcb_retrieval_records`, and `gcb_operator_dashboard`.
-- Grafana dashboard API reports dashboard `GCB Local Runtime Logs` with 14 panels:
+  - successful steps included all live raw landing assets, all live source-record conversion assets, `fourok_retrieval_records`, and `fourok_operator_dashboard`.
+- Grafana dashboard API reports dashboard `4OK Local Runtime Logs` with 14 panels:
   - Loki panels: 3
   - Prometheus panels: 10
   - Tempo panels: 1
-- Prometheus target `gcb-dagster-runtime` is up and `gcb_runtime_exporter_up` query returned `1`.
-- OTLP metric smoke query `gcb_smoke_requests_total` returned a result for service `gcb-local-metric-smoke`.
+- Prometheus target `fourok-dagster-runtime` is up and `fourok_runtime_exporter_up` query returned `1`.
+- OTLP metric smoke query `fourok_smoke_requests_total` returned a result for service `fourok-local-metric-smoke`.
 
 Important remaining blocker observed from Dagster asset nodes:
 
 A Dagster asset-node query returned 24 visible assets. The live hourly backfill assets are materialized, but several visible assets have no latest materialization and therefore appear red/unimplemented in the operator lineage:
 
-- `gcb_audit_metadata`
-- `gcb_canonical_objects_and_entity_links`
-- `gcb_golden_retrieval_eval`
-- `gcb_google_drive_source_records_from_raw_landing`
-- `gcb_linear_source_records_from_raw_landing`
-- `gcb_slack_source_records_from_raw_landing`
-- `gcb_source_records_from_raw_landing`
-- `gcb_twenty_source_records_from_raw_landing`
-- `gcb_webhook_backlog`
+- `fourok_audit_metadata`
+- `fourok_canonical_objects_and_entity_links`
+- `fourok_golden_retrieval_eval`
+- `fourok_google_drive_source_records_from_raw_landing`
+- `fourok_linear_source_records_from_raw_landing`
+- `fourok_slack_source_records_from_raw_landing`
+- `fourok_source_records_from_raw_landing`
+- `fourok_twenty_source_records_from_raw_landing`
+- `fourok_webhook_backlog`
 
 Decision for next implementation effort:
 
@@ -79,20 +79,20 @@ Implemented and verified product lineage cleanup:
 - Kept the product live lineage assets:
   - all four live raw landing assets,
   - all four live source-record import assets,
-  - `gcb_webhook_backlog`,
-  - `gcb_canonical_objects_and_entity_links`,
-  - `gcb_retrieval_records`,
-  - `gcb_operator_dashboard`,
-  - `gcb_audit_metadata`.
-- Updated `gcb_hourly_live_backfill` selection so a successful run materializes every default product asset, including webhook backlog, canonical objects, retrieval, operator dashboard, and audit metadata.
+  - `fourok_webhook_backlog`,
+  - `fourok_canonical_objects_and_entity_links`,
+  - `fourok_retrieval_records`,
+  - `fourok_operator_dashboard`,
+  - `fourok_audit_metadata`.
+- Updated `fourok_hourly_live_backfill` selection so a successful run materializes every default product asset, including webhook backlog, canonical objects, retrieval, operator dashboard, and audit metadata.
 
 Live verification:
 
-- `uv run gcb-dev pipeline-up` succeeded and rebuilt/restarted the local pipeline services.
-- Fresh launched `gcb_hourly_live_backfill` run succeeded:
+- `uv run fourok-dev pipeline-up` succeeded and rebuilt/restarted the local pipeline services.
+- Fresh launched `fourok_hourly_live_backfill` run succeeded:
   - Run ID: `1582cdf0-a3f8-4121-bc60-32a01c774d87`
   - Status: `SUCCESS`
-  - Successful steps: `meltano_*_live_raw_landing`, `gcb_*_live_source_records_from_raw_landing`, `gcb_webhook_backlog`, `gcb_canonical_objects_and_entity_links`, `gcb_retrieval_records`, `gcb_operator_dashboard`, `gcb_audit_metadata`.
+  - Successful steps: `meltano_*_live_raw_landing`, `fourok_*_live_source_records_from_raw_landing`, `fourok_webhook_backlog`, `fourok_canonical_objects_and_entity_links`, `fourok_retrieval_records`, `fourok_operator_dashboard`, `fourok_audit_metadata`.
 - Dagster asset-node GraphQL after the run reported:
   - `asset_count=13`
   - `unmaterialized=[]`
@@ -113,34 +113,34 @@ Operator counts/freshness snapshot against runtime Postgres:
 
 Grafana data-count dashboard update requested by user:
 
-- Dashboard `GCB Local Runtime Logs` now has 18 panels.
+- Dashboard `4OK Local Runtime Logs` now has 18 panels.
 - Added/verified data-count panels:
   - `Imported source records by source/type`
   - `Raw landed records by connector/stream`
   - `Processed canonical objects by type`
   - `Processed entity links by relationship`
   - `Processed retrieval records by status`
-- Metrics exporter now reads the runtime Postgres database through `GCB_DATABASE_URL` and exposes processed data-count metrics.
+- Metrics exporter now reads the runtime Postgres database through `FOUR_OK_DATABASE_URL` and exposes processed data-count metrics.
 - Live exporter/Prometheus verification returned 25 data-count series, including:
-  - `gcb_source_records_total{source_system="google_drive",record_type="document"} 21`
-  - `gcb_source_records_total{source_system="linear",record_type="work_item"} 3`
-  - `gcb_source_records_total{source_system="slack",record_type="person"} 3`
-  - `gcb_source_records_total{source_system="twenty",record_type="person"} 4`
-  - `gcb_canonical_objects_total{object_type="Organization"} 100`
-  - `gcb_canonical_objects_total{object_type="Message"} 103`
-  - `gcb_canonical_objects_total{object_type="WorkItem"} 110`
-  - `gcb_canonical_objects_total{object_type="Document"} 24`
-  - `gcb_canonical_objects_total{object_type="Relationship"} 14`
-  - `gcb_canonical_objects_total{object_type="Person"} 126`
-  - `gcb_entity_links_total{relationship="assignee"} 102`
-  - `gcb_entity_links_total{relationship="author"} 206`
-  - `gcb_retrieval_records_total{status="current"} 73`
+  - `fourok_source_records_total{source_system="google_drive",record_type="document"} 21`
+  - `fourok_source_records_total{source_system="linear",record_type="work_item"} 3`
+  - `fourok_source_records_total{source_system="slack",record_type="person"} 3`
+  - `fourok_source_records_total{source_system="twenty",record_type="person"} 4`
+  - `fourok_canonical_objects_total{object_type="Organization"} 100`
+  - `fourok_canonical_objects_total{object_type="Message"} 103`
+  - `fourok_canonical_objects_total{object_type="WorkItem"} 110`
+  - `fourok_canonical_objects_total{object_type="Document"} 24`
+  - `fourok_canonical_objects_total{object_type="Relationship"} 14`
+  - `fourok_canonical_objects_total{object_type="Person"} 126`
+  - `fourok_entity_links_total{relationship="assignee"} 102`
+  - `fourok_entity_links_total{relationship="author"} 206`
+  - `fourok_retrieval_records_total{status="current"} 73`
 
 Regression checks:
 
 - `uv run python scripts/check_dagster_pipeline.py` printed `asset_count=13` and listed only product/default assets.
 - `uv run pytest tests/runtime/test_dagster_pipeline.py -q` passed: `18 passed`.
-- `uv run pytest tests/runtime/test_metrics_exporter.py tests/runtime/test_compose.py::test_observability_files_define_gcb_log_dashboard_and_docker_labels tests/runtime/test_compose.py::test_compose_declares_gcb_metrics_exporter_for_prometheus -q` passed: `3 passed`.
+- `uv run pytest tests/runtime/test_metrics_exporter.py tests/runtime/test_compose.py::test_observability_files_define_fourok_log_dashboard_and_docker_labels tests/runtime/test_compose.py::test_compose_declares_fourok_metrics_exporter_for_prometheus -q` passed: `3 passed`.
 - Broader touched runtime suite passed: `36 passed` for `tests/runtime/test_metrics_exporter.py tests/runtime/test_compose.py tests/runtime/test_dagster_pipeline.py`.
 
 Remaining blockers before COMPLETE:
@@ -168,28 +168,28 @@ Root cause findings:
 
 2. **Twenty extraction truncation bug**:
    - `TwentyTapConfig.limit` defaulted to `100`, and `main()` defaulted `TWENTY_LIMIT` to `100`.
-   - Live API probe through Infisical-backed credentials showed:
+   - Live API probe through env/.env-backed credentials showed:
      - `limit=100` returns 100 companies.
      - `limit=1000` is API-capped at 200 companies but response has `totalCount=797` and `pageInfo.hasNextPage=True`.
      - Correct pagination parameter is `starting_after=<pageInfo.endCursor>`; `offset`, `page`, `after`, `cursor`, `startingAfter`, `afterCursor`, and `startCursor` all returned the first page again.
    - Added regression `test_twenty_tap_paginates_companies_and_people_until_configured_limit`.
-   - Fixed `tap-gcb-twenty` to paginate `companies` and `people` in 200-record pages using `starting_after` until the configured total limit; default limit is now 1000.
+   - Fixed `tap-fourok-twenty` to paginate `companies` and `people` in 200-record pages using `starting_after` until the configured total limit; default limit is now 1000.
 
 Verification:
 
 - Narrow tests after the fix:
   - `uv run pytest tests/etl/extract/test_twenty_connectors.py tests/etl/extract/test_connectors_ingest.py::test_snapshot_deleted_source_is_restored_when_present_in_later_active_import -q` -> `9 passed`.
-- Live fixed tap smoke with Infisical credentials, without printing secrets:
+- Live fixed tap smoke with external secret manager credentials, without printing secrets:
   - configured limit: `1000`
   - Twenty companies returned: `797`
   - Twenty people returned: `704`
   - total Twenty records returned: `1501`
 - Rebuilt/restarted local pipeline:
-  - `uv run gcb-dev pipeline-up` succeeded.
+  - `uv run fourok-dev pipeline-up` succeeded.
 - Fresh manually launched backfill after pagination fix:
   - Run ID: `b8daee7d-0e98-4883-8528-17802f64360e`
   - Status: `SUCCESS`
-  - Successful steps included all live raw landing/import assets, `gcb_webhook_backlog`, `gcb_canonical_objects_and_entity_links`, `gcb_retrieval_records`, `gcb_operator_dashboard`, and `gcb_audit_metadata`.
+  - Successful steps included all live raw landing/import assets, `fourok_webhook_backlog`, `fourok_canonical_objects_and_entity_links`, `fourok_retrieval_records`, `fourok_operator_dashboard`, and `fourok_audit_metadata`.
 - Live DB after the run:
   - Twenty active organization source records: `797`
   - Twenty active person source records: `707`
@@ -197,7 +197,7 @@ Verification:
   - Active canonical `Person` objects: `729`
   - Current retrieval records: `1808`
   - Remaining Twenty lifecycle tombstones: `[]`
-- `uv run gcb operator-status --database-url "$DB"` after the run reported:
+- `uv run fourok operator-status --database-url "$DB"` after the run reported:
   - `imported_items_by_source.twenty=1504`
   - `retrieval_records.total=1808`
   - `freshness.live_ingestion.sources.twenty.latest_status=succeeded`
@@ -219,43 +219,43 @@ User-reported symptom:
 Root cause evidence:
 
 - Direct Prometheus/Grafana datasource queries initially returned no series for:
-  - `gcb_source_records_total`
-  - `gcb_canonical_objects_total`
-  - `gcb_retrieval_records_total`
-- Prometheus target evidence showed `gcb-dagster-runtime` was down:
-  - target: `gcb-metrics-exporter:9108`
+  - `fourok_source_records_total`
+  - `fourok_canonical_objects_total`
+  - `fourok_retrieval_records_total`
+- Prometheus target evidence showed `fourok-dagster-runtime` was down:
+  - target: `fourok-metrics-exporter:9108`
   - error: `server returned HTTP status 500 Internal Server Error`
-- Running the metrics collection inside `4ok-gcb-metrics-exporter-1` showed the exception:
+- Running the metrics collection inside `4ok-fourok-metrics-exporter-1` showed the exception:
   - `ValueError: Invalid isoformat string: '1780063291'`
-  - failing path: `_timestamp(str(row["updated_at"]))` while rendering `gcb_source_latest_record_timestamp_seconds`.
+  - failing path: `_timestamp(str(row["updated_at"]))` while rendering `fourok_source_latest_record_timestamp_seconds`.
 - Cause: at least one live `source_records.updated_at` value is a numeric epoch string rather than an ISO timestamp; the exporter only accepted ISO strings and crashed the whole `/metrics` response.
 
 Fix:
 
 - Added a regression in `tests/runtime/test_metrics_exporter.py` for numeric epoch-string `updated_at` values.
-- Updated `_timestamp` in `src/gcb/runtime/metrics_exporter.py` to accept numeric epoch strings and ISO timestamps.
-- Rebuilt/recreated `gcb-metrics-exporter` with the fixed image.
+- Updated `_timestamp` in `src/fourok/runtime/metrics_exporter.py` to accept numeric epoch strings and ISO timestamps.
+- Rebuilt/recreated `fourok-metrics-exporter` with the fixed image.
 
 Verification after restart:
 
 - `uv run pytest tests/runtime/test_metrics_exporter.py -q` -> `1 passed`.
 - Exporter `/metrics` now emits the expected count metrics, including:
-  - `gcb_source_records_total{record_type="organization",source_system="twenty"} 797`
-  - `gcb_source_records_total{record_type="person",source_system="twenty"} 707`
-  - `gcb_canonical_objects_total{object_type="Organization"} 797`
-  - `gcb_retrieval_records_total{status="current"} 1808`
+  - `fourok_source_records_total{record_type="organization",source_system="twenty"} 797`
+  - `fourok_source_records_total{record_type="person",source_system="twenty"} 707`
+  - `fourok_canonical_objects_total{object_type="Organization"} 797`
+  - `fourok_retrieval_records_total{status="current"} 1808`
 - Grafana Prometheus datasource proxy queries now return:
-  - `gcb_source_records_total{source_system="twenty",record_type="organization"}` -> `797`
-  - `gcb_source_records_total{source_system="twenty",record_type="person"}` -> `707`
-  - `gcb_canonical_objects_total{object_type="Organization"}` -> `797`
-  - `gcb_retrieval_records_total{status="current"}` -> `1808`
-- Prometheus target status for `gcb-dagster-runtime` after restart:
+  - `fourok_source_records_total{source_system="twenty",record_type="organization"}` -> `797`
+  - `fourok_source_records_total{source_system="twenty",record_type="person"}` -> `707`
+  - `fourok_canonical_objects_total{object_type="Organization"}` -> `797`
+  - `fourok_retrieval_records_total{status="current"}` -> `1808`
+- Prometheus target status for `fourok-dagster-runtime` after restart:
   - `health=up`
   - `lastError=""`
-- Grafana dashboard `gcb-local-runtime-logs` contains the relevant panels:
-  - `Imported source records by source/type` -> `gcb_source_records_total`
-  - `Processed canonical objects by type` -> `gcb_canonical_objects_total`
-  - `Processed retrieval records by status` -> `gcb_retrieval_records_total`
+- Grafana dashboard `fourok-local-runtime-logs` contains the relevant panels:
+  - `Imported source records by source/type` -> `fourok_source_records_total`
+  - `Processed canonical objects by type` -> `fourok_canonical_objects_total`
+  - `Processed retrieval records by status` -> `fourok_retrieval_records_total`
 
 Goal update requested by user:
 
@@ -277,18 +277,18 @@ Current git/runtime inspection:
   - `0f32a5f fix: restore and paginate twenty live imports`
   - `c00a412 feat: make product lineage green and visible`
 - Uncommitted changes were present from interrupted work in:
-  - `src/gcb/etl/extract/google_drive_tap.py`
-  - `src/gcb/etl/extract/linear_tap.py`
+  - `src/fourok/etl/extract/google_drive_tap.py`
+  - `src/fourok/etl/extract/linear_tap.py`
   - `tests/etl/extract/test_google_drive_connectors.py`
   - `tests/etl/extract/test_linear_connectors.py`
   - `docs/mcp-retrieval.md`
-  - `src/gcb/runtime/mcp_retrieval.py`
+  - `src/fourok/runtime/mcp_retrieval.py`
   - `tests/runtime/test_mcp_retrieval.py`
 - Docker/live runtime is currently unavailable in this execution environment:
   - `stat /var/run/docker.sock` -> missing socket
   - `docker ps` -> failed to connect to Docker API
-  - `uv run gcb-dev dagster-status` -> connection refused to `127.0.0.1:3001`
-  - `/tmp/gcb-host-db.txt` is absent, so no live host DB URL is available for `gcb operator-status`.
+  - `uv run fourok-dev dagster-status` -> connection refused to `127.0.0.1:3001`
+  - `/tmp/fourok-host-db.txt` is absent, so no live host DB URL is available for `fourok operator-status`.
 - Therefore fresh live Gate 1/Gate 1B/Gate 3/Gate 5 runtime proof is currently blocked until the Docker socket/local stack is available again.
 
 Gate 1B static/default Definitions verification while live runtime is blocked:
@@ -296,15 +296,15 @@ Gate 1B static/default Definitions verification while live runtime is blocked:
 - `uv run python scripts/check_dagster_pipeline.py` produced:
   - `asset_count=13`
   - default assets only:
-    - `gcb_audit_metadata`
-    - `gcb_canonical_objects_and_entity_links`
-    - `gcb_google_drive_live_source_records_from_raw_landing`
-    - `gcb_linear_live_source_records_from_raw_landing`
-    - `gcb_operator_dashboard`
-    - `gcb_retrieval_records`
-    - `gcb_slack_live_source_records_from_raw_landing`
-    - `gcb_twenty_live_source_records_from_raw_landing`
-    - `gcb_webhook_backlog`
+    - `fourok_audit_metadata`
+    - `fourok_canonical_objects_and_entity_links`
+    - `fourok_google_drive_live_source_records_from_raw_landing`
+    - `fourok_linear_live_source_records_from_raw_landing`
+    - `fourok_operator_dashboard`
+    - `fourok_retrieval_records`
+    - `fourok_slack_live_source_records_from_raw_landing`
+    - `fourok_twenty_live_source_records_from_raw_landing`
+    - `fourok_webhook_backlog`
     - `meltano_google_drive_live_raw_landing`
     - `meltano_linear_live_raw_landing`
     - `meltano_slack_live_raw_landing`
@@ -329,8 +329,8 @@ Extractor audit work in progress:
 
 MCP work in progress:
 
-- Current patch changes `mcp_retrieval._database_url` so an explicit `state` path prevents accidental fallback to `GCB_DATABASE_URL`; this keeps fixture/state-based MCP tests isolated from the live DB.
-- Current patch adds a deterministic MCP handler regression proving Slack channel permissions through `search_gcb`:
+- Current patch changes `mcp_retrieval._database_url` so an explicit `state` path prevents accidental fallback to `FOUR_OK_DATABASE_URL`; this keeps fixture/state-based MCP tests isolated from the live DB.
+- Current patch adds a deterministic MCP handler regression proving Slack channel permissions through `search_fourok`:
   - query without `slack:channel:C0TEMPCRM` returns zero results/evidence;
   - query with that role returns the restricted Slack source/evidence.
 - This is deterministic regression proof only; the goal still requires live MCP/server-path proof for Google Drive, Linear, Twenty, Slack allowed, and Slack denied once runtime is available.
@@ -358,7 +358,7 @@ Important correction to the earlier extractor-audit note:
 
 Live rebuild/restart evidence:
 
-- `uv run gcb-dev pipeline-up` rebuilt/recreated the pipeline stack using image tag `5fbca60` and started:
+- `uv run fourok-dev pipeline-up` rebuilt/recreated the pipeline stack using image tag `5fbca60` and started:
   - `4ok-postgres-1` healthy
   - `4ok-dagster-postgres-1` healthy
   - `4ok-dagster-code-1` healthy
@@ -367,7 +367,7 @@ Live rebuild/restart evidence:
 - Full local runtime/observability stack observed healthy/running afterwards:
   - Dagster webserver/code/daemon/postgres
   - runtime Postgres
-  - `gcb-metrics-exporter`
+  - `fourok-metrics-exporter`
   - observability/Grafana
   - promtail
   - cerbos
@@ -376,53 +376,53 @@ Live rebuild/restart evidence:
 
 Live run evidence:
 
-- Launched manual `gcb_hourly_live_backfill` verification run after the bounded Google Drive default fix.
+- Launched manual `fourok_hourly_live_backfill` verification run after the bounded Google Drive default fix.
 - Run ID: `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`
-- `uv run gcb-dev dagster-status` returned `status=ok`, repository `__repository__`, location `gcb_pipeline`.
+- `uv run fourok-dev dagster-status` returned `status=ok`, repository `__repository__`, location `fourok_pipeline`.
 - Schedule/sensor state:
-  - `gcb_hourly_live_backfill_schedule`: `RUNNING`
-  - `gcb_webhook_backlog_sensor`: `RUNNING`
+  - `fourok_hourly_live_backfill_schedule`: `RUNNING`
+  - `fourok_webhook_backlog_sensor`: `RUNNING`
 - Latest run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`: `SUCCESS`.
 - Successful steps:
   - `meltano_google_drive_live_raw_landing`
   - `meltano_linear_live_raw_landing`
   - `meltano_slack_live_raw_landing`
   - `meltano_twenty_live_raw_landing`
-  - `gcb_google_drive_live_source_records_from_raw_landing`
-  - `gcb_linear_live_source_records_from_raw_landing`
-  - `gcb_slack_live_source_records_from_raw_landing`
-  - `gcb_twenty_live_source_records_from_raw_landing`
-  - `gcb_canonical_objects_and_entity_links`
-  - `gcb_retrieval_records`
-  - `gcb_audit_metadata`
-  - `gcb_webhook_backlog`
-  - `gcb_operator_dashboard`
+  - `fourok_google_drive_live_source_records_from_raw_landing`
+  - `fourok_linear_live_source_records_from_raw_landing`
+  - `fourok_slack_live_source_records_from_raw_landing`
+  - `fourok_twenty_live_source_records_from_raw_landing`
+  - `fourok_canonical_objects_and_entity_links`
+  - `fourok_retrieval_records`
+  - `fourok_audit_metadata`
+  - `fourok_webhook_backlog`
+  - `fourok_operator_dashboard`
 
 Gate 1B asset-node evidence after rebuild/restart:
 
 - Dagster GraphQL query `query { assetNodes { assetKey { path } groupName } }` returned exactly 13 visible assets, all in group `default`:
-  - `gcb_audit_metadata` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
-  - `gcb_canonical_objects_and_entity_links` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
-  - `gcb_google_drive_live_source_records_from_raw_landing` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
-  - `gcb_linear_live_source_records_from_raw_landing` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
-  - `gcb_operator_dashboard` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
-  - `gcb_retrieval_records` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
-  - `gcb_slack_live_source_records_from_raw_landing` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
-  - `gcb_twenty_live_source_records_from_raw_landing` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
-  - `gcb_webhook_backlog` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
+  - `fourok_audit_metadata` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
+  - `fourok_canonical_objects_and_entity_links` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
+  - `fourok_google_drive_live_source_records_from_raw_landing` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
+  - `fourok_linear_live_source_records_from_raw_landing` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
+  - `fourok_operator_dashboard` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
+  - `fourok_retrieval_records` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
+  - `fourok_slack_live_source_records_from_raw_landing` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
+  - `fourok_twenty_live_source_records_from_raw_landing` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
+  - `fourok_webhook_backlog` — product/live asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
   - `meltano_google_drive_live_raw_landing` — product/live raw landing asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
   - `meltano_linear_live_raw_landing` — product/live raw landing asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
   - `meltano_slack_live_raw_landing` — product/live raw landing asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
   - `meltano_twenty_live_raw_landing` — product/live raw landing asset; fresh successful materialization in run `5e7b5fd1-072a-4a40-a8db-ec15475d8c0c`.
 - The previously red/unmaterialized/non-product assets are not visible in the default product Definitions after rebuild/restart:
-  - `gcb_golden_retrieval_eval`
-  - non-live `gcb_*_source_records_from_raw_landing` variants
-  - generic `gcb_source_records_from_raw_landing`
+  - `fourok_golden_retrieval_eval`
+  - non-live `fourok_*_source_records_from_raw_landing` variants
+  - generic `fourok_source_records_from_raw_landing`
 - Therefore the main product Dagster lineage shown to the operator has no unexplained red assets for Gate 1B.
 
 Operator-status caveat outside Gate 1B:
 
-- `uv run gcb operator-status --database-url "$GCB_DATABASE_URL"` now connects to runtime Postgres when `.env` is loaded, but reports `live_ingestion.status=attention_required` because connector-job freshness is still sourced from older connector job records around `2026-06-09T16:04:18Z` and is stale.
+- `uv run fourok operator-status --database-url "$FOUR_OK_DATABASE_URL"` now connects to runtime Postgres when `.env` is loaded, but reports `live_ingestion.status=attention_required` because connector-job freshness is still sourced from older connector job records around `2026-06-09T16:04:18Z` and is stale.
 - That is **not a Gate 1B blocker** because Gate 1B is specifically Dagster product lineage; it remains an open Gate 2/source-of-truth blocker.
 
 Observability smoke evidence:
@@ -440,33 +440,33 @@ Final Gate 1B verification was repeated after committing the code fix and rebuil
   - `4ok-dagster-code:88cfed3`
 - Manual verification run launched through Dagster GraphQL:
   - run ID: `97a85b59-caa2-444e-8fa1-aa389defa3b0`
-  - reason tag: `gcb/manual_reason=verify-final-commit-88cfed3`
-- Monitored with `uv run gcb-dev dagster-status` until terminal state.
+  - reason tag: `fourok/manual_reason=verify-final-commit-88cfed3`
+- Monitored with `uv run fourok-dev dagster-status` until terminal state.
 - Final status: `SUCCESS`.
 - Successful steps in run `97a85b59-caa2-444e-8fa1-aa389defa3b0`:
   - `meltano_google_drive_live_raw_landing`
   - `meltano_linear_live_raw_landing`
   - `meltano_slack_live_raw_landing`
   - `meltano_twenty_live_raw_landing`
-  - `gcb_google_drive_live_source_records_from_raw_landing`
-  - `gcb_linear_live_source_records_from_raw_landing`
-  - `gcb_slack_live_source_records_from_raw_landing`
-  - `gcb_twenty_live_source_records_from_raw_landing`
-  - `gcb_canonical_objects_and_entity_links`
-  - `gcb_retrieval_records`
-  - `gcb_audit_metadata`
-  - `gcb_webhook_backlog`
-  - `gcb_operator_dashboard`
+  - `fourok_google_drive_live_source_records_from_raw_landing`
+  - `fourok_linear_live_source_records_from_raw_landing`
+  - `fourok_slack_live_source_records_from_raw_landing`
+  - `fourok_twenty_live_source_records_from_raw_landing`
+  - `fourok_canonical_objects_and_entity_links`
+  - `fourok_retrieval_records`
+  - `fourok_audit_metadata`
+  - `fourok_webhook_backlog`
+  - `fourok_operator_dashboard`
 
 Gate 1B conclusion from final committed-image run:
 
 - The default/operator-facing product Dagster lineage has 13 visible assets.
 - The final committed-image run materialized all 13 product/live assets successfully.
 - The explicitly listed previously red nodes are addressed:
-  - `gcb_audit_metadata`: product asset now materialized successfully.
-  - `gcb_canonical_objects_and_entity_links`: product asset now materialized successfully.
-  - `gcb_webhook_backlog`: product asset now materialized successfully.
-  - `gcb_golden_retrieval_eval`, non-live `gcb_*_source_records_from_raw_landing` variants, and generic `gcb_source_records_from_raw_landing`: not visible in default product Definitions; guarded by `tests/runtime/test_dagster_pipeline.py`.
+  - `fourok_audit_metadata`: product asset now materialized successfully.
+  - `fourok_canonical_objects_and_entity_links`: product asset now materialized successfully.
+  - `fourok_webhook_backlog`: product asset now materialized successfully.
+  - `fourok_golden_retrieval_eval`, non-live `fourok_*_source_records_from_raw_landing` variants, and generic `fourok_source_records_from_raw_landing`: not visible in default product Definitions; guarded by `tests/runtime/test_dagster_pipeline.py`.
 - Gate 1B is therefore complete with fresh tool-backed evidence.
 
 Overall goal status remains **NOT COMPLETE** because Gate 2 and later gates still have open proof/fix requirements, including the operator-status freshness/source-of-truth caveat documented above.
@@ -475,8 +475,8 @@ Overall goal status remains **NOT COMPLETE** because Gate 2 and later gates stil
 
 The exact Gate 2 blocker was not that the live runtime was unavailable and not that Dagster failed to write data. The blocker was a source-of-truth/DX mismatch:
 
-- Host-side `gcb operator-status` without the same DB URL as Dagster can query an empty/stale local state/DB and report stale connector-job freshness.
-- The running Dagster code container has `GCB_DATABASE_URL` set to the Compose runtime DB (`postgres` inside Docker). For host-side proof this must be mapped to `127.0.0.1`.
+- Host-side `fourok operator-status` without the same DB URL as Dagster can query an empty/stale local state/DB and report stale connector-job freshness.
+- The running Dagster code container has `FOUR_OK_DATABASE_URL` set to the Compose runtime DB (`postgres` inside Docker). For host-side proof this must be mapped to `127.0.0.1`.
 - Querying the exact runtime DB used by Dagster proves current data exists and is fresh.
 
 Runtime DB direct proof from the same DB URL used by Dagster (host-mapped):
@@ -498,7 +498,7 @@ Runtime DB direct proof from the same DB URL used by Dagster (host-mapped):
 
 Fresh connector-job examples in the runtime DB include run IDs `97a85b59-caa2-444e-8fa1-aa389defa3b0` and `a61b1151-0347-4f69-8742-7aee2c46f8ae`, with connector job timestamps around `2026-06-10T09:01:13Z`/`2026-06-10T09:01:14Z` and `freshness_status=fresh` in `output_state_json`.
 
-`gcb operator-status` against the runtime DB returned:
+`fourok operator-status` against the runtime DB returned:
 
 - `status`: `ok`
 - `imported_items_by_source`:
@@ -518,16 +518,16 @@ Fresh connector-job examples in the runtime DB include run IDs `97a85b59-caa2-44
 
 Operator-facing DX fix:
 
-- Patched `src/gcb/runtime/operator_live.py` so `gcb-dev operator-live --dry-run` reports the host-mapped DB URL for the operator-facing preview instead of the container-internal `@postgres` hostname.
+- Patched `src/fourok/runtime/operator_live.py` so `fourok-dev operator-live --dry-run` reports the host-mapped DB URL for the operator-facing preview instead of the container-internal `@postgres` hostname.
 - Added regression `test_operator_live_dry_run_reports_host_database_url_for_compose_postgres`.
 - `uv run pytest tests/runtime/test_operator_live.py -q` -> `5 passed`.
-- `uv run gcb-dev operator-live --dry-run` now reports redacted host URL:
-  - `postgresql+psycopg://gcb:[REDACTED]@127.0.0.1:5432/gcb`
+- `uv run fourok-dev operator-live --dry-run` now reports redacted host URL:
+  - `postgresql+psycopg://fourok:[REDACTED]@127.0.0.1:5432/fourok`
 
 Gate 2 status after this proof:
 
 - Operator-status counts/freshness are proven current and DB-backed when pointed at the runtime DB used by Dagster.
-- Remaining Gate 2 work, if any, is to decide whether plain `gcb operator-status` should auto-resolve the running Compose DB URL or whether the supported operator command is `gcb-dev operator-live`/explicit `--database-url`. The live data path itself is no longer blocked.
+- Remaining Gate 2 work, if any, is to decide whether plain `fourok operator-status` should auto-resolve the running Compose DB URL or whether the supported operator command is `fourok-dev operator-live`/explicit `--database-url`. The live data path itself is no longer blocked.
 
 ### 2026-06-10 Gate 2 operator source-of-truth fix
 
@@ -535,9 +535,9 @@ Status for the in-scope Gate 2 operator surfaces: **COMPLETE WITH LIVE EVIDENCE*
 
 Root cause/decision:
 
-- Plain host-side `uv run gcb operator-status` used the generic state helper and therefore did not reliably resolve the same Compose runtime Postgres DB used by Dagster.
+- Plain host-side `uv run fourok operator-status` used the generic state helper and therefore did not reliably resolve the same Compose runtime Postgres DB used by Dagster.
 - `operator-status` and `operator-live` also counted all `source_records`, while the metrics exporter/Grafana count source counts current imported records with `lifecycle_state='active'`.
-- Decision: improve default DX for plain `gcb operator-status` because it is low risk when scoped to the default state path. The command now resolves `.env`/runtime Compose `GCB_DATABASE_URL`, maps Docker hostname `postgres` to host `127.0.0.1`, and still leaves explicit non-default `--state` fixture checks isolated unless `--database-url` is supplied.
+- Decision: improve default DX for plain `fourok operator-status` because it is low risk when scoped to the default state path. The command now resolves `.env`/runtime Compose `FOUR_OK_DATABASE_URL`, maps Docker hostname `postgres` to host `127.0.0.1`, and still leaves explicit non-default `--state` fixture checks isolated unless `--database-url` is supplied.
 - Decision: current operator-visible imported counts are active DB source records. Lifecycle totals remain available through the fuller dashboard surface; compact operator status should agree with metrics/Grafana active counts.
 
 Regression coverage added:
@@ -556,7 +556,7 @@ Focused tests:
 Live runtime proof, with secrets redacted:
 
 - Running containers inspected with `docker ps`; the runtime Postgres, Dagster webserver/code/daemon, metrics exporter, observability container, and promtail were running/healthy where applicable.
-- `uv run gcb operator-status` now works without an explicit `--database-url` and reported:
+- `uv run fourok operator-status` now works without an explicit `--database-url` and reported:
   - `status=ok`
   - `imported_items_by_source.google_drive=21`
   - `imported_items_by_source.linear=1049`
@@ -576,8 +576,8 @@ Live runtime proof, with secrets redacted:
   - `slack=29`
   - `twenty=1514`
   - retrieval by status: `current=2670`
-- `uv run gcb-dev operator-live --dry-run` reported the redacted host-mapped DB URL:
-  - `postgresql+psycopg://gcb:[REDACTED]@127.0.0.1:5432/gcb`
+- `uv run fourok-dev operator-live --dry-run` reported the redacted host-mapped DB URL:
+  - `postgresql+psycopg://fourok:[REDACTED]@127.0.0.1:5432/fourok`
 - Read-only `build_operator_live_report(...)` against the same DB reported:
   - `source_record_counts_by_source_system.google_drive=21`
   - `source_record_counts_by_source_system.linear=1049`
@@ -585,23 +585,23 @@ Live runtime proof, with secrets redacted:
   - `source_record_counts_by_source_system.twenty=1514`
   - `retrieval_count=2670`
 - Metrics exporter was not exposed on host port `9108`, so it was queried through the Compose network from the observability container:
-  - `gcb_source_records_total{record_type="document",source_system="google_drive"} 21`
-  - `gcb_source_records_total{record_type="message",source_system="linear"} 393`
-  - `gcb_source_records_total{record_type="person",source_system="linear"} 10`
-  - `gcb_source_records_total{record_type="project",source_system="linear"} 2`
-  - `gcb_source_records_total{record_type="resource",source_system="linear"} 2`
-  - `gcb_source_records_total{record_type="work_item",source_system="linear"} 642`
-  - `gcb_source_records_total{record_type="person",source_system="slack"} 12`
-  - `gcb_source_records_total{record_type="relationship",source_system="slack"} 14`
-  - `gcb_source_records_total{record_type="work_item",source_system="slack"} 3`
-  - `gcb_source_records_total{record_type="organization",source_system="twenty"} 802`
-  - `gcb_source_records_total{record_type="person",source_system="twenty"} 712`
-  - `gcb_retrieval_records_total{status="current"} 2670`
-- Prometheus inside the observability container returned the same count series, and `up{job="gcb-dagster-runtime"}` returned `1` for `gcb-metrics-exporter:9108`.
+  - `fourok_source_records_total{record_type="document",source_system="google_drive"} 21`
+  - `fourok_source_records_total{record_type="message",source_system="linear"} 393`
+  - `fourok_source_records_total{record_type="person",source_system="linear"} 10`
+  - `fourok_source_records_total{record_type="project",source_system="linear"} 2`
+  - `fourok_source_records_total{record_type="resource",source_system="linear"} 2`
+  - `fourok_source_records_total{record_type="work_item",source_system="linear"} 642`
+  - `fourok_source_records_total{record_type="person",source_system="slack"} 12`
+  - `fourok_source_records_total{record_type="relationship",source_system="slack"} 14`
+  - `fourok_source_records_total{record_type="work_item",source_system="slack"} 3`
+  - `fourok_source_records_total{record_type="organization",source_system="twenty"} 802`
+  - `fourok_source_records_total{record_type="person",source_system="twenty"} 712`
+  - `fourok_retrieval_records_total{status="current"} 2670`
+- Prometheus inside the observability container returned the same count series, and `up{job="fourok-dagster-runtime"}` returned `1` for `fourok-metrics-exporter:9108`.
 
 MCP operator_status inspection, not changed in this Gate 2 slice:
 
-- `gcb.runtime.mcp_retrieval.operator_status(database_url=host_mapped_runtime_db)` still reports all source rows:
+- `fourok.runtime.mcp_retrieval.operator_status(database_url=host_mapped_runtime_db)` still reports all source rows:
   - `source_record_count=2616`
   - `source_record_counts_by_source_system.acceptance=1`
   - `linear=1051`
@@ -620,7 +620,7 @@ Runtime containers inspected:
 
 - `4ok-dagster-code-1`: running/healthy.
 - `4ok-dagster-webserver-1`: running/healthy, host port `127.0.0.1:3001`.
-- `4ok-gcb-metrics-exporter-1`: running.
+- `4ok-fourok-metrics-exporter-1`: running.
 - `4ok-observability-1`: running/healthy, host ports `3000`, `3100`, `3200`, `4317`, and `4318`.
 - `4ok-promtail-1`: running.
 
@@ -629,33 +629,33 @@ Loki label discovery:
 - Endpoint: `GET http://127.0.0.1:3100/loki/api/v1/labels`
 - Result summary: labels include `compose_project`, `compose_service`, `container_name`, `service_name`, and `stream`.
 - Endpoint: `GET http://127.0.0.1:3100/loki/api/v1/label/service_name/values`
-- Result summary: service names include `gcb-dagster-code`, `dagster-code`, `dagster-daemon`, `dagster-webserver`, `gcb-metrics-exporter`, `postgres`, `promtail`, and `observability`.
+- Result summary: service names include `fourok-dagster-code`, `dagster-code`, `dagster-daemon`, `dagster-webserver`, `fourok-metrics-exporter`, `postgres`, `promtail`, and `observability`.
 
 Loki recent range query proof:
 
 - Endpoint: `GET http://127.0.0.1:3100/loki/api/v1/query_range`
-- Query: `{service_name="gcb-dagster-code"}`
+- Query: `{service_name="fourok-dagster-code"}`
 - Window: last 1 hour at query time.
-- Result summary: `status=success`, `resultType=streams`, `totalEntriesReturned=5`, stream labels include `service_name="gcb-dagster-code"`, and recent messages included:
+- Result summary: `status=success`, `resultType=streams`, `totalEntriesReturned=5`, stream labels include `service_name="fourok-dagster-code"`, and recent messages included:
   - `Started Dagster code server for file /app/deploy/dagster/definitions.py in process 9`
   - `Stopping server once all current RPC calls terminate or 60 seconds pass`
 - Endpoint: `GET http://127.0.0.1:3100/loki/api/v1/query_range`
 - Query: `{compose_project="4ok",compose_service="dagster-code"}`
 - Window: last 1 hour at query time.
 - Result summary: `status=success`, `resultType=streams`, `totalEntriesReturned=5`, stream labels include `container_name="4ok-dagster-code-1"`, and recent messages included:
-  - `RUN_SUCCESS - Finished execution of run for "gcb_hourly_live_backfill".`
-  - `STEP_SUCCESS - Finished execution of step "gcb_webhook_backlog"`
+  - `RUN_SUCCESS - Finished execution of run for "fourok_hourly_live_backfill".`
+  - `STEP_SUCCESS - Finished execution of step "fourok_webhook_backlog"`
 
 Tempo recent trace proof:
 
 - Endpoint: `GET http://127.0.0.1:3200/api/search`
-- TraceQL query: `{ resource.service.name =~ "gcb.*" }`
+- TraceQL query: `{ resource.service.name =~ "fourok.*" }`
 - Window: last 4 hours at query time.
-- Result summary: returned 10 traces, with `rootServiceName="gcb-dagster-code"`, root trace names including `connect`, and `serviceStats.gcb-dagster-code.spanCount=1`.
+- Result summary: returned 10 traces, with `rootServiceName="fourok-dagster-code"`, root trace names including `connect`, and `serviceStats.fourok-dagster-code.spanCount=1`.
 - Endpoint: `GET http://127.0.0.1:3200/api/search`
-- TraceQL query: `{ resource.service.name = "gcb-dagster-code" }`
+- TraceQL query: `{ resource.service.name = "fourok-dagster-code" }`
 - Window: last 4 hours at query time.
-- Result summary: returned 10 traces, with root trace names including `connect` and `SELECT dagster`; each sampled span included `service.name="gcb-dagster-code"`.
+- Result summary: returned 10 traces, with root trace names including `connect` and `SELECT dagster`; each sampled span included `service.name="fourok-dagster-code"`.
 - Endpoint: `GET http://127.0.0.1:3200/api/search/tags`
 - Result summary: searchable tags include `service.name`, `db.name`, `db.system`, `db.user`, `net.peer.name`, and `net.peer.port`.
 
@@ -663,36 +663,36 @@ Grafana dashboard/API proof:
 
 - Endpoint: `GET http://127.0.0.1:3000/api/health`
 - Result summary: `database=ok`, `version=13.0.1`, `commit=a100054f`.
-- Endpoint: `GET http://127.0.0.1:3000/api/search?query=GCB`
-- Result summary: found provisioned dashboard `GCB Local Runtime Logs`, uid `gcb-local-runtime-logs`, URL `/d/gcb-local-runtime-logs/gcb-local-runtime-logs`.
-- Endpoint: `GET http://127.0.0.1:3000/api/dashboards/uid/gcb-local-runtime-logs`
+- Endpoint: `GET http://127.0.0.1:3000/api/search?query=4OK`
+- Result summary: found provisioned dashboard `4OK Local Runtime Logs`, uid `fourok-local-runtime-logs`, URL `/d/fourok-local-runtime-logs/fourok-local-runtime-logs`.
+- Endpoint: `GET http://127.0.0.1:3000/api/dashboards/uid/fourok-local-runtime-logs`
 - Result summary: dashboard is provisioned, version `4`, refreshes every `10s`, and contains 18 panels plus an Explore link.
 - Operator-usable log surfaces:
-  - Dashboard link `Explore all GCB logs` uses `/explore` with Loki query `{compose_project="4ok"}` over `now-4h` to `now`.
+  - Dashboard link `Explore all 4OK logs` uses `/explore` with Loki query `{compose_project="4ok"}` over `now-4h` to `now`.
   - Panel `All 4ok Docker logs` uses Loki range query `{compose_project="4ok"}`.
   - Panel `Dagster code logs` uses Loki range query `{compose_service="dagster-code"}`.
   - Panel `Dagster failures` uses Loki range query `{compose_service="dagster-code"} |= "STEP_FAILURE"`.
 - Operator-usable trace surface:
-  - Panel `Recent GCB traces (Tempo)` uses Tempo TraceQL query `{ resource.service.name =~ "gcb.*" }`.
+  - Panel `Recent 4OK traces (Tempo)` uses Tempo TraceQL query `{ resource.service.name =~ "fourok.*" }`.
 - Operator-usable count surfaces:
-  - Panel `Imported source records by source/type` uses Prometheus query `gcb_source_records_total`.
-  - Panel `Raw landed records by connector/stream` uses `gcb_raw_landed_records_total`.
-  - Panel `Processed canonical objects by type` uses `gcb_canonical_objects_total`.
-  - Panel `Processed entity links by relationship` uses `gcb_entity_links_total`.
-  - Panel `Processed retrieval records by status` uses `gcb_retrieval_records_total`.
+  - Panel `Imported source records by source/type` uses Prometheus query `fourok_source_records_total`.
+  - Panel `Raw landed records by connector/stream` uses `fourok_raw_landed_records_total`.
+  - Panel `Processed canonical objects by type` uses `fourok_canonical_objects_total`.
+  - Panel `Processed entity links by relationship` uses `fourok_entity_links_total`.
+  - Panel `Processed retrieval records by status` uses `fourok_retrieval_records_total`.
 
 Prometheus target and metric proof from inside the observability container:
 
 - Endpoint: `GET http://localhost:9090/api/v1/targets?state=active`
 - Command path: `docker exec 4ok-observability-1 curl -fsS ...`
 - Result summary for scrape target:
-  - `job="gcb-dagster-runtime"`
-  - `scrapeUrl="http://gcb-metrics-exporter:9108/metrics"`
+  - `job="fourok-dagster-runtime"`
+  - `scrapeUrl="http://fourok-metrics-exporter:9108/metrics"`
   - `health="up"`
   - `lastError=""`
   - `lastScrape="2026-06-10T09:46:48.574654803Z"`
 - Endpoint: `GET http://localhost:9090/api/v1/query`
-- Query: `gcb_source_records_total`
+- Query: `fourok_source_records_total`
 - Result summary: `status=success`, 11 source-record series present, including:
   - `google_drive/document=21`
   - `linear/work_item=642`
@@ -701,7 +701,7 @@ Prometheus target and metric proof from inside the observability container:
   - `twenty/organization=802`
   - `twenty/person=712`
 - Endpoint: `GET http://localhost:9090/api/v1/query`
-- Query: `gcb_canonical_objects_total`
+- Query: `fourok_canonical_objects_total`
 - Result summary: canonical object series present:
   - `Organization=802`
   - `Person=734`
@@ -710,44 +710,44 @@ Prometheus target and metric proof from inside the observability container:
   - `Document=24`
   - `Relationship=14`
 - Endpoint: `GET http://localhost:9090/api/v1/query`
-- Query: `gcb_retrieval_records_total`
+- Query: `fourok_retrieval_records_total`
 - Result summary: `status="current"` series present with value `2670`.
 
 Gate 3 conclusion:
 
-- Recent GCB service logs are queryable in Loki through a range query, including the explicit `service_name="gcb-dagster-code"` path and the Docker label path used by the dashboard.
-- Recent GCB service traces are queryable in Tempo through TraceQL for `resource.service.name="gcb-dagster-code"`.
-- Grafana exposes operator-usable log, trace, and count panels in the provisioned `GCB Local Runtime Logs` dashboard.
-- Prometheus inside the observability container has an up `gcb-dagster-runtime` scrape target and current runtime count series.
+- Recent 4OK service logs are queryable in Loki through a range query, including the explicit `service_name="fourok-dagster-code"` path and the Docker label path used by the dashboard.
+- Recent 4OK service traces are queryable in Tempo through TraceQL for `resource.service.name="fourok-dagster-code"`.
+- Grafana exposes operator-usable log, trace, and count panels in the provisioned `4OK Local Runtime Logs` dashboard.
+- Prometheus inside the observability container has an up `fourok-dagster-runtime` scrape target and current runtime count series.
 ### 2026-06-10 Gate 4 MCP stdio retrieval proof
 
 Status for **Gate 4 only**: **COMPLETE WITH LIVE STDIO MCP EVIDENCE**.
 
 Repository/launch documentation:
 
-- MCP server entrypoint is `gcb-mcp = "gcb.runtime.mcp_retrieval:main"` in `pyproject.toml`.
-- Documented repo launch command: `uv run gcb-mcp`.
+- MCP server entrypoint is `fourok-mcp = "fourok.runtime.mcp_retrieval:main"` in `pyproject.toml`.
+- Documented repo launch command: `uv run fourok-mcp`.
 - Documented Hermes native MCP config shape uses:
   - `command`: `uv`
-  - `args`: `["run", "gcb-mcp"]`
+  - `args`: `["run", "fourok-mcp"]`
   - `cwd`: repository checkout containing `pyproject.toml`
-  - `env.GCB_DATABASE_URL`: runtime DB URL injected from local environment/secrets, never committed.
-- Exact worktree command used for live proof: stdio MCP client launched `uv run gcb-mcp` from `/home/simon/Projects/project-4ok/4ok.worktrees/gate4-mcp-retrieval` with `GCB_DATABASE_URL` set to the host-mapped runtime Postgres URL.
+  - `env.FOUR_OK_DATABASE_URL`: runtime DB URL injected from local environment/secrets, never committed.
+- Exact worktree command used for live proof: stdio MCP client launched `uv run fourok-mcp` from `/home/simon/Projects/project-4ok/4ok.worktrees/gate4-mcp-retrieval` with `FOUR_OK_DATABASE_URL` set to the host-mapped runtime Postgres URL.
 
 Test/contract proof:
 
 - `uv run pytest tests/runtime/test_mcp_retrieval.py -q` -> `8 passed`.
 - Covered behavior includes:
   - schema discovery via `tool_schemas()` without launching the full server;
-  - FastMCP registration of public names `search_gcb` and `operator_status`;
-  - deterministic Slack allow/deny regression through the registered FastMCP `search_gcb` tool contract, not just the underlying helper.
+  - FastMCP registration of public names `search_fourok` and `operator_status`;
+  - deterministic Slack allow/deny regression through the registered FastMCP `search_fourok` tool contract, not just the underlying helper.
 
 Live stdio MCP client proof:
 
-- Command used an MCP SDK `ClientSession` with `StdioServerParameters(command="uv", args=["run", "gcb-mcp"], cwd=<worktree>, env={"GCB_DATABASE_URL": <runtime-db>})`.
-- The command did not print credentials; DB URL in logs was redacted as `postgresql+psycopg://gcb:[REDACTED]@127.0.0.1:5432/gcb`.
+- Command used an MCP SDK `ClientSession` with `StdioServerParameters(command="uv", args=["run", "fourok-mcp"], cwd=<worktree>, env={"FOUR_OK_DATABASE_URL": <runtime-db>})`.
+- The command did not print credentials; DB URL in logs was redacted as `postgresql+psycopg://fourok:[REDACTED]@127.0.0.1:5432/fourok`.
 - `list_tools` returned exactly:
-  - `search_gcb`
+  - `search_fourok`
   - `operator_status`
 - `operator_status` via MCP returned live DB-backed counts:
   - `status=ok`
@@ -756,7 +756,7 @@ Live stdio MCP client proof:
   - `retrieval_count=2670`
   - retrieval status counts: `current=2670`
 
-Live retrieval via MCP `search_gcb`:
+Live retrieval via MCP `search_fourok`:
 
 - Google Drive query:
   - query: `Buena Progress Update`
@@ -813,7 +813,7 @@ Integrated commits before the final pass:
 
 Final orchestrator fix:
 
-- Updated `gcb.runtime.mcp_retrieval.operator_status` so the MCP `operator_status` tool uses the same compact runtime status contract as `gcb operator-status` for real `GovernedContext` state.
+- Updated `fourok.runtime.mcp_retrieval.operator_status` so the MCP `operator_status` tool uses the same compact runtime status contract as `fourok operator-status` for real `GovernedContext` state.
 - The MCP operator status now reports active imported-item counts and the full `retrieval_records`/`freshness.live_ingestion` shape instead of a separate all-source-row count contract.
 - Updated `docs/mcp-retrieval.md` to document this contract.
 - Added/updated regression coverage in `tests/runtime/test_mcp_retrieval.py`.
@@ -824,36 +824,36 @@ Focused tests after the final MCP operator-status alignment:
 
 Gate 5 rebuild/restart proof:
 
-- `uv run gcb-dev pipeline-up` rebuilt/recreated the pipeline stack with image tag `207b7ba`.
+- `uv run fourok-dev pipeline-up` rebuilt/recreated the pipeline stack with image tag `207b7ba`.
 - Verified images:
   - `4ok-dagster-code:207b7ba`
   - `4ok-dagster:207b7ba`
-- `uv run gcb-dev dagster-status` after restart returned:
+- `uv run fourok-dev dagster-status` after restart returned:
   - `status=ok`
-  - `gcb_hourly_live_backfill_schedule=RUNNING`
-  - `gcb_webhook_backlog_sensor=RUNNING`
+  - `fourok_hourly_live_backfill_schedule=RUNNING`
+  - `fourok_webhook_backlog_sensor=RUNNING`
 - Launched fresh manual backfill through Dagster GraphQL after restart:
   - run ID: `0c6dfb66-443a-4548-8c88-5241400a21e4`
-  - tag: `gcb/manual_reason=verify-after-merge-207b7ba`
+  - tag: `fourok/manual_reason=verify-after-merge-207b7ba`
   - final status: `SUCCESS`
 - Successful steps in run `0c6dfb66-443a-4548-8c88-5241400a21e4`:
   - `meltano_google_drive_live_raw_landing`
   - `meltano_linear_live_raw_landing`
   - `meltano_slack_live_raw_landing`
   - `meltano_twenty_live_raw_landing`
-  - `gcb_google_drive_live_source_records_from_raw_landing`
-  - `gcb_linear_live_source_records_from_raw_landing`
-  - `gcb_slack_live_source_records_from_raw_landing`
-  - `gcb_twenty_live_source_records_from_raw_landing`
-  - `gcb_canonical_objects_and_entity_links`
-  - `gcb_retrieval_records`
-  - `gcb_audit_metadata`
-  - `gcb_webhook_backlog`
-  - `gcb_operator_dashboard`
+  - `fourok_google_drive_live_source_records_from_raw_landing`
+  - `fourok_linear_live_source_records_from_raw_landing`
+  - `fourok_slack_live_source_records_from_raw_landing`
+  - `fourok_twenty_live_source_records_from_raw_landing`
+  - `fourok_canonical_objects_and_entity_links`
+  - `fourok_retrieval_records`
+  - `fourok_audit_metadata`
+  - `fourok_webhook_backlog`
+  - `fourok_operator_dashboard`
 
 Post-restart operator-status proof:
 
-- `uv run gcb operator-status` without explicit `--database-url` returned:
+- `uv run fourok operator-status` without explicit `--database-url` returned:
   - `imported_items_by_source.google_drive=23`
   - `imported_items_by_source.linear=1049`
   - `imported_items_by_source.slack=29`
@@ -864,9 +864,9 @@ Post-restart operator-status proof:
 
 Post-restart MCP stdio proof:
 
-- Stdio MCP client launched `uv run gcb-mcp` from the repo with `GCB_DATABASE_URL` set to the host-mapped runtime DB URL.
-- `list_tools` returned exactly `search_gcb` and `operator_status`.
-- MCP `operator_status` returned the same compact active-count contract as `gcb operator-status`:
+- Stdio MCP client launched `uv run fourok-mcp` from the repo with `FOUR_OK_DATABASE_URL` set to the host-mapped runtime DB URL.
+- `list_tools` returned exactly `search_fourok` and `operator_status`.
+- MCP `operator_status` returned the same compact active-count contract as `fourok operator-status`:
   - `imported_items_by_source.google_drive=23`
   - `imported_items_by_source.linear=1049`
   - `imported_items_by_source.slack=29`
@@ -874,7 +874,7 @@ Post-restart MCP stdio proof:
   - `retrieval_records.total=2674`
   - `retrieval_records.by_status.current=2674`
   - `freshness.live_ingestion.status=fresh`
-- MCP `search_gcb` live retrieval proof after restart:
+- MCP `search_fourok` live retrieval proof after restart:
   - Google Drive query `Buena Progress Update`: `result_count=3`, `evidence_count=3`, source refs included real `google_drive:file:*` records.
   - Linear query `Message frank` with role `linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d`: `result_count=1`, source ref `linear:issue:4OK-691`, evidence permission ref matched the Linear team role.
   - Twenty query `Pennylane`: `result_count=1`, source ref `twenty:company:3fa2685d-64d7-406b-8503-0c8ad2bb9f78`.
@@ -883,14 +883,14 @@ Post-restart MCP stdio proof:
 
 Post-restart observability proof:
 
-- Loki range query `{service_name="gcb-dagster-code"}` over the recent window returned `5` streams.
-- Tempo TraceQL query `{ resource.service.name =~ "gcb.*" }` returned `5` traces.
+- Loki range query `{service_name="fourok-dagster-code"}` over the recent window returned `5` streams.
+- Tempo TraceQL query `{ resource.service.name =~ "fourok.*" }` returned `5` traces.
 - Grafana health returned `database=ok`.
-- Grafana dashboard API returned dashboard title `GCB Local Runtime Logs` with `18` panels.
+- Grafana dashboard API returned dashboard title `4OK Local Runtime Logs` with `18` panels.
 - Prometheus inside the observability container:
-  - target `job="gcb-dagster-runtime"` had `health="up"`, `lastError=""`, `scrapeUrl="http://gcb-metrics-exporter:9108/metrics"`.
-  - query `gcb_retrieval_records_total` returned `status="current"` value `2674`.
-  - query `gcb_source_records_total` returned `11` source-record series.
+  - target `job="fourok-dagster-runtime"` had `health="up"`, `lastError=""`, `scrapeUrl="http://fourok-metrics-exporter:9108/metrics"`.
+  - query `fourok_retrieval_records_total` returned `status="current"` value `2674`.
+  - query `fourok_source_records_total` returned `11` source-record series.
 
 Gate 5 conclusion:
 
@@ -909,7 +909,7 @@ All authoritative gates now have fresh tool-backed evidence in this report:
 
 - Gate 1: Dagster recurring local runtime works; schedules/sensors are running and live backfill runs succeed.
 - Gate 1B: product lineage is green/honest; all 13 visible product/live assets materialized successfully and obsolete red non-live assets are no longer in the default product Definitions.
-- Gate 2: operator-visible import counts/freshness are runtime DB-backed and current; plain `gcb operator-status`, operator-live reporting, metrics/Prometheus/Grafana counts, and MCP `operator_status` now use the same active imported-item source of truth.
+- Gate 2: operator-visible import counts/freshness are runtime DB-backed and current; plain `fourok operator-status`, operator-live reporting, metrics/Prometheus/Grafana counts, and MCP `operator_status` now use the same active imported-item source of truth.
 - Gate 3: Loki logs, Tempo traces, Grafana dashboard panels, Prometheus target, and runtime count series are live and operator-usable.
 - Gate 4: MCP server/tool discovery, stdio launch path, Hermes config snippet, live retrieval for Google Drive/Linear/Twenty/Slack, and Slack allow/deny permission behavior are proven through the server/tool contract.
 - Gate 5: the local stack survived rebuild/restart on the integrated code; fresh Dagster run `0c6dfb66-443a-4548-8c88-5241400a21e4` succeeded and post-restart operator, observability, and MCP checks passed.

@@ -2,11 +2,11 @@ from pathlib import Path
 
 from sqlalchemy import delete
 
-from gcb.etl.extract.email_parser import load_email_dir
-from gcb.governance import GovernedContext
-from gcb.retrieval.embeddings import chunk_text, embed_text, embedding_dimensions
-from gcb.retrieval.evaluation import compare_retrieval_methods, load_retrieval_eval_cases
-from gcb.retrieval.vector_search import _vector_dimension_from_type
+from fourok.etl.extract.email_parser import load_email_dir
+from fourok.governance import GovernedContext
+from fourok.retrieval.embeddings import chunk_text, embed_text, embedding_dimensions
+from fourok.retrieval.evaluation import compare_retrieval_methods, load_retrieval_eval_cases
+from fourok.retrieval.vector_search import _vector_dimension_from_type
 
 FIXTURES = Path(__file__).parents[2] / "fixtures"
 EMAILS = FIXTURES / "emails"
@@ -62,9 +62,9 @@ def test_openai_embedding_provider_uses_api_when_key_is_configured(monkeypatch) 
         return FakeResponse()
 
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-    monkeypatch.setenv("GCB_EMBEDDING_PROVIDER", "openai")
-    monkeypatch.setenv("GCB_EMBEDDING_DIMENSIONS", "4")
-    monkeypatch.setattr("gcb.retrieval.embeddings._urlopen", fake_urlopen)
+    monkeypatch.setenv("FOUR_OK_EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("FOUR_OK_EMBEDDING_DIMENSIONS", "4")
+    monkeypatch.setattr("fourok.retrieval.embeddings._urlopen", fake_urlopen)
 
     assert embedding_dimensions() == 4
     assert embed_text("runtime deployment decision") == [0.1, 0.2, 0.3, 0.4]

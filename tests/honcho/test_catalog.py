@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from gcb.honcho.catalog import CatalogEmployee, import_source_catalogs
+from fourok.honcho.catalog import CatalogEmployee, import_source_catalogs
 
 FIXTURE = (
     Path(__file__).parent.parent.parent / "fixtures" / "honcho" / "linear_twenty_slack_sample.json"

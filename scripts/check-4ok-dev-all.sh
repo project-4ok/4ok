@@ -6,11 +6,11 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 CHECK_TARGET="${CHECK_TARGET:-ssh}"
 GATEWAY_SSH_TARGET="${GATEWAY_SSH_TARGET:-root@178.105.10.7}"
 STAGE1_RUNNER="${STAGE1_RUNNER:-auto}"
-GCB_STAGE1_CONTAINER="${GCB_STAGE1_CONTAINER:-openclaw-gcb-app-1}"
-GCB_STAGE1_COMMAND="${GCB_STAGE1_COMMAND:-/app/.venv/bin/gcb}"
-LOCAL_STAGE1_COMMAND="${LOCAL_STAGE1_COMMAND:-uv run gcb}"
-DAGSTER_GRAPHQL_URL="${DAGSTER_GRAPHQL_URL:-http://gcb-dagster-webserver:3001/graphql}"
-GRAFANA_URL="${GRAFANA_URL:-http://gcb-observability:3000}"
+FOUR_OK_STAGE1_CONTAINER="${FOUR_OK_STAGE1_CONTAINER:-openclaw-fourok-app-1}"
+FOUR_OK_STAGE1_COMMAND="${FOUR_OK_STAGE1_COMMAND:-/app/.venv/bin/fourok}"
+LOCAL_STAGE1_COMMAND="${LOCAL_STAGE1_COMMAND:-uv run fourok}"
+DAGSTER_GRAPHQL_URL="${DAGSTER_GRAPHQL_URL:-http://fourok-dagster-webserver:3001/graphql}"
+GRAFANA_URL="${GRAFANA_URL:-http://fourok-observability:3000}"
 STAGE1_CASES="${STAGE1_CASES:-}"
 REFRESH_DAGSTER_BACKFILL="${REFRESH_DAGSTER_BACKFILL:-true}"
 DAGSTER_BACKFILL_CHECK="${DAGSTER_BACKFILL_CHECK:-${REPO_ROOT}/scripts/run-4ok-dev-dagster-backfill.sh}"
@@ -20,9 +20,9 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [--json]
 
-Run two GCB/OpenClaw gates and combine their JSON results:
+Run two 4OK/OpenClaw gates and combine their JSON results:
   1. deployment surface check via scripts/check-4ok-dev-deployment.sh --json
-  2. gcb stage1-acceptance --json on the selected target
+  2. fourok stage1-acceptance --json on the selected target
 
 The top-level status is ok only when both gates return status=ok.
 The command exits non-zero otherwise.
@@ -33,18 +33,18 @@ Target modes:
 
 Stage 1 runners:
   STAGE1_RUNNER=auto    ssh -> docker, local -> host (default)
-  STAGE1_RUNNER=docker  run stage1 inside GCB_STAGE1_CONTAINER on the target
+  STAGE1_RUNNER=docker  run stage1 inside FOUR_OK_STAGE1_CONTAINER on the target
   STAGE1_RUNNER=host    run stage1 with LOCAL_STAGE1_COMMAND on the target shell
 
 Environment overrides:
   CHECK_TARGET=ssh|local
   GATEWAY_SSH_TARGET=root@178.105.10.7
   STAGE1_RUNNER=auto|docker|host
-  GCB_STAGE1_CONTAINER=openclaw-gcb-app-1
-  GCB_STAGE1_COMMAND=/app/.venv/bin/gcb
-  LOCAL_STAGE1_COMMAND='uv run gcb'
-  DAGSTER_GRAPHQL_URL=http://gcb-dagster-webserver:3001/graphql
-  GRAFANA_URL=http://gcb-observability:3000
+  FOUR_OK_STAGE1_CONTAINER=openclaw-fourok-app-1
+  FOUR_OK_STAGE1_COMMAND=/app/.venv/bin/fourok
+  LOCAL_STAGE1_COMMAND='uv run fourok'
+  DAGSTER_GRAPHQL_URL=http://fourok-dagster-webserver:3001/graphql
+  GRAFANA_URL=http://fourok-observability:3000
   STAGE1_CASES=/app/.local/stage1/live_retrieval_case_set.generated.json
   REFRESH_DAGSTER_BACKFILL=true
   DAGSTER_BACKFILL_CHECK=scripts/run-4ok-dev-dagster-backfill.sh
@@ -73,8 +73,8 @@ python3 - \
   "${CHECK_TARGET}" \
   "${GATEWAY_SSH_TARGET}" \
   "${STAGE1_RUNNER}" \
-  "${GCB_STAGE1_CONTAINER}" \
-  "${GCB_STAGE1_COMMAND}" \
+  "${FOUR_OK_STAGE1_CONTAINER}" \
+  "${FOUR_OK_STAGE1_COMMAND}" \
   "${LOCAL_STAGE1_COMMAND}" \
   "${DAGSTER_GRAPHQL_URL}" \
   "${GRAFANA_URL}" \

@@ -9,15 +9,15 @@ Scope: final evidence for `docs/goal.md` Stage 1 freshness/check closure after d
 Status: PASS on local runtime after rebuild/restart at commit `92fd453`.
 
 - Corrected Stage 1 acceptance now fails on current Dagster run failures, incomplete required steps, or stale hourly success freshness.
-- Dagster image/app image were rebuilt with `GCB_IMAGE_TAG=92fd453` and local runtime services restarted.
-- Manual `gcb_hourly_live_backfill` run succeeded after rebuild.
+- Dagster image/app image were rebuilt with `FOUR_OK_IMAGE_TAG=92fd453` and local runtime services restarted.
+- Manual `fourok_hourly_live_backfill` run succeeded after rebuild.
 - Grafana/Prometheus freshness reported the successful hourly backfill within SLA.
-- `uv run gcb stage1-acceptance --json` exited 0 and all checks were `ok`.
+- `uv run fourok stage1-acceptance --json` exited 0 and all checks were `ok`.
 
 ## Fixes committed
 
 - `83dddde fix(runtime): fail stage1 on stale dagster runs`
-  - Adds `runtime_status` to `gcb-dev dagster-status`.
+  - Adds `runtime_status` to `fourok-dev dagster-status`.
   - Fails Stage 1 Dagster gate unless latest hourly run is successful, required steps are successful, and latest success is fresh.
   - Fails Grafana gate when `[Pipeline] Minutes since successful hourly backfill` is stale.
 - `92fd453 fix(slack): preserve textless live messages`
@@ -39,17 +39,17 @@ git commit hook for 92fd453:
 Rebuild/restart:
 
 ```text
-uv run gcb-dev pipeline-up
-GCB_IMAGE_TAG=92fd453 docker compose --profile observability up --build --force-recreate -d gcb-metrics-exporter promtail
+uv run fourok-dev pipeline-up
+FOUR_OK_IMAGE_TAG=92fd453 docker compose --profile observability up --build --force-recreate -d fourok-metrics-exporter promtail
 ```
 
 Manual Dagster run:
 
 ```text
-docker exec 4ok-dagster-webserver-1 dagster job launch -w /opt/dagster/dagster_home/workspace.yaml -j gcb_hourly_live_backfill --tags '{"manual":"hermes-stage1-proof","image":"92fd453"}'
+docker exec 4ok-dagster-webserver-1 dagster job launch -w /opt/dagster/dagster_home/workspace.yaml -j fourok_hourly_live_backfill --tags '{"manual":"hermes-stage1-proof","image":"92fd453"}'
 ```
 
-Latest run result from `uv run gcb-dev dagster-status`:
+Latest run result from `uv run fourok-dev dagster-status`:
 
 ```json
 {
@@ -65,7 +65,7 @@ Latest run result from `uv run gcb-dev dagster-status`:
 Corrected Stage 1 acceptance:
 
 ```text
-uv run gcb stage1-acceptance --json --report .local/stage1-live-checks/stage1-final.md > .local/stage1-live-checks/stage1-final.json
+uv run fourok stage1-acceptance --json --report .local/stage1-live-checks/stage1-final.md > .local/stage1-live-checks/stage1-final.json
 STAGE1_RC=0
 ```
 
@@ -89,7 +89,7 @@ Summary from `.local/stage1-live-checks/stage1-final.json`:
   },
   "grafana": {
     "status": "ok",
-    "dashboard_uid": "gcb-local-runtime-logs",
+    "dashboard_uid": "fourok-local-runtime-logs",
     "minutes_since_successful_hourly_backfill": 0.34317803382873535
   }
 }

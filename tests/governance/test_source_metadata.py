@@ -1,19 +1,19 @@
-from gcb.etl.extract.source_records import SourceIdentity, SourceRecord
-from gcb.etl.load.retrieval_records import (
+from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
+from fourok.etl.load.retrieval_records import (
     RetrievalRecord,
     prepare_retrieval_records,
     retrieval_record_rows,
     store_retrieval_records,
 )
-from gcb.etl.load.source_metadata import (
+from fourok.etl.load.source_metadata import (
     denied_source_refs,
     source_identity_rows,
     source_metadata,
     source_record_rows,
     store_source_records,
 )
-from gcb.governance.policy import PrincipalContext
-from gcb.governance.state import create_governed_context_state
+from fourok.governance.policy import PrincipalContext
+from fourok.governance.state import create_governed_context_state
 
 
 def test_store_source_records_replaces_metadata_and_identity_rows() -> None:

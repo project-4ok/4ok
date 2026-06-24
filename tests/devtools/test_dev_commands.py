@@ -1,7 +1,7 @@
 import subprocess
 from pathlib import Path
 
-from gcb.devtools.dev import (
+from fourok.devtools.dev import (
     build_plan,
     compose_env_report,
     connector_secret_report,
@@ -33,14 +33,14 @@ def test_fast_plan_runs_reusable_local_gate_with_optional_pytest_args() -> None:
 def test_lint_and_format_check_ignore_untracked_parallel_work() -> None:
     plan = build_plan("fast", [])
 
-    assert plan[0].command == ("uv", "run", "python", "-m", "gcb.devtools.dev", "lint")
-    assert plan[1].command == ("uv", "run", "python", "-m", "gcb.devtools.dev", "format")
+    assert plan[0].command == ("uv", "run", "python", "-m", "fourok.devtools.dev", "lint")
+    assert plan[1].command == ("uv", "run", "python", "-m", "fourok.devtools.dev", "format")
 
 
 def test_fast_plan_defaults_to_default_pytest_suite() -> None:
     plan = build_plan("fast", [])
 
-    assert plan[3].command == ("uv", "run", "python", "-m", "gcb.devtools.dev", "test-tracked")
+    assert plan[3].command == ("uv", "run", "python", "-m", "fourok.devtools.dev", "test-tracked")
 
 
 def test_full_plan_includes_goal_audit_and_default_pytest() -> None:
@@ -54,8 +54,8 @@ def test_full_plan_includes_goal_audit_and_default_pytest() -> None:
         "goal-audit",
         "whitespace",
     ]
-    assert plan[3].command == ("uv", "run", "python", "-m", "gcb.devtools.dev", "test-tracked")
-    assert plan[4].command == ("uv", "run", "gcb", "goal-audit")
+    assert plan[3].command == ("uv", "run", "python", "-m", "fourok.devtools.dev", "test-tracked")
+    assert plan[4].command == ("uv", "run", "fourok", "goal-audit")
 
 
 def test_operator_live_plan_runs_pipeline_group_module() -> None:
@@ -69,22 +69,22 @@ def test_operator_live_plan_runs_pipeline_group_module() -> None:
         "pipeline",
         "python",
         "-m",
-        "gcb.runtime.operator_live",
+        "fourok.runtime.operator_live",
         "--dry-run",
     )
 
 
 def test_compose_config_plan_uses_safe_required_env_defaults(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("gcb.devtools.dev._git_short_head", lambda *, default: default)
+    monkeypatch.setattr("fourok.devtools.dev._git_short_head", lambda *, default: default)
 
     plan = build_plan("compose-config", [])
 
     assert len(plan) == 1
     assert plan[0].env == {
         "DAGSTER_POSTGRES_PASSWORD": "local-check",
-        "GCB_DATABASE_URL": "postgresql+psycopg://gcb:local-check@postgres:5432/gcb",
-        "GCB_IMAGE_TAG": "local-check",
+        "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:local-check@postgres:5432/fourok",
+        "FOUR_OK_IMAGE_TAG": "local-check",
         "POSTGRES_PASSWORD": "local-check",
     }
     assert plan[0].command == ("docker", "compose", "--profile", "pipeline", "config")
@@ -94,11 +94,11 @@ def test_compose_env_report_redacts_runtime_env_and_keeps_non_secret_values(
     monkeypatch, tmp_path: Path
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("gcb.devtools.dev._git_short_head", lambda *, default: "abc1234")
+    monkeypatch.setattr("fourok.devtools.dev._git_short_head", lambda *, default: "abc1234")
     (tmp_path / ".env").write_text(
         "POSTGRES_PASSWORD=super-secret\n"
-        "INFISICAL_PROJECT_ID=project-123\n"
-        "INFISICAL_DOMAIN=https://infisical.example\n",
+        "LINEAR_API_KEY=linear-token\n"
+        "",
         encoding="utf-8",
     )
 
@@ -106,13 +106,14 @@ def test_compose_env_report_redacts_runtime_env_and_keeps_non_secret_values(
 
     assert report["status"] == "ok"
     assert report["env"]["POSTGRES_PASSWORD"] == "[REDACTED]"
-    assert report["env"]["GCB_DATABASE_URL"] == "[REDACTED]"
-    assert report["env"]["GCB_IMAGE_TAG"] == "abc1234"
-    assert report["env"]["GCB_INFISICAL_PROJECT_ID"] == "project-123"
-    assert report["usage"]["pipeline_ps"] == "uv run gcb-dev pipeline-ps"
-    assert report["usage"]["app_up"] == "uv run gcb-dev app-up"
-    assert report["usage"]["observability_up"] == "uv run gcb-dev observability-up"
-    assert report["usage"]["stack_up"] == "uv run gcb-dev stack-up"
+    assert report["env"]["FOUR_OK_DATABASE_URL"] == "[REDACTED]"
+    assert report["env"]["FOUR_OK_IMAGE_TAG"] == "abc1234"
+    assert report["env"]["LINEAR_API_KEY"] == "linear-token"
+    assert report["usage"]["pipeline_ps"] == "uv run fourok-dev pipeline-ps"
+    assert report["usage"]["app_up"] == "uv run fourok-dev app-up"
+    assert report["usage"]["core_up"] == "uv run fourok-dev core-up"
+    assert report["usage"]["observability_up"] == "uv run fourok-dev observability-up"
+    assert report["usage"]["stack_up"] == "uv run fourok-dev stack-up  # core only"
 
 
 def test_connector_secret_report_flags_missing_required_live_connector_keys() -> None:
@@ -158,10 +159,10 @@ def test_install_hooks_writes_versioned_hook_entrypoints(tmp_path: Path) -> None
         hooks_dir / "pre-push",
     ]
     assert (hooks_dir / "pre-commit").read_text(encoding="utf-8") == (
-        "#!/usr/bin/env bash\nset -euo pipefail\n\nuv run gcb-dev fast\n"
+        "#!/usr/bin/env bash\nset -euo pipefail\n\nuv run fourok-dev fast\n"
     )
     assert (hooks_dir / "pre-push").read_text(encoding="utf-8") == (
-        "#!/usr/bin/env bash\nset -euo pipefail\n\nuv run gcb-dev full\n"
+        "#!/usr/bin/env bash\nset -euo pipefail\n\nuv run fourok-dev full\n"
     )
 
 
@@ -180,7 +181,7 @@ def test_install_hooks_supports_linked_worktree_git_file(tmp_path: Path, monkeyp
         assert args == ("-C", str(project_root), "rev-parse", "--git-common-dir")
         return [str(common_git_dir)]
 
-    monkeypatch.setattr("gcb.devtools.dev._git_lines", fake_git_lines)
+    monkeypatch.setattr("fourok.devtools.dev._git_lines", fake_git_lines)
 
     written = install_hooks(project_root)
 
@@ -211,12 +212,12 @@ def test_logs_status_report_summarizes_loki_labels_counts_and_queries() -> None:
 
     assert report["status"] == "ok"
     assert report["compose_services"] == ["dagster-code", "dagster-daemon"]
-    assert report["queries"]["all_gcb"] == '{compose_project="4ok"}'
+    assert report["queries"]["all_fourok"] == '{compose_project="4ok"}'
     assert (
         report["queries"]["dagster_failures"]
         == '{compose_service="dagster-code"} |= "STEP_FAILURE"'
     )
-    assert report["counts"]["all_gcb"]["entries"] == 2
+    assert report["counts"]["all_fourok"]["entries"] == 2
     assert len(calls) == 4
 
 
@@ -233,17 +234,17 @@ def test_dagster_status_entrypoint_reports_repository_health() -> None:
                         "nodes": [
                             {
                                 "name": "__repository__",
-                                "location": {"name": "gcb_pipeline"},
-                                "pipelines": [{"name": "gcb_hourly_live_backfill"}],
+                                "location": {"name": "fourok_pipeline"},
+                                "pipelines": [{"name": "fourok_hourly_live_backfill"}],
                                 "schedules": [
                                     {
-                                        "name": "gcb_hourly_live_backfill_schedule",
+                                        "name": "fourok_hourly_live_backfill_schedule",
                                         "scheduleState": {"status": "RUNNING"},
                                     }
                                 ],
                                 "sensors": [
                                     {
-                                        "name": "gcb_webhook_backlog_sensor",
+                                        "name": "fourok_webhook_backlog_sensor",
                                         "sensorState": {"status": "RUNNING"},
                                     }
                                 ],
@@ -263,7 +264,7 @@ def test_dagster_status_entrypoint_reports_repository_health() -> None:
                             "startTime": 1781164400.0,
                             "endTime": 9999999999.0,
                             "stepStats": [
-                                {"stepKey": "gcb_retrieval_records", "status": "SUCCESS"}
+                                {"stepKey": "fourok_retrieval_records", "status": "SUCCESS"}
                             ],
                         }
                     ],
@@ -281,9 +282,9 @@ def test_dagster_status_entrypoint_reports_repository_health() -> None:
     assert isinstance(runtime_status, dict)
     assert runtime_status["status"] == "ok"
     assert runtime_status["latest_run_status"] == "SUCCESS"
-    assert report["schedules"]["gcb_hourly_live_backfill_schedule"] == "RUNNING"
+    assert report["schedules"]["fourok_hourly_live_backfill_schedule"] == "RUNNING"
     assert report["latest_runs"][0]["run_id"] == "run-1"
-    assert report["latest_runs"][0]["step_statuses"]["gcb_retrieval_records"] == "SUCCESS"
+    assert report["latest_runs"][0]["step_statuses"]["fourok_retrieval_records"] == "SUCCESS"
     assert len(payloads) == 2
 
 
@@ -297,11 +298,11 @@ def test_dagster_status_flags_failed_latest_step_as_runtime_failure() -> None:
                         "nodes": [
                             {
                                 "name": "__repository__",
-                                "location": {"name": "gcb_pipeline"},
-                                "pipelines": [{"name": "gcb_hourly_live_backfill"}],
+                                "location": {"name": "fourok_pipeline"},
+                                "pipelines": [{"name": "fourok_hourly_live_backfill"}],
                                 "schedules": [
                                     {
-                                        "name": "gcb_hourly_live_backfill_schedule",
+                                        "name": "fourok_hourly_live_backfill_schedule",
                                         "scheduleState": {"status": "RUNNING"},
                                     }
                                 ],
@@ -352,7 +353,7 @@ def test_dagster_status_flags_failed_latest_step_as_runtime_failure() -> None:
     }
 
 
-def test_dagster_status_entrypoint_discovers_gcb_repository_from_multiple_nodes() -> None:
+def test_dagster_status_entrypoint_discovers_fourok_repository_from_multiple_nodes() -> None:
     def fake_graphql(url: str, query: str, variables=None):
         if "repositoriesOrError" in query:
             return {
@@ -374,17 +375,17 @@ def test_dagster_status_entrypoint_discovers_gcb_repository_from_multiple_nodes(
                             },
                             {
                                 "name": "__repository__",
-                                "location": {"name": "gcb_pipeline"},
-                                "pipelines": [{"name": "gcb_hourly_live_backfill"}],
+                                "location": {"name": "fourok_pipeline"},
+                                "pipelines": [{"name": "fourok_hourly_live_backfill"}],
                                 "schedules": [
                                     {
-                                        "name": "gcb_hourly_live_backfill_schedule",
+                                        "name": "fourok_hourly_live_backfill_schedule",
                                         "scheduleState": {"status": "RUNNING"},
                                     }
                                 ],
                                 "sensors": [
                                     {
-                                        "name": "gcb_webhook_backlog_sensor",
+                                        "name": "fourok_webhook_backlog_sensor",
                                         "sensorState": {"status": "RUNNING"},
                                     }
                                 ],
@@ -408,14 +409,14 @@ def test_dagster_status_entrypoint_discovers_gcb_repository_from_multiple_nodes(
     )
 
     assert report["repository_status"] == "ok"
-    assert report["location"] == "gcb_pipeline"
-    assert report["schedules"]["gcb_hourly_live_backfill_schedule"] == "RUNNING"
-    assert report["sensors"]["gcb_webhook_backlog_sensor"] == "RUNNING"
+    assert report["location"] == "fourok_pipeline"
+    assert report["schedules"]["fourok_hourly_live_backfill_schedule"] == "RUNNING"
+    assert report["sensors"]["fourok_webhook_backlog_sensor"] == "RUNNING"
 
 
 def test_module_entrypoint_executes_dev_cli() -> None:
     result = subprocess.run(
-        ["python", "-m", "gcb.devtools.dev", "fast", "--dry-run"],
+        ["python", "-m", "fourok.devtools.dev", "fast", "--dry-run"],
         check=True,
         capture_output=True,
         text=True,

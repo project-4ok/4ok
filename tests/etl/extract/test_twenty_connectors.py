@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from gcb.etl.extract.connectors import (
+from fourok.etl.extract.connectors import (
     land_singer_records,
     load_landed_source_records,
     load_twenty_source_records,
     twenty_person_source_record_from_raw,
 )
-from gcb.etl.extract.twenty_tap import TwentyTapConfig, run_twenty_tap
+from fourok.etl.extract.twenty_tap import TwentyTapConfig, run_twenty_tap
 
 FIXTURES = Path(__file__).parents[3] / "fixtures" / "connectors"
 SINGER_TWENTY_CRM = FIXTURES / "singer_twenty_crm.jsonl"
@@ -68,10 +68,10 @@ def test_twenty_person_adapter_rejects_missing_id_before_source_records() -> Non
 def test_committed_meltano_config_wires_twenty_fixture_job() -> None:
     config = (Path(__file__).parents[3] / "meltano.yml").read_text(encoding="utf-8")
 
-    assert "tap-gcb-twenty-fixture" in config
+    assert "tap-fourok-twenty-fixture" in config
     assert "fixtures/connectors/singer_twenty_crm.jsonl" in config
     assert "singer-twenty-fixture-to-raw" in config
-    assert "tap-gcb-twenty-fixture target-gcb-raw-jsonl" in config
+    assert "tap-fourok-twenty-fixture target-fourok-raw-jsonl" in config
 
 
 def test_twenty_tap_emits_companies_people_and_state() -> None:

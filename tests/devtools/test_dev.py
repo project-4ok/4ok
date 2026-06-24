@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from gcb.devtools.dev import DevStep, build_plan
+from fourok.devtools.dev import DevStep, build_plan
 
 
 def test_pipeline_up_loads_project_dotenv_and_sets_stable_local_defaults(
@@ -8,12 +8,12 @@ def test_pipeline_up_loads_project_dotenv_and_sets_stable_local_defaults(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".env").write_text(
-        "INFISICAL_PROJECT_ID=project-123\n"
-        "INFISICAL_ENV=dev\n"
-        "INFISICAL_PATH=/customer/runtime\n"
-        "INFISICAL_DOMAIN=https://infisical.example\n"
-        "INFISICAL_CLIENT_ID=client-id\n"
-        "INFISICAL_CLIENT_SECRET=secret-value\n",
+        "LINEAR_API_KEY=linear-token\n"
+        ""
+        ""
+        ""
+        ""
+        "SLACK_BOT_TOKEN=secret-value\n",
         encoding="utf-8",
     )
 
@@ -36,19 +36,20 @@ def test_pipeline_up_loads_project_dotenv_and_sets_stable_local_defaults(
     )
     assert step.env["POSTGRES_PASSWORD"] == "local-check"
     assert step.env["DAGSTER_POSTGRES_PASSWORD"] == "local-check"
-    assert step.env["GCB_DATABASE_URL"] == "postgresql+psycopg://gcb:local-check@postgres:5432/gcb"
-    assert step.env["GCB_INFISICAL_PROJECT_ID"] == "project-123"
-    assert step.env["GCB_INFISICAL_ENV"] == "dev"
-    assert step.env["GCB_INFISICAL_PATH"] == "/customer/runtime"
-    assert step.env["GCB_INFISICAL_DOMAIN"] == "https://infisical.example"
-    assert step.env["INFISICAL_CLIENT_SECRET"] == "secret-value"
+    assert step.env["FOUR_OK_DATABASE_URL"] == "postgresql+psycopg://fourok:local-check@postgres:5432/fourok"
+    assert step.env["LINEAR_API_KEY"] == "linear-token"
+    assert step.env["LINEAR_API_KEY"] == "linear-token"
+    assert step.env["LINEAR_API_KEY"] == "linear-token"
+    assert step.env["LINEAR_API_KEY"] == "linear-token"
+    assert step.env["SLACK_BOT_TOKEN"] == "secret-value"
 
 
 def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("gcb.devtools.dev._git_short_head", lambda *, default: "abc1234")
+    monkeypatch.setattr("fourok.devtools.dev._git_short_head", lambda *, default: "abc1234")
 
     [app_step] = build_plan("app-up", [])
+    [core_step] = build_plan("core-up", [])
     [observability_step] = build_plan("observability-up", [])
 
     assert app_step.command == (
@@ -59,11 +60,12 @@ def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkey
         "--force-recreate",
         "-d",
         "postgres",
-        "cerbos",
         "app",
     )
-    assert app_step.env["GCB_IMAGE_TAG"] == "abc1234"
+    assert core_step.command == app_step.command
+    assert app_step.env["FOUR_OK_IMAGE_TAG"] == "abc1234"
     assert app_step.env["POSTGRES_PASSWORD"] == "local-check"
+    assert app_step.env["COMPOSE_PROJECT_NAME"] == "4ok"
     assert observability_step.command == (
         "docker",
         "compose",
@@ -73,18 +75,27 @@ def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkey
         "-d",
         "observability",
     )
-    assert observability_step.env["GCB_DATABASE_URL"] == (
-        "postgresql+psycopg://gcb:local-check@postgres:5432/gcb"
+    assert observability_step.env["FOUR_OK_DATABASE_URL"] == (
+        "postgresql+psycopg://fourok:local-check@postgres:5432/fourok"
     )
 
 
 def test_stack_up_starts_runtime_pipeline_and_observability_in_order(tmp_path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("gcb.devtools.dev._git_short_head", lambda *, default: "abc1234")
+    monkeypatch.setattr("fourok.devtools.dev._git_short_head", lambda *, default: "abc1234")
 
     plan = build_plan("stack-up", [])
 
-    assert [step.name for step in plan] == ["app-up", "observability-up", "pipeline-up"]
+    assert [step.name for step in plan] == ["core-up"]
+
+
+def test_compose_env_overrides_stale_smoke_project_name(tmp_path, monkeypatch) -> None:
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.setenv("COMPOSE_PROJECT_NAME", "smoke-4ok")
+
+    [step] = build_plan("core-up", [])
+
+    assert step.env["COMPOSE_PROJECT_NAME"] == "4ok"
 
 
 def test_dev_step_dry_run_redacts_secret_env_values() -> None:
@@ -92,18 +103,18 @@ def test_dev_step_dry_run_redacts_secret_env_values() -> None:
         "example",
         ("example",),
         env={
-            "INFISICAL_CLIENT_ID": "client-id",
-            "INFISICAL_CLIENT_SECRET": "secret-value",
+            "LINEAR_API_KEY": "linear-value",
+            "SLACK_BOT_TOKEN": "secret-value",
             "POSTGRES_PASSWORD": "local-check",
-            "GCB_DATABASE_URL": "postgresql+psycopg://gcb:local-check@postgres:5432/gcb",
+            "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:local-check@postgres:5432/fourok",
         },
     )
 
     data = step.to_dict()
 
     assert data["env"] == {
-        "GCB_DATABASE_URL": "[REDACTED]",
-        "INFISICAL_CLIENT_ID": "client-id",
-        "INFISICAL_CLIENT_SECRET": "[REDACTED]",
+        "FOUR_OK_DATABASE_URL": "[REDACTED]",
+        "LINEAR_API_KEY": "client-id",
+        "SLACK_BOT_TOKEN": "[REDACTED]",
         "POSTGRES_PASSWORD": "[REDACTED]",
     }

@@ -1,6 +1,6 @@
 import pytest
 
-from gcb.etl.transform.pii import PresidioPiiDetector, spacy_model_available
+from fourok.etl.transform.pii import PresidioPiiDetector, spacy_model_available
 
 
 def test_presidio_detector_finds_seeded_identifiers() -> None:
@@ -47,7 +47,7 @@ def test_presidio_detector_finds_narrow_address_baseline() -> None:
 
 
 def test_spacy_model_backed_detector_requires_installed_model() -> None:
-    model_name = "gcb_missing_spacy_model"
+    model_name = "fourok_missing_spacy_model"
 
     assert not spacy_model_available(model_name)
     with pytest.raises(RuntimeError, match="uv run python -m spacy download"):

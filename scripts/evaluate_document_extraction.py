@@ -7,7 +7,7 @@ import zipfile
 from dataclasses import asdict, dataclass
 from pathlib import Path
 
-from gcb.etl.extract.document_extraction import (
+from fourok.etl.extract.document_extraction import (
     DocumentConversionError,
     attachment_from_document,
 )

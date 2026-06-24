@@ -1,10 +1,10 @@
 from sqlalchemy import MetaData
 from sqlalchemy.dialects import postgresql
 
-from gcb.storage.models import Base
-from gcb.storage.models.context_object import CanonicalObjectRow
-from gcb.storage.models.entity_link import EntityLinkRow
-from gcb.storage.models.source_record import SourceRecordRow
+from fourok.storage.models import Base
+from fourok.storage.models.context_object import CanonicalObjectRow
+from fourok.storage.models.entity_link import EntityLinkRow
+from fourok.storage.models.source_record import SourceRecordRow
 
 
 def test_storage_models_define_active_tables() -> None:

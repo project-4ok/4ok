@@ -1,6 +1,6 @@
-from gcb.governance import GovernedContext
-from gcb.governance.policy import PrincipalContext
-from gcb.runtime.openclaw import (
+from fourok.governance import GovernedContext
+from fourok.governance.policy import PrincipalContext
+from fourok.runtime.openclaw import (
     OpenClawMessage,
     OpenClawSearchTools,
     call_openclaw_tool,
@@ -101,7 +101,7 @@ def test_capture_openclaw_messages_imports_through_governed_pipeline(tmp_path) -
     assert context.raw_source_refs() == ["openclaw:session:session-1:message:000001"]
 
 
-def test_openclaw_search_tools_expose_only_gcb_search_context() -> None:
+def test_openclaw_search_tools_expose_only_fourok_search_context() -> None:
     context = GovernedContext()
     context.ingest_source_records(
         openclaw_messages_to_source_records(
@@ -131,9 +131,9 @@ def test_openclaw_search_tools_expose_only_gcb_search_context() -> None:
     public_methods = {
         name for name in dir(tools) if not name.startswith("_") and callable(getattr(tools, name))
     }
-    response = tools.gcb_search_context("Robin renewal", limit=1)
+    response = tools.fourok_search_context("Robin renewal", limit=1)
 
-    assert public_methods == {"gcb_search_context"}
+    assert public_methods == {"fourok_search_context"}
     assert response["result_candidates"][0]["source_ref"] == (
         "openclaw:session:session-1:message:000001"
     )
@@ -145,9 +145,9 @@ def test_openclaw_search_tools_expose_only_gcb_search_context() -> None:
 def test_openclaw_tool_contract_exposes_only_search_context_schema() -> None:
     contracts = openclaw_tool_contracts()
 
-    assert [contract["name"] for contract in contracts] == ["gcb_search_context"]
+    assert [contract["name"] for contract in contracts] == ["fourok_search_context"]
     assert contracts[0] == {
-        "name": "gcb_search_context",
+        "name": "fourok_search_context",
         "description": (
             "Search governed company context and return permission-filtered evidence. "
             "Does not return hidden fields or inject context automatically."
@@ -205,7 +205,7 @@ def test_openclaw_tool_dispatch_validates_arguments_and_invokes_search() -> None
 
     response = call_openclaw_tool(
         tools,
-        "gcb_search_context",
+        "fourok_search_context",
         {"query": "Robin renewal", "limit": 1},
     )
 
@@ -228,20 +228,20 @@ def test_openclaw_tool_dispatch_rejects_unknown_tools_and_bad_arguments() -> Non
     try:
         call_openclaw_tool(tools, "request_reveal", {"token": "BANK_ACCOUNT_1"})
     except ValueError as exc:
-        assert str(exc) == "unsupported OpenClaw GCB tool: request_reveal"
+        assert str(exc) == "unsupported OpenClaw 4OK tool: request_reveal"
     else:
         raise AssertionError("unknown tool should be rejected")
 
     try:
-        call_openclaw_tool(tools, "gcb_search_context", {"query": "", "limit": 1})
+        call_openclaw_tool(tools, "fourok_search_context", {"query": "", "limit": 1})
     except ValueError as exc:
-        assert str(exc) == "gcb_search_context.query must be a non-empty string"
+        assert str(exc) == "fourok_search_context.query must be a non-empty string"
     else:
         raise AssertionError("empty query should be rejected")
 
     try:
-        call_openclaw_tool(tools, "gcb_search_context", {"query": "Robin", "limit": 100})
+        call_openclaw_tool(tools, "fourok_search_context", {"query": "Robin", "limit": 100})
     except ValueError as exc:
-        assert str(exc) == "gcb_search_context.limit must be between 1 and 20"
+        assert str(exc) == "fourok_search_context.limit must be between 1 and 20"
     else:
         raise AssertionError("invalid limit should be rejected")

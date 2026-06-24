@@ -2,7 +2,7 @@ from pathlib import Path
 
 import pytest
 
-from gcb.etl.extract.connectors import (
+from fourok.etl.extract.connectors import (
     ConnectorPayloadError,
     gmail_source_record_from_raw,
     land_singer_records,
@@ -13,13 +13,13 @@ from gcb.etl.extract.connectors import (
     load_slack_source_records,
     slack_message_source_record_from_raw,
 )
-from gcb.etl.extract.fixture_tap import main as fixture_tap_main
-from gcb.etl.extract.raw_jsonl_target import main as raw_jsonl_target_main
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.etl.load.source_metadata import source_metadata, store_source_records
-from gcb.governance import GovernedContext
-from gcb.governance.policy import PrincipalContext
-from gcb.governance.state import create_governed_context_state
+from fourok.etl.extract.fixture_tap import main as fixture_tap_main
+from fourok.etl.extract.raw_jsonl_target import main as raw_jsonl_target_main
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.etl.load.source_metadata import source_metadata, store_source_records
+from fourok.governance import GovernedContext
+from fourok.governance.policy import PrincipalContext
+from fourok.governance.state import create_governed_context_state
 
 FIXTURES = Path(__file__).parents[3] / "fixtures" / "connectors"
 SINGER_EMAILS = FIXTURES / "singer_email_messages.jsonl"
@@ -459,7 +459,7 @@ def test_fixture_tap_outputs_configured_singer_file(
         '{"type":"RECORD","stream":"email_messages","record":{"id":"msg-1","body":"body"}}\n',
         encoding="utf-8",
     )
-    monkeypatch.setenv("TAP_GCB_FIXTURE_FIXTURE_PATH", str(fixture))
+    monkeypatch.setenv("TAP_FOUR_OK_FIXTURE_FIXTURE_PATH", str(fixture))
 
     fixture_tap_main()
 
@@ -470,8 +470,8 @@ def test_fixture_tap_accepts_slack_namespace_config(
     capsys,
     monkeypatch,
 ) -> None:
-    monkeypatch.delenv("TAP_GCB_FIXTURE_FIXTURE_PATH", raising=False)
-    monkeypatch.setenv("TAP_GCB_SLACK_FIXTURE_FIXTURE_PATH", str(SINGER_SLACK_MESSAGES))
+    monkeypatch.delenv("TAP_FOUR_OK_FIXTURE_FIXTURE_PATH", raising=False)
+    monkeypatch.setenv("TAP_FOUR_OK_SLACK_FIXTURE_FIXTURE_PATH", str(SINGER_SLACK_MESSAGES))
 
     fixture_tap_main()
 
@@ -484,7 +484,7 @@ def test_raw_jsonl_target_lands_stdin_records(
     tmp_path: Path,
 ) -> None:
     landing_dir = tmp_path / "landing"
-    monkeypatch.setenv("TARGET_GCB_RAW_JSONL_LANDING_DIR", str(landing_dir))
+    monkeypatch.setenv("TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR", str(landing_dir))
     monkeypatch.setattr(
         "sys.stdin",
         [
@@ -508,14 +508,14 @@ def test_raw_jsonl_target_lands_stdin_records(
 def test_committed_meltano_config_wires_fixture_tap_to_raw_target() -> None:
     config = (Path(__file__).parents[3] / "meltano.yml").read_text(encoding="utf-8")
 
-    assert "tap-gcb-fixture" in config
-    assert "tap-gcb-slack-fixture" in config
-    assert "target-gcb-raw-jsonl" in config
+    assert "tap-fourok-fixture" in config
+    assert "tap-fourok-slack-fixture" in config
+    assert "target-fourok-raw-jsonl" in config
     assert "fixtures/connectors/singer_email_messages.jsonl" in config
     assert "fixtures/connectors/singer_slack_messages.jsonl" in config
     assert ".local/raw/singer" in config
-    assert "tap-gcb-fixture target-gcb-raw-jsonl" in config
-    assert "tap-gcb-slack-fixture target-gcb-raw-jsonl" in config
+    assert "tap-fourok-fixture target-fourok-raw-jsonl" in config
+    assert "tap-fourok-slack-fixture target-fourok-raw-jsonl" in config
 
 
 def test_source_record_lifecycle_deletion_removes_connector_record_from_search(

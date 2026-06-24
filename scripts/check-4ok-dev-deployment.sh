@@ -3,26 +3,26 @@ set -euo pipefail
 
 CHECK_TARGET="${CHECK_TARGET:-ssh}"
 GATEWAY_SSH_TARGET="${GATEWAY_SSH_TARGET:-root@178.105.10.7}"
-QUERY="${GCB_STATUS_QUERY:-${GCB_DEV_STATUS_QUERY:-4OK}}"
+QUERY="${FOUR_OK_STATUS_QUERY:-${FOUR_OK_DEV_STATUS_QUERY:-4OK}}"
 INCLUDE_GH="${INCLUDE_GH:-true}"
 GH_REPO="${GH_REPO:-project-4ok/4ok-infrastructure-prod}"
 OPENCLAW_IMAGE_WORKFLOW="${OPENCLAW_IMAGE_WORKFLOW:-4ok-openclaw-dev-image.yml}"
 OPENCLAW_IMAGE_WORKFLOW_REQUIRED="${OPENCLAW_IMAGE_WORKFLOW_REQUIRED:-false}"
 RUNTIME_DEPLOY_WORKFLOW="${RUNTIME_DEPLOY_WORKFLOW:-dev-customer-gateway-4ok-runtime-deploy}"
 GATEWAY_CONTAINER="${GATEWAY_CONTAINER:-openclaw-openclaw-gateway-1}"
-GCB_RETRIEVE_CONTAINER="${GCB_RETRIEVE_CONTAINER:-openclaw-gcb-app-1}"
-GCB_RETRIEVE_COMMAND="${GCB_RETRIEVE_COMMAND:-/app/.venv/bin/gcb}"
-GCB_CRITICAL_CONTAINERS="${GCB_CRITICAL_CONTAINERS:-openclaw-openclaw-gateway-1,openclaw-gcb-app-1,openclaw-gcb-postgres-1,openclaw-gcb-dagster-code-1,openclaw-gcb-dagster-postgres-1,openclaw-gcb-observability-1,openclaw-gcb-cerbos-1}"
-CONTAINER_FILTER_REGEX="${CONTAINER_FILTER_REGEX:-openclaw-gcb|openclaw-openclaw-gateway}"
+FOUR_OK_RETRIEVE_CONTAINER="${FOUR_OK_RETRIEVE_CONTAINER:-openclaw-fourok-app-1}"
+FOUR_OK_RETRIEVE_COMMAND="${FOUR_OK_RETRIEVE_COMMAND:-/app/.venv/bin/fourok}"
+FOUR_OK_CRITICAL_CONTAINERS="${FOUR_OK_CRITICAL_CONTAINERS:-openclaw-openclaw-gateway-1,openclaw-fourok-app-1,openclaw-fourok-postgres-1,openclaw-fourok-dagster-code-1,openclaw-fourok-dagster-postgres-1,openclaw-fourok-observability-1}"
+CONTAINER_FILTER_REGEX="${CONTAINER_FILTER_REGEX:-openclaw-fourok|openclaw-openclaw-gateway}"
 GRAFANA_URL="${GRAFANA_URL:-http://127.0.0.1:13000}"
 DAGSTER_SERVER_INFO_URL="${DAGSTER_SERVER_INFO_URL:-http://127.0.0.1:13001/server_info}"
-GCB_DASHBOARD_UID="${GCB_DASHBOARD_UID:-gcb-local-runtime-logs}"
+FOUR_OK_DASHBOARD_UID="${FOUR_OK_DASHBOARD_UID:-fourok-local-runtime-logs}"
 
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [--json]
 
-Run a one-command status check for a GCB/OpenClaw deployment surface.
+Run a one-command status check for a 4OK/OpenClaw deployment surface.
 
 Target modes:
   CHECK_TARGET=ssh    run Docker/curl checks on GATEWAY_SSH_TARGET over SSH (default)
@@ -34,15 +34,15 @@ Environment overrides:
   GH_REPO=project-4ok/4ok-infrastructure-prod
   INCLUDE_GH=true
   OPENCLAW_IMAGE_WORKFLOW_REQUIRED=false
-  GCB_STATUS_QUERY=4OK
+  FOUR_OK_STATUS_QUERY=4OK
   GATEWAY_CONTAINER=openclaw-openclaw-gateway-1
-  GCB_RETRIEVE_CONTAINER=openclaw-gcb-app-1
-  GCB_RETRIEVE_COMMAND=/app/.venv/bin/gcb
-  GCB_CRITICAL_CONTAINERS=comma,separated,container,names
-  CONTAINER_FILTER_REGEX='openclaw-gcb|openclaw-openclaw-gateway'
+  FOUR_OK_RETRIEVE_CONTAINER=openclaw-fourok-app-1
+  FOUR_OK_RETRIEVE_COMMAND=/app/.venv/bin/fourok
+  FOUR_OK_CRITICAL_CONTAINERS=comma,separated,container,names
+  CONTAINER_FILTER_REGEX='openclaw-fourok|openclaw-openclaw-gateway'
   GRAFANA_URL=http://127.0.0.1:13000
   DAGSTER_SERVER_INFO_URL=http://127.0.0.1:13001/server_info
-  GCB_DASHBOARD_UID=gcb-local-runtime-logs
+  FOUR_OK_DASHBOARD_UID=fourok-local-runtime-logs
 
 The command prints JSON and exits non-zero unless the deployment status is ok.
 EOF
@@ -75,13 +75,13 @@ python3 - \
   "$OPENCLAW_IMAGE_WORKFLOW_REQUIRED" \
   "$RUNTIME_DEPLOY_WORKFLOW" \
   "$GATEWAY_CONTAINER" \
-  "$GCB_RETRIEVE_CONTAINER" \
-  "$GCB_RETRIEVE_COMMAND" \
-  "$GCB_CRITICAL_CONTAINERS" \
+  "$FOUR_OK_RETRIEVE_CONTAINER" \
+  "$FOUR_OK_RETRIEVE_COMMAND" \
+  "$FOUR_OK_CRITICAL_CONTAINERS" \
   "$CONTAINER_FILTER_REGEX" \
   "$GRAFANA_URL" \
   "$DAGSTER_SERVER_INFO_URL" \
-  "$GCB_DASHBOARD_UID" <<'PY'
+  "$FOUR_OK_DASHBOARD_UID" <<'PY'
 from __future__ import annotations
 
 import json
@@ -223,7 +223,7 @@ if retrieve_proc.returncode != 0:
     retrieve["stderr"] = retrieve_proc.stderr.strip()
 
 
-grafana_search_url = grafana_url.rstrip("/") + "/api/search?query=gcb"
+grafana_search_url = grafana_url.rstrip("/") + "/api/search?query=fourok"
 grafana_proc = target_shell(f"curl -fsS {shlex.quote(grafana_search_url)}")
 try:
     dashboards = json.loads(grafana_proc.stdout) if grafana_proc.returncode == 0 else []
@@ -261,7 +261,7 @@ checks = {
         "critical_unhealthy": unhealthy,
         "observed": containers,
     },
-    "gcb_retrieve": retrieve,
+    "fourok_retrieve": retrieve,
     "grafana": grafana,
     "dagster": dagster,
 }

@@ -1,1 +1,0 @@
-"""4ok spike package."""

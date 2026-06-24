@@ -5,7 +5,6 @@ description = "Spike prototypes for governed company context retrieval."
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
-    "infisicalsdk>=1.0.16",
     "mcp>=1.21.0",
     "opentelemetry-exporter-otlp-proto-http>=1.39.0",
     "opentelemetry-instrumentation-logging>=0.60b0",
@@ -24,14 +23,15 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-gcb = "gcb.cli:main"
-gcb-dev = "gcb.devtools.dev:main"
-gcb-mcp = "gcb.runtime.mcp_retrieval:main"
-tap-gcb-fixture = "gcb.etl.extract.fixture_tap:main"
-tap-gcb-google-drive = "gcb.etl.extract.google_drive_tap:main"
-tap-gcb-linear = "gcb.etl.extract.linear_tap:main"
-tap-gcb-twenty = "gcb.etl.extract.twenty_tap:main"
-target-gcb-raw-jsonl = "gcb.etl.extract.raw_jsonl_target:main"
+four-ok = "fourok.cli:main"
+four-ok-agent-grafana = "fourok.agent_experience.grafana:main"
+four-ok-dev = "fourok.devtools.dev:main"
+four-ok-mcp = "fourok.runtime.mcp_retrieval:main"
+tap-fourok-fixture = "fourok.etl.extract.fixture_tap:main"
+tap-fourok-google-drive = "fourok.etl.extract.google_drive_tap:main"
+tap-fourok-linear = "fourok.etl.extract.linear_tap:main"
+tap-fourok-twenty = "fourok.etl.extract.twenty_tap:main"
+target-fourok-raw-jsonl = "fourok.etl.extract.raw_jsonl_target:main"
 
 [dependency-groups]
 dev = [
@@ -51,7 +51,7 @@ line-length = 100
 src = ["src", "tests"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/gcb"]
+packages = ["src/fourok"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP", "B"]

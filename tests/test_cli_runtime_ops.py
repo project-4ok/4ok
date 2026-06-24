@@ -3,12 +3,12 @@ import os
 from datetime import UTC, datetime
 from pathlib import Path
 
-from gcb.cli import main
-from gcb.etl.extract.email_parser import load_email_dir
-from gcb.governance import GovernedContext
-from gcb.governance.policy import PrincipalContext
-from gcb.governance.state import create_governed_context_state
-from gcb.runtime.webhooks import (
+from fourok.cli import main
+from fourok.etl.extract.email_parser import load_email_dir
+from fourok.governance import GovernedContext
+from fourok.governance.policy import PrincipalContext
+from fourok.governance.state import create_governed_context_state
+from fourok.runtime.webhooks import (
     WebhookEventInput,
     enqueue_webhook_event,
     process_pending_webhook_events,
@@ -50,7 +50,7 @@ def test_cli_context_fixture_import_reports_day2_counts(
         monkeypatch.setattr(
             "sys.argv",
             [
-                "gcb",
+                "fourok",
                 "import-context-fixture",
                 "--fixture",
                 str(import_path),
@@ -85,7 +85,7 @@ def test_cli_context_fixture_import_marks_missing_snapshot_records_deleted(
         monkeypatch.setattr(
             "sys.argv",
             [
-                "gcb",
+                "fourok",
                 "import-context-fixture",
                 "--fixture",
                 str(import_path),
@@ -116,7 +116,7 @@ def test_cli_context_fixture_import_marks_missing_snapshot_records_deleted(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "search-state",
             "superseded duplicate repeated source records cleanup",
             "--state",
@@ -133,7 +133,7 @@ def test_cli_context_fixture_import_marks_missing_snapshot_records_deleted(
 
 
 def test_cli_prints_runtime_service_boundaries(capsys, monkeypatch) -> None:
-    monkeypatch.setattr("sys.argv", ["gcb", "runtime-services"])
+    monkeypatch.setattr("sys.argv", ["fourok", "runtime-services"])
 
     main()
 
@@ -143,7 +143,7 @@ def test_cli_prints_runtime_service_boundaries(capsys, monkeypatch) -> None:
     assert services["connector-runner"]["current_runtime"] == "manual command"
     assert "production broker decision" in services["connector-runner"]["not_yet"]
     assert "webhook-backlog" in services
-    assert services["context-api"]["health_check"] == "gcb health"
+    assert services["context-api"]["health_check"] == "fourok health"
 
 
 def test_cli_runtime_monitor_emits_bounded_health_report(
@@ -157,17 +157,17 @@ def test_cli_runtime_monitor_emits_bounded_health_report(
         return object()
 
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.cli_parts.commands_runtime.create_governed_context_state",
         fake_create_state,
     )
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.cli_parts.commands_runtime.check_runtime_health",
         lambda _state: {"status": "ok", "checks": []},
     )
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "runtime-monitor",
             "--state",
             str(state),
@@ -186,7 +186,7 @@ def test_cli_runtime_monitor_emits_bounded_health_report(
 
 
 def test_cli_prints_dependency_contract_spikes(capsys, monkeypatch) -> None:
-    monkeypatch.setattr("sys.argv", ["gcb", "dependency-contracts"])
+    monkeypatch.setattr("sys.argv", ["fourok", "dependency-contracts"])
 
     main()
 
@@ -196,13 +196,13 @@ def test_cli_prints_dependency_contract_spikes(capsys, monkeypatch) -> None:
     assert output["status"] == "ok"
     assert output["summary"]["missing_dimension_count"] == 0
     assert output["summary"]["unproved_count"] == 0
-    assert "infisical-sdk" in contracts
+    assert "env-secret-loading" in contracts
     assert "singer-meltano-style-connectors" in contracts
     assert contracts["docker-compose-runtime"]["proof_commands"]
 
 
 def test_cli_prints_internal_prod_readiness(capsys, monkeypatch) -> None:
-    monkeypatch.setattr("sys.argv", ["gcb", "internal-prod-readiness"])
+    monkeypatch.setattr("sys.argv", ["fourok", "internal-prod-readiness"])
 
     main()
 
@@ -216,7 +216,7 @@ def test_cli_prints_internal_prod_readiness(capsys, monkeypatch) -> None:
 
 
 def test_cli_source_command_is_not_active(monkeypatch) -> None:
-    monkeypatch.setattr("sys.argv", ["gcb", "source", "singer:email_messages:msg-001"])
+    monkeypatch.setattr("sys.argv", ["fourok", "source", "singer:email_messages:msg-001"])
 
     try:
         main()
@@ -237,7 +237,7 @@ def test_cli_purges_expired_restricted_raw_sources(capsys, monkeypatch, tmp_path
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "purge-raw-retention",
             "--state",
             str(state),
@@ -259,7 +259,7 @@ def test_cli_purges_raw_sources_with_configured_retention(
 ) -> None:
     state = tmp_path / "state.sqlite"
     raw_store = tmp_path / "raw-source-objects"
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     source_ref = "local_email:0013-refund-iban"
     context = GovernedContext(state, raw_store_path=raw_store)
     context.ingest(load_email_dir(FIXTURES))
@@ -269,7 +269,7 @@ def test_cli_purges_raw_sources_with_configured_retention(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "purge-raw-retention",
             "--state",
             str(state),
@@ -291,7 +291,7 @@ def test_cli_purges_raw_sources_with_configured_raw_store(
 ) -> None:
     state = tmp_path / "state.sqlite"
     raw_store = tmp_path / "raw-source-objects"
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     source_ref = "local_email:0013-refund-iban"
     context = GovernedContext(state, raw_store_path=raw_store)
     context.ingest(load_email_dir(FIXTURES))
@@ -313,7 +313,7 @@ def test_cli_purges_raw_sources_with_configured_raw_store(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "purge-raw-retention",
             "--state",
             str(state),
@@ -332,7 +332,7 @@ def test_cli_purges_expired_audit_events_with_configured_retention(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
     state = tmp_path / "state.sqlite"
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     context = GovernedContext(state)
     context._record_audit(
         "search",
@@ -353,7 +353,7 @@ def test_cli_purges_expired_audit_events_with_configured_retention(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "purge-audit-retention",
             "--state",
             str(state),
@@ -386,7 +386,7 @@ def test_cli_retention_status_reports_policy_and_eligible_counts(
     ignored_file.write_text("ignored", encoding="utf-8")
     os.utime(expired_backup, (datetime(2026, 5, 10, tzinfo=UTC).timestamp(),) * 2)
     os.utime(retained_backup, (datetime(2026, 5, 23, tzinfo=UTC).timestamp(),) * 2)
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     source_ref = "local_email:0013-refund-iban"
     context = GovernedContext(state_path, raw_store_path=raw_store)
     context.ingest(load_email_dir(FIXTURES))
@@ -489,7 +489,7 @@ def test_cli_retention_status_reports_policy_and_eligible_counts(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "retention-status",
             "--state",
             str(state_path),
@@ -578,7 +578,7 @@ def test_cli_purge_backup_retention_deletes_only_expired_dumps(
     ignored_file.write_text("ignored", encoding="utf-8")
     os.utime(expired_backup, (datetime(2026, 5, 10, tzinfo=UTC).timestamp(),) * 2)
     os.utime(retained_backup, (datetime(2026, 5, 23, tzinfo=UTC).timestamp(),) * 2)
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     config.write_text(
         "\n".join(
             [
@@ -595,7 +595,7 @@ def test_cli_purge_backup_retention_deletes_only_expired_dumps(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "purge-backup-retention",
             "--config",
             str(config),
@@ -687,13 +687,13 @@ def test_cli_purge_webhook_retention_deletes_only_terminal_expired_rows(
         ),
         now=datetime(2026, 5, 24, tzinfo=UTC),
     )
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     config.write_text("[retention]\nwebhook_backlog_days = 7\n", encoding="utf-8")
 
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "purge-webhook-retention",
             "--state",
             str(state_path),
@@ -745,7 +745,7 @@ def test_cli_audit_summary_prints_operator_counts(capsys, monkeypatch, tmp_path:
         },
     )
 
-    monkeypatch.setattr("sys.argv", ["gcb", "audit-summary", "--state", str(state)])
+    monkeypatch.setattr("sys.argv", ["fourok", "audit-summary", "--state", str(state)])
 
     main()
 

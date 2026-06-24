@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from gcb.runtime.seed_snapshots import prepare_context_seed_snapshot
+from fourok.runtime.seed_snapshots import prepare_context_seed_snapshot
 
 FIXTURES = Path(__file__).parents[2] / "fixtures" / "context_substrate"
 

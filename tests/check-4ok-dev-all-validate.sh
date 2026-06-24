@@ -10,15 +10,15 @@ help_output="$(${TARGET} --help)"
 
 for expected in \
   "deployment surface check via scripts/check-4ok-dev-deployment.sh --json" \
-  "gcb stage1-acceptance --json on the selected target" \
+  "fourok stage1-acceptance --json on the selected target" \
   "The top-level status is ok only when both gates return status=ok." \
   "CHECK_TARGET=ssh    run target checks on GATEWAY_SSH_TARGET over SSH" \
   "CHECK_TARGET=local  run target checks on this machine" \
   "STAGE1_RUNNER=auto    ssh -> docker, local -> host" \
-  "STAGE1_RUNNER=docker  run stage1 inside GCB_STAGE1_CONTAINER on the target" \
+  "STAGE1_RUNNER=docker  run stage1 inside FOUR_OK_STAGE1_CONTAINER on the target" \
   "STAGE1_RUNNER=host    run stage1 with LOCAL_STAGE1_COMMAND on the target shell" \
   "GATEWAY_SSH_TARGET=root@178.105.10.7" \
-  "LOCAL_STAGE1_COMMAND='uv run gcb'" \
+  "LOCAL_STAGE1_COMMAND='uv run fourok'" \
   "STAGE1_CASES=/app/.local/stage1/live_retrieval_case_set.generated.json" \
   "REFRESH_DAGSTER_BACKFILL=true"
 do

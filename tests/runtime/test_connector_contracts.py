@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from gcb.runtime.connector_contracts import (
+from fourok.runtime.connector_contracts import (
     CONNECTOR_TAP_CONTRACTS,
     ConnectorContractError,
     connector_contract_report,

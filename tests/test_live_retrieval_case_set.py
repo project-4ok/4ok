@@ -3,18 +3,18 @@ from pathlib import Path
 
 import pytest
 
-from gcb.cli import main
-from gcb.etl.extract.connectors import (
+from fourok.cli import main
+from fourok.etl.extract.connectors import (
     load_google_drive_source_records,
     load_linear_source_records,
     load_slack_source_records,
     load_twenty_source_records,
 )
-from gcb.etl.extract.openviking_adapter import (
+from fourok.etl.extract.openviking_adapter import (
     load_openviking_messages_jsonl_source_records,
 )
-from gcb.governance import GovernedContext
-from gcb.retrieval.live_retrieval_case_set import (
+from fourok.governance import GovernedContext
+from fourok.retrieval.live_retrieval_case_set import (
     DEFAULT_GOOGLE_DRIVE_FIXTURE,
     DEFAULT_LINEAR_FIXTURE,
     DEFAULT_OPENVIKING_FIXTURE,
@@ -59,7 +59,7 @@ def test_live_retrieval_case_set_fails_with_missing_expected_source_ref(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "live-retrieval-case-set",
             "--cases",
             str(broken_cases),
@@ -92,7 +92,7 @@ def test_live_retrieval_case_set_passes_with_seeded_fixtures(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "live-retrieval-case-set",
             "--state",
             str(state),
@@ -165,12 +165,12 @@ def test_live_retrieval_case_set_uses_runtime_database_when_configured(
         + load_twenty_source_records(TWENTY_FIXTURE)
     )
 
-    monkeypatch.setenv("GCB_DATABASE_URL", database_url)
+    monkeypatch.setenv("FOUR_OK_DATABASE_URL", database_url)
     report_path = tmp_path / "report-runtime.md"
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "live-retrieval-case-set",
             "--cases",
             str(runtime_case),

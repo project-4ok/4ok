@@ -37,13 +37,13 @@ def test_pinned_runtime_compose_uses_public_dagster_runtime_image_without_builds
     assert ":latest" not in compose_text
 
     services = compose["services"]
-    assert services["app"]["image"] == "${GCB_APP_IMAGE:?set GCB_APP_IMAGE to a digest image ref}"
-    assert services["gcb-metrics-exporter"]["image"] == services["app"]["image"]
+    assert services["app"]["image"] == "${FOUR_OK_APP_IMAGE:?set FOUR_OK_APP_IMAGE to a digest image ref}"
+    assert services["fourok-metrics-exporter"]["image"] == services["app"]["image"]
     assert services["dagster-code"]["image"] == (
-        "${GCB_DAGSTER_CODE_IMAGE:?set GCB_DAGSTER_CODE_IMAGE to a digest image ref}"
+        "${FOUR_OK_DAGSTER_CODE_IMAGE:?set FOUR_OK_DAGSTER_CODE_IMAGE to a digest image ref}"
     )
     assert services["dagster-webserver"]["image"] == (
-        "${GCB_DAGSTER_RUNTIME_IMAGE:-" + PUBLIC_DAGSTER_RUNTIME_IMAGE + "}"
+        "${FOUR_OK_DAGSTER_RUNTIME_IMAGE:-" + PUBLIC_DAGSTER_RUNTIME_IMAGE + "}"
     )
     assert services["dagster-daemon"]["image"] == services["dagster-webserver"]["image"]
     assert (
@@ -51,17 +51,17 @@ def test_pinned_runtime_compose_uses_public_dagster_runtime_image_without_builds
     )
     assert services["dagster-daemon"]["environment"]["DAGSTER_HOME"] == "/opt/dagster/dagster_home"
     assert (
-        "../dagster/dagster.yaml:/tmp/gcb-dagster-home/dagster.yaml:ro"
+        "../dagster/dagster.yaml:/tmp/fourok-dagster-home/dagster.yaml:ro"
         in services["dagster-webserver"]["volumes"]
     )
     assert (
-        "../dagster/workspace.yaml:/tmp/gcb-dagster-home/workspace.yaml:ro"
+        "../dagster/workspace.yaml:/tmp/fourok-dagster-home/workspace.yaml:ro"
         in services["dagster-webserver"]["volumes"]
     )
     assert services["dagster-code"]["environment"]["DAGSTER_CURRENT_IMAGE"] == (
-        "${GCB_DAGSTER_CODE_IMAGE:?set GCB_DAGSTER_CODE_IMAGE to a digest image ref}"
+        "${FOUR_OK_DAGSTER_CODE_IMAGE:?set FOUR_OK_DAGSTER_CODE_IMAGE to a digest image ref}"
     )
-    assert "GCB_DATABASE_URL" in services["app"]["environment"]
+    assert "FOUR_OK_DATABASE_URL" in services["app"]["environment"]
     assert services["dagster-webserver"]["ports"] == ["127.0.0.1:3001:3001"]
 
 
@@ -71,16 +71,16 @@ def test_standalone_cli_install_script_builds_clean_python313_wheel() -> None:
     assert "uv build --wheel" in script
     assert "uv venv --python 3.13" in script
     assert "uv pip install" in script
-    assert "gcb --help" in script
+    assert "fourok --help" in script
     assert "grep" in script and "retrieve" in script
 
 
 def test_runtime_env_example_exposes_pinned_artifact_contract() -> None:
-    example = Path("deploy/runtime/gcb-runtime.env.example").read_text(encoding="utf-8")
+    example = Path("deploy/runtime/fourok-runtime.env.example").read_text(encoding="utf-8")
 
-    assert "GCB_GIT_SHA=" in example
-    assert "GCB_CLI_WHEEL_URL=" in example
-    assert "GCB_CLI_WHEEL_SHA256=" in example
-    assert "GCB_APP_IMAGE=ghcr.io/project-4ok/4ok-app@sha256:" in example
-    assert "GCB_DAGSTER_CODE_IMAGE=ghcr.io/project-4ok/4ok-dagster-code@sha256:" in example
-    assert f"GCB_DAGSTER_RUNTIME_IMAGE={PUBLIC_DAGSTER_RUNTIME_IMAGE}" in example
+    assert "FOUR_OK_GIT_SHA=" in example
+    assert "FOUR_OK_CLI_WHEEL_URL=" in example
+    assert "FOUR_OK_CLI_WHEEL_SHA256=" in example
+    assert "FOUR_OK_APP_IMAGE=ghcr.io/project-4ok/4ok-app@sha256:" in example
+    assert "FOUR_OK_DAGSTER_CODE_IMAGE=ghcr.io/project-4ok/4ok-dagster-code@sha256:" in example
+    assert f"FOUR_OK_DAGSTER_RUNTIME_IMAGE={PUBLIC_DAGSTER_RUNTIME_IMAGE}" in example

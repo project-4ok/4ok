@@ -1,8 +1,8 @@
 from datetime import UTC, datetime
 
-from gcb.governance import GovernedContext
-from gcb.governance.state import create_governed_context_state
-from gcb.runtime.webhooks import (
+from fourok.governance import GovernedContext
+from fourok.governance.state import create_governed_context_state
+from fourok.runtime.webhooks import (
     WebhookEventInput,
     enqueue_webhook_event,
     process_pending_webhook_events,

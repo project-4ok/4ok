@@ -60,13 +60,13 @@ while [[ $# -gt 0 ]]; do
 done
 
 if [[ "${print_urls}" == "true" ]]; then
-  printf 'Grafana: http://127.0.0.1:%s/d/gcb-local-runtime-logs/gcb-local-runtime-logs\n' "${LOCAL_GRAFANA_PORT}"
+  printf 'Grafana: http://127.0.0.1:%s/d/fourok-local-runtime-logs/fourok-local-runtime-logs\n' "${LOCAL_GRAFANA_PORT}"
   printf 'Dagster: http://127.0.0.1:%s\n' "${LOCAL_DAGSTER_PORT}"
   exit 0
 fi
 
 printf 'Opening 4OK dev observability tunnel to %s\n' "${GATEWAY_SSH_TARGET}" >&2
-printf 'Grafana: http://127.0.0.1:%s/d/gcb-local-runtime-logs/gcb-local-runtime-logs\n' "${LOCAL_GRAFANA_PORT}" >&2
+printf 'Grafana: http://127.0.0.1:%s/d/fourok-local-runtime-logs/fourok-local-runtime-logs\n' "${LOCAL_GRAFANA_PORT}" >&2
 printf 'Dagster: http://127.0.0.1:%s\n' "${LOCAL_DAGSTER_PORT}" >&2
 printf 'Press Ctrl-C to close the tunnel.\n' >&2
 

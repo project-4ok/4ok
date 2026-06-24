@@ -1,7 +1,7 @@
 from sqlalchemy import MetaData, create_engine, insert, select
 from sqlalchemy.sql.schema import Table
 
-from gcb.governance.token_store import (
+from fourok.governance.token_store import (
     find_token_row,
     prune_unreferenced_tokens,
     token_for,
@@ -10,7 +10,7 @@ from gcb.governance.token_store import (
     token_store_table,
     tokens_for_rows,
 )
-from gcb.storage.models.token import TokenSourceRow, TokenStoreRow
+from fourok.storage.models.token import TokenSourceRow, TokenStoreRow
 
 
 def test_token_tables_are_backed_by_orm_models() -> None:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from gcb.etl.extract.slack_tap_env import apply_slack_tap_defaults
+from fourok.etl.extract.slack_tap_env import apply_slack_tap_defaults
 
 
 def test_slack_tap_defaults_bound_live_backfill_to_safe_hourly_scope() -> None:

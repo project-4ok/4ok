@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from gcb.runtime.acceptance import internal_v0_acceptance_proof
+from fourok.runtime.acceptance import internal_v0_acceptance_proof
 
 FIXTURES = Path(__file__).parents[2] / "fixtures" / "context_substrate"
 
@@ -8,7 +8,7 @@ FIXTURES = Path(__file__).parents[2] / "fixtures" / "context_substrate"
 def test_internal_v0_acceptance_proof_covers_runtime_loop_without_raw_bodies(
     tmp_path: Path,
 ) -> None:
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     raw_store = tmp_path / "raw-source-objects"
     config.write_text(
         "\n".join(
@@ -40,11 +40,11 @@ def test_internal_v0_acceptance_proof_covers_runtime_loop_without_raw_bodies(
         config_path=config,
         fixture_path=FIXTURES / "source_snapshot_eval.json",
         query="Robin Scharf",
-        backup_database_url="postgresql://gcb:secret@example.internal:5432/gcb",
-        backup_output=tmp_path / "backups" / "gcb.dump",
+        backup_database_url="postgresql://fourok:secret@example.internal:5432/fourok",
+        backup_output=tmp_path / "backups" / "fourok.dump",
         observability_smoke=lambda: {
             "status": "ok",
-            "service_name": "gcb-test",
+            "service_name": "fourok-test",
             "exporter": "console",
             "sensitive_payload_exported": False,
         },
@@ -96,7 +96,7 @@ def test_internal_v0_acceptance_proof_covers_runtime_loop_without_raw_bodies(
         "telemetry": {
             "enabled": False,
             "endpoint": "http://localhost:4318",
-            "service_name": "gcb-app",
+            "service_name": "fourok-app",
         },
         "connectors": {
             "enabled": [],
@@ -157,7 +157,7 @@ def test_internal_v0_acceptance_proof_covers_runtime_loop_without_raw_bodies(
 def test_internal_v0_acceptance_proof_surfaces_operational_alerts(
     tmp_path: Path,
 ) -> None:
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     raw_store = tmp_path / "raw-source-objects"
     config.write_text(
         "\n".join(
@@ -183,7 +183,7 @@ def test_internal_v0_acceptance_proof_surfaces_operational_alerts(
         fixture_path=FIXTURES / "source_snapshot_eval.json",
         query="Robin Scharf",
         backup_database_url=None,
-        backup_output=tmp_path / "backups" / "gcb.dump",
+        backup_output=tmp_path / "backups" / "fourok.dump",
         observability_smoke=lambda: {
             "status": "failed",
             "reason": "collector_unreachable",
@@ -217,7 +217,7 @@ def test_internal_v0_acceptance_proof_surfaces_operational_alerts(
                 "threshold": "check status != ok",
                 "message": "Docker Compose internal access-boundary smoke check failed.",
                 "next_step": (
-                    "Run `gcb access-smoke --compose-file docker-compose.yml` and fix "
+                    "Run `fourok access-smoke --compose-file docker-compose.yml` and fix "
                     "unintended exposed services."
                 ),
             },
@@ -227,7 +227,7 @@ def test_internal_v0_acceptance_proof_surfaces_operational_alerts(
                 "threshold": "check status != ok",
                 "message": "OpenTelemetry smoke/export check failed.",
                 "next_step": (
-                    "Run `gcb observability-smoke` with the local observability profile "
+                    "Run `fourok observability-smoke` with the local observability profile "
                     "enabled and inspect exporter configuration."
                 ),
             },
@@ -237,7 +237,7 @@ def test_internal_v0_acceptance_proof_surfaces_operational_alerts(
                 "threshold": "check status != ok",
                 "message": "PostgreSQL backup command wiring failed.",
                 "next_step": (
-                    "Run `gcb postgres-backup` with the configured backup database URL "
+                    "Run `fourok postgres-backup` with the configured backup database URL "
                     "and verify the output path."
                 ),
             },
@@ -247,7 +247,7 @@ def test_internal_v0_acceptance_proof_surfaces_operational_alerts(
                 "threshold": "check status != ok",
                 "message": "PostgreSQL restore-drill command wiring failed.",
                 "next_step": (
-                    "Run `gcb postgres-restore-drill` against a separate drill database "
+                    "Run `fourok postgres-restore-drill` against a separate drill database "
                     "and inspect the command report."
                 ),
             },

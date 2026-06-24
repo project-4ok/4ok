@@ -13,7 +13,7 @@ for expected in \
   "CHECK_TARGET=local  run Docker/curl checks on the local machine" \
   "GATEWAY_SSH_TARGET=root@178.105.10.7" \
   "OPENCLAW_IMAGE_WORKFLOW_REQUIRED=false" \
-  "GCB_CRITICAL_CONTAINERS=comma,separated,container,names" \
+  "FOUR_OK_CRITICAL_CONTAINERS=comma,separated,container,names" \
   "GRAFANA_URL=http://127.0.0.1:13000" \
   "DAGSTER_SERVER_INFO_URL=http://127.0.0.1:13001/server_info" \
   "The command prints JSON and exits non-zero unless the deployment status is ok."
@@ -35,11 +35,11 @@ for expected in \
   "4ok-openclaw-dev-image.yml" \
   "dev-customer-gateway-4ok-runtime-deploy" \
   "openclaw-openclaw-gateway-1" \
-  "openclaw-gcb-app-1" \
-  "GCB_RETRIEVE_CONTAINER=openclaw-gcb-app-1" \
-  "GCB_RETRIEVE_COMMAND=/app/.venv/bin/gcb" \
+  "openclaw-fourok-app-1" \
+  "FOUR_OK_RETRIEVE_CONTAINER=openclaw-fourok-app-1" \
+  "FOUR_OK_RETRIEVE_COMMAND=/app/.venv/bin/fourok" \
   "retrieve --format json" \
-  "gcb-local-runtime-logs" \
+  "fourok-local-runtime-logs" \
   "target_shell" \
   "bash" \
   "ssh"

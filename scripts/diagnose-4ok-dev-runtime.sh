@@ -3,16 +3,16 @@ set -euo pipefail
 
 CHECK_TARGET="${CHECK_TARGET:-ssh}"
 GATEWAY_SSH_TARGET="${GATEWAY_SSH_TARGET:-root@178.105.10.7}"
-DAGSTER_WEBSERVER_CONTAINER="${DAGSTER_WEBSERVER_CONTAINER:-openclaw-gcb-dagster-webserver-1}"
-DAGSTER_CODE_CONTAINER="${DAGSTER_CODE_CONTAINER:-openclaw-gcb-dagster-code-1}"
-GCB_APP_CONTAINER="${GCB_APP_CONTAINER:-openclaw-gcb-app-1}"
+DAGSTER_WEBSERVER_CONTAINER="${DAGSTER_WEBSERVER_CONTAINER:-openclaw-fourok-dagster-webserver-1}"
+DAGSTER_CODE_CONTAINER="${DAGSTER_CODE_CONTAINER:-openclaw-fourok-dagster-code-1}"
+FOUR_OK_APP_CONTAINER="${FOUR_OK_APP_CONTAINER:-openclaw-fourok-app-1}"
 CONNECTOR_SMOKE="${CONNECTOR_SMOKE:-true}"
 
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [--json]
 
-Print detailed non-secret diagnostics for a GCB/OpenClaw target.
+Print detailed non-secret diagnostics for a 4OK/OpenClaw target.
 
 Target modes:
   CHECK_TARGET=ssh    run on GATEWAY_SSH_TARGET over SSH (default)
@@ -20,9 +20,9 @@ Target modes:
 
 Environment overrides:
   GATEWAY_SSH_TARGET=root@178.105.10.7
-  DAGSTER_WEBSERVER_CONTAINER=openclaw-gcb-dagster-webserver-1
-  DAGSTER_CODE_CONTAINER=openclaw-gcb-dagster-code-1
-  GCB_APP_CONTAINER=openclaw-gcb-app-1
+  DAGSTER_WEBSERVER_CONTAINER=openclaw-fourok-dagster-webserver-1
+  DAGSTER_CODE_CONTAINER=openclaw-fourok-dagster-code-1
+  FOUR_OK_APP_CONTAINER=openclaw-fourok-app-1
   CONNECTOR_SMOKE=true
 EOF
 }
@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-python3 - "$CHECK_TARGET" "$GATEWAY_SSH_TARGET" "$DAGSTER_WEBSERVER_CONTAINER" "$DAGSTER_CODE_CONTAINER" "$GCB_APP_CONTAINER" "$CONNECTOR_SMOKE" <<'PY'
+python3 - "$CHECK_TARGET" "$GATEWAY_SSH_TARGET" "$DAGSTER_WEBSERVER_CONTAINER" "$DAGSTER_CODE_CONTAINER" "$FOUR_OK_APP_CONTAINER" "$CONNECTOR_SMOKE" <<'PY'
 from __future__ import annotations
 
 import json
@@ -91,14 +91,14 @@ try:
 except json.JSONDecodeError:
     secret_presence = {}
 
-containers = shell("docker ps --format '{{.Names}}\\t{{.Status}}' | grep -E 'openclaw-gcb|openclaw-openclaw-gateway|4ok|dagster' | sort", 60)
+containers = shell("docker ps --format '{{.Names}}\\t{{.Status}}' | grep -E 'openclaw-fourok|openclaw-openclaw-gateway|4ok|dagster' | sort", 60)
 container_rows = []
 for line in containers.stdout.splitlines():
     if "\t" in line:
         name, status = line.split("\t", 1)
         container_rows.append({"name": name, "status": status})
 
-stage1 = docker_exec(app, "/app/.venv/bin/gcb stage1-acceptance --json --dagster-url http://gcb-dagster-webserver:3001/graphql --grafana-url http://gcb-observability:3000", 180)
+stage1 = docker_exec(app, "/app/.venv/bin/fourok stage1-acceptance --json --dagster-url http://fourok-dagster-webserver:3001/graphql --grafana-url http://fourok-observability:3000", 180)
 try:
     stage1_json = json.loads(stage1.stdout) if stage1.stdout.strip().startswith("{") else None
 except json.JSONDecodeError:
@@ -113,7 +113,7 @@ if connector_smoke.lower() == "true":
         "twenty-live-to-raw",
     ]
     for job in jobs:
-        cmd = f"cd /app && TARGET_GCB_RAW_JSONL_LANDING_DIR=/app/.local/diagnostics-{job} /app/.venv/bin/meltano run {job}"
+        cmd = f"cd /app && TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR=/app/.local/diagnostics-{job} /app/.venv/bin/meltano run {job}"
         p = docker_exec(code, cmd, 120)
         combined = "\n".join([p.stdout, p.stderr])
         interesting = [

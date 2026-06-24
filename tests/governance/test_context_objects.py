@@ -1,5 +1,5 @@
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.etl.load.context_objects import (
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.etl.load.context_objects import (
     canonical_object_from_source_record,
     canonical_object_rows,
     entity_link_rows,
@@ -7,7 +7,7 @@ from gcb.etl.load.context_objects import (
     store_canonical_objects,
     store_entity_links,
 )
-from gcb.governance.state import create_governed_context_state
+from fourok.governance.state import create_governed_context_state
 
 
 def test_store_canonical_objects_replaces_rows_by_object_ref() -> None:

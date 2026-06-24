@@ -2,14 +2,14 @@ from pathlib import Path
 
 import pytest
 
-from gcb.etl.extract.email_parser import load_email_dir, path_for_source_ref
-from gcb.etl.transform.pii import PresidioPiiDetector
-from gcb.evaluation import (
+from fourok.etl.extract.email_parser import load_email_dir, path_for_source_ref
+from fourok.etl.transform.pii import PresidioPiiDetector
+from fourok.evaluation import (
     evaluate_pii_detector,
     load_labeled_email_pii_cases,
     load_pii_eval_cases,
 )
-from gcb.governance import GovernedContext
+from fourok.governance import GovernedContext
 
 FIXTURES = Path(__file__).parent.parent / "fixtures"
 EMAILS = FIXTURES / "emails"

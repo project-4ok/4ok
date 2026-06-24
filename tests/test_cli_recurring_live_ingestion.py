@@ -2,13 +2,13 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from gcb.cli import main
-from gcb.etl.extract.sync_jobs import (
+from fourok.cli import main
+from fourok.etl.extract.sync_jobs import (
     complete_connector_job,
     connector_job_runs,
     start_connector_job,
 )
-from gcb.governance.state import create_governed_context_state
+from fourok.governance.state import create_governed_context_state
 
 
 def test_cli_run_live_ingestion_runs_selected_live_backfill_and_records_status(
@@ -16,7 +16,7 @@ def test_cli_run_live_ingestion_runs_selected_live_backfill_and_records_status(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("GCB_DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("FOUR_OK_DATABASE_URL", "sqlite:///:memory:")
     state_path = tmp_path / "state.sqlite"
     artifact_dir = tmp_path / "live-artifacts"
     calls: list[list[str]] = []
@@ -30,7 +30,7 @@ def test_cli_run_live_ingestion_runs_selected_live_backfill_and_records_status(
                 [
                     "asset_count=24",
                     "meltano_slack_live_raw_landing",
-                    "gcb_slack_live_source_records_from_raw_landing",
+                    "fourok_slack_live_source_records_from_raw_landing",
                     "live_connector_materialize_status=ok",
                 ]
             )
@@ -38,11 +38,11 @@ def test_cli_run_live_ingestion_runs_selected_live_backfill_and_records_status(
 
         return Completed()
 
-    monkeypatch.setattr("gcb.runtime.recurring_live_ingestion.subprocess.run", fake_runner)
+    monkeypatch.setattr("fourok.runtime.recurring_live_ingestion.subprocess.run", fake_runner)
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-live-ingestion",
             "--source",
             "slack",
@@ -108,7 +108,7 @@ def test_cli_run_live_ingestion_without_explicit_state_uses_database_url(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     database_path = tmp_path / "live.sqlite"
-    monkeypatch.setenv("GCB_DATABASE_URL", f"sqlite:///{database_path}")
+    monkeypatch.setenv("FOUR_OK_DATABASE_URL", f"sqlite:///{database_path}")
     artifact_dir = tmp_path / "live-artifacts"
 
     class Completed:
@@ -117,13 +117,13 @@ def test_cli_run_live_ingestion_without_explicit_state_uses_database_url(
         stderr = ""
 
     monkeypatch.setattr(
-        "gcb.runtime.recurring_live_ingestion.subprocess.run",
+        "fourok.runtime.recurring_live_ingestion.subprocess.run",
         lambda *_args, **_kwargs: Completed(),
     )
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-live-ingestion",
             "--source",
             "slack",
@@ -153,7 +153,7 @@ def test_cli_run_live_ingestion_skips_source_with_running_job(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("GCB_DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("FOUR_OK_DATABASE_URL", "sqlite:///:memory:")
     state_path = tmp_path / "state.sqlite"
     state = create_governed_context_state(
         state_path=state_path,
@@ -169,7 +169,7 @@ def test_cli_run_live_ingestion_skips_source_with_running_job(
     )
 
     monkeypatch.setattr(
-        "gcb.runtime.recurring_live_ingestion.subprocess.run",
+        "fourok.runtime.recurring_live_ingestion.subprocess.run",
         lambda *_args, **_kwargs: (_ for _ in ()).throw(
             AssertionError("running connector should not invoke Dagster")
         ),
@@ -177,7 +177,7 @@ def test_cli_run_live_ingestion_skips_source_with_running_job(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-live-ingestion",
             "--source",
             "linear",
@@ -208,7 +208,7 @@ def test_cli_live_ingestion_status_reports_source_freshness_and_idempotency(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("GCB_DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("FOUR_OK_DATABASE_URL", "sqlite:///:memory:")
     state_path = tmp_path / "state.sqlite"
     state = create_governed_context_state(
         state_path=state_path,
@@ -241,7 +241,7 @@ def test_cli_live_ingestion_status_reports_source_freshness_and_idempotency(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "live-ingestion-status",
             "--state",
             str(state_path),

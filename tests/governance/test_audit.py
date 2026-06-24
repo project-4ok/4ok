@@ -3,14 +3,14 @@ from datetime import UTC, datetime
 import pytest
 from sqlalchemy import MetaData, create_engine
 
-from gcb.governance.audit import (
+from fourok.governance.audit import (
     audit_events,
     audit_summary,
     purge_expired_audit_events,
     record_audit_event,
 )
-from gcb.governance.policy import PrincipalContext
-from gcb.storage.models import AuditEventRow, table_for_model
+from fourok.governance.policy import PrincipalContext
+from fourok.storage.models import AuditEventRow, table_for_model
 
 
 def build_audit_store():

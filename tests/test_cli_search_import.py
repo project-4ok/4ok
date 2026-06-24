@@ -3,10 +3,10 @@ import subprocess
 import sys
 from pathlib import Path
 
-from gcb.cli import main
-from gcb.etl.extract.connectors import load_singer_source_records
-from gcb.governance import GovernedContext
-from gcb.governance.policy import PrincipalContext
+from fourok.cli import main
+from fourok.etl.extract.connectors import load_singer_source_records
+from fourok.governance import GovernedContext
+from fourok.governance.policy import PrincipalContext
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "emails"
 CONNECTOR_FIXTURES = Path(__file__).parent.parent / "fixtures" / "connectors"
@@ -35,7 +35,7 @@ def test_cli_search_prints_json_results(capsys, monkeypatch, tmp_path: Path) -> 
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "search",
             "refund cancellation payment",
             "--emails",
@@ -68,7 +68,7 @@ def test_cli_governed_search_and_audit_exposes_no_reveal_tokens(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "search",
             "refund iban canceled account",
             "--emails",
@@ -85,7 +85,7 @@ def test_cli_governed_search_and_audit_exposes_no_reveal_tokens(
     assert "sensitive_tokens" not in search_output
     assert "BANK_ACCOUNT_" not in str(search_output)
 
-    monkeypatch.setattr("sys.argv", ["gcb", "audit", "--state", str(state)])
+    monkeypatch.setattr("sys.argv", ["fourok", "audit", "--state", str(state)])
     main()
     audit_output = json.loads(capsys.readouterr().out)
     assert [event["event_type"] for event in audit_output["events"]] == [
@@ -121,13 +121,13 @@ def test_cli_search_state_explicit_sqlite_state_ignores_ambient_database_url(
 
     state = tmp_path / "state.sqlite"
     monkeypatch.setenv(
-        "GCB_DATABASE_URL",
-        "postgresql+psycopg://gcb:stale@127.0.0.1:5432/gcb",
+        "FOUR_OK_DATABASE_URL",
+        "postgresql+psycopg://fourok:stale@127.0.0.1:5432/fourok",
     )
-    monkeypatch.setattr("gcb.cli_parts.commands_search.GovernedContext", FakeContext)
+    monkeypatch.setattr("fourok.cli_parts.commands_search.GovernedContext", FakeContext)
     monkeypatch.setattr(
         "sys.argv",
-        ["gcb", "search-state", "refund", "--state", str(state)],
+        ["fourok", "search-state", "refund", "--state", str(state)],
     )
 
     main()
@@ -140,7 +140,7 @@ def test_cli_search_state_explicit_sqlite_state_ignores_ambient_database_url(
 
 
 def test_cli_reveal_command_is_not_active(monkeypatch) -> None:
-    monkeypatch.setattr("sys.argv", ["gcb", "reveal", "BANK_ACCOUNT_OLD"])
+    monkeypatch.setattr("sys.argv", ["fourok", "reveal", "BANK_ACCOUNT_OLD"])
 
     try:
         main()
@@ -151,7 +151,7 @@ def test_cli_reveal_command_is_not_active(monkeypatch) -> None:
 
 
 def test_cli_help_hides_research_experiment_commands(capsys, monkeypatch) -> None:
-    monkeypatch.setattr("sys.argv", ["gcb", "--help"])
+    monkeypatch.setattr("sys.argv", ["fourok", "--help"])
 
     try:
         main()
@@ -175,19 +175,19 @@ def test_cli_help_hides_research_experiment_commands(capsys, monkeypatch) -> Non
 def test_fixture_cli_help_marks_fixture_paths_as_test_only(capsys, monkeypatch) -> None:
     for argv, expected in [
         (
-            ["gcb", "import-context-fixture", "--help"],
+            ["fourok", "import-context-fixture", "--help"],
             "test-only deterministic context snapshot",
         ),
         (
-            ["gcb", "run-imports", "--help"],
+            ["fourok", "run-imports", "--help"],
             "context-fixture is regression-only",
         ),
         (
-            ["gcb", "acceptance-proof", "--help"],
+            ["fourok", "acceptance-proof", "--help"],
             "Fixture seed for deterministic regression proof only",
         ),
         (
-            ["gcb", "search", "--help"],
+            ["fourok", "search", "--help"],
             "Search local email fixture regression data",
         ),
     ]:
@@ -204,8 +204,8 @@ def test_fixture_cli_help_marks_fixture_paths_as_test_only(capsys, monkeypatch) 
 
 def test_cli_import_does_not_load_hidden_experiment_modules() -> None:
     script = (
-        "import sys; import gcb.cli; "
-        "print(any(name.startswith(('gcb.honcho', 'gcb.retrieval.graphiti_episodes')) "
+        "import sys; import fourok.cli; "
+        "print(any(name.startswith(('fourok.honcho', 'fourok.retrieval.graphiti_episodes')) "
         "for name in sys.modules))"
     )
 
@@ -220,7 +220,7 @@ def test_cli_import_does_not_load_hidden_experiment_modules() -> None:
 
 
 def test_cli_goal_audit_reports_alignment(capsys, monkeypatch) -> None:
-    monkeypatch.setattr("sys.argv", ["gcb", "goal-audit"])
+    monkeypatch.setattr("sys.argv", ["fourok", "goal-audit"])
 
     main()
     output = json.loads(capsys.readouterr().out)
@@ -245,10 +245,10 @@ def test_cli_access_smoke_prints_compose_access_report(capsys, monkeypatch, tmp_
             "skipped_services": [],
         }
 
-    monkeypatch.setattr("gcb.cli_parts.commands_runtime.check_compose_access_boundary", fake_check)
+    monkeypatch.setattr("fourok.cli_parts.commands_runtime.check_compose_access_boundary", fake_check)
     monkeypatch.setattr(
         "sys.argv",
-        ["gcb", "access-smoke", "--compose-file", str(compose_file)],
+        ["fourok", "access-smoke", "--compose-file", str(compose_file)],
     )
 
     main()
@@ -264,7 +264,7 @@ def test_cli_access_smoke_prints_compose_access_report(capsys, monkeypatch, tmp_
 
 
 def test_cli_eval_retrieval_runs_default_golden_query_fixture(capsys, monkeypatch) -> None:
-    monkeypatch.setattr("sys.argv", ["gcb", "eval-retrieval"])
+    monkeypatch.setattr("sys.argv", ["fourok", "eval-retrieval"])
 
     main()
 
@@ -296,7 +296,7 @@ def test_cli_lands_singer_records(capsys, monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "land-singer",
             str(CONNECTOR_FIXTURES / "singer_email_messages.jsonl"),
             "--landing-dir",
@@ -345,7 +345,7 @@ def test_cli_ingests_gmail_singer_records_into_state(capsys, monkeypatch, tmp_pa
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "ingest-gmail-singer",
             str(singer_file),
             "--state",
@@ -402,7 +402,7 @@ def test_cli_ingests_flat_gmail_singer_records_with_current_permissions(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "ingest-gmail-singer",
             str(singer_file),
             "--state",
@@ -463,7 +463,7 @@ def test_cli_search_state_queries_existing_governed_state_without_loading_fixtur
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "search-state",
             "finance secret iban",
             "--state",
@@ -498,7 +498,7 @@ def test_cli_imports_context_fixture_and_searches_source_records(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "import-context-fixture",
             "--fixture",
             str(fixture),
@@ -518,7 +518,7 @@ def test_cli_imports_context_fixture_and_searches_source_records(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "search-state",
             "renewal meeting Thursday",
             "--state",
@@ -581,7 +581,7 @@ def test_cli_prepare_seed_snapshot_writes_local_seed_manifest(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "prepare-seed-snapshot",
             "--input",
             str(fixture),
@@ -609,14 +609,14 @@ def test_cli_search_state_returns_source_backed_related_objects(
     state = tmp_path / "state.sqlite"
     fixture = CONTEXT_FIXTURES / "source_snapshot_eval.json"
     context = GovernedContext(state)
-    from gcb.etl.extract.context_snapshot import load_context_snapshot_source_records
+    from fourok.etl.extract.context_snapshot import load_context_snapshot_source_records
 
     context.ingest_source_records(load_context_snapshot_source_records(fixture))
 
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "search-state",
             "ask Robin Scharf renewal meeting",
             "--state",
@@ -746,14 +746,14 @@ def test_cli_search_state_returns_ambiguous_person_candidates(
     state = tmp_path / "state.sqlite"
     fixture = CONTEXT_FIXTURES / "source_snapshot_eval.json"
     context = GovernedContext(state)
-    from gcb.etl.extract.context_snapshot import load_context_snapshot_source_records
+    from fourok.etl.extract.context_snapshot import load_context_snapshot_source_records
 
     context.ingest_source_records(load_context_snapshot_source_records(fixture))
 
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "search-state",
             "Robin renewal meeting Thursday",
             "--state",

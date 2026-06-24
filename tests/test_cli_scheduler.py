@@ -3,17 +3,17 @@ import shutil
 from datetime import datetime
 from pathlib import Path
 
-from gcb.cli import main
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.etl.extract.sync_jobs import (
+from fourok.cli import main
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.etl.extract.sync_jobs import (
     complete_connector_job,
     connector_job_runs,
     fail_connector_job,
     start_connector_job,
 )
-from gcb.etl.load.retrieval_records import retrieval_record_rows
-from gcb.governance import GovernedContext
-from gcb.governance.state import create_governed_context_state
+from fourok.etl.load.retrieval_records import retrieval_record_rows
+from fourok.governance import GovernedContext
+from fourok.governance.state import create_governed_context_state
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "emails"
 CONNECTOR_FIXTURES = Path(__file__).parent.parent / "fixtures" / "connectors"
@@ -66,7 +66,7 @@ def test_cli_run_imports_retry_failed_waits_for_backoff(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-imports",
             "--connector",
             "context-fixture",
@@ -96,7 +96,7 @@ def test_cli_run_imports_retry_failed_uses_configured_scheduler_backoff(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
     state_path = tmp_path / "state.sqlite"
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text(
         "[scheduler]\nretry_delay_seconds = 120\nmax_attempts = 3\n",
         encoding="utf-8",
@@ -125,7 +125,7 @@ def test_cli_run_imports_retry_failed_uses_configured_scheduler_backoff(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-imports",
             "--connector",
             "context-fixture",
@@ -155,7 +155,7 @@ def test_cli_run_imports_retry_failed_respects_configured_max_attempts(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
     state_path = tmp_path / "state.sqlite"
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text(
         "[scheduler]\nretry_delay_seconds = 120\nmax_attempts = 1\n",
         encoding="utf-8",
@@ -184,7 +184,7 @@ def test_cli_run_imports_retry_failed_respects_configured_max_attempts(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-imports",
             "--connector",
             "context-fixture",
@@ -231,7 +231,7 @@ def test_cli_run_imports_marks_malformed_connector_payload_invalid(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-imports",
             "--connector",
             "gmail-singer",
@@ -276,7 +276,7 @@ def test_cli_run_imports_context_fixture_repeated_runs_are_upsert_safe(capsys, m
         monkeypatch.setattr(
             "sys.argv",
             [
-                "gcb",
+                "fourok",
                 "run-imports",
                 "--connector",
                 "context-fixture",
@@ -331,7 +331,7 @@ def test_cli_run_imports_context_fixture_repeated_runs_are_upsert_safe(capsys, m
 
 def test_cli_run_imports_emits_safe_runtime_span(capsys, monkeypatch, tmp_path: Path) -> None:
     state_path = tmp_path / "state.sqlite"
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text("[retrieval]\nmax_words = 6\noverlap_words = 2\n", encoding="utf-8")
     spans: list[dict[str, object]] = []
 
@@ -353,11 +353,11 @@ def test_cli_run_imports_emits_safe_runtime_span(capsys, monkeypatch, tmp_path: 
         def start_as_current_span(self, name: str) -> FakeSpan:
             return FakeSpan(name)
 
-    monkeypatch.setattr("gcb.cli_parts.import_helpers.trace.get_tracer", lambda _name: FakeTracer())
+    monkeypatch.setattr("fourok.cli_parts.import_helpers.trace.get_tracer", lambda _name: FakeTracer())
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-imports",
             "--connector",
             "context-fixture",
@@ -376,23 +376,23 @@ def test_cli_run_imports_emits_safe_runtime_span(capsys, monkeypatch, tmp_path: 
     assert output["status"] == "succeeded"
     assert spans == [
         {
-            "name": "gcb.retrieval.prepare",
+            "name": "fourok.retrieval.prepare",
             "attributes": {
-                "gcb.source_record.count": 20,
-                "gcb.retrieval.unit_count": 53,
-                "gcb.retrieval.max_words": 6,
-                "gcb.retrieval.overlap_words": 2,
+                "fourok.source_record.count": 20,
+                "fourok.retrieval.unit_count": 53,
+                "fourok.retrieval.max_words": 6,
+                "fourok.retrieval.overlap_words": 2,
             },
         },
         {
-            "name": "gcb.run_imports",
+            "name": "fourok.run_imports",
             "attributes": {
-                "gcb.connector.name": "context-fixture",
-                "gcb.connector.attempt": 1,
-                "gcb.import.status": "succeeded",
-                "gcb.import.record_count": 20,
-                "gcb.import.deleted_record_count": 0,
-                "gcb.import.restricted_count": 0,
+                "fourok.connector.name": "context-fixture",
+                "fourok.connector.attempt": 1,
+                "fourok.import.status": "succeeded",
+                "fourok.import.record_count": 20,
+                "fourok.import.deleted_record_count": 0,
+                "fourok.import.restricted_count": 0,
             },
         },
     ]
@@ -439,7 +439,7 @@ def test_cli_dashboard_prints_operator_stats(capsys, monkeypatch, tmp_path: Path
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "dashboard",
             "--state",
             str(state_path),
@@ -462,7 +462,7 @@ def test_cli_dashboard_uses_configured_scheduler_retry_visibility(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
     state_path = tmp_path / "state.sqlite"
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text(
         "[scheduler]\nretry_delay_seconds = 120\nmax_attempts = 3\n",
         encoding="utf-8",
@@ -491,7 +491,7 @@ def test_cli_dashboard_uses_configured_scheduler_retry_visibility(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "dashboard",
             "--state",
             str(state_path),
@@ -513,7 +513,7 @@ def test_cli_rebuilds_retrieval_units_from_source_records(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
     state_path = tmp_path / "state.sqlite"
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     context = GovernedContext(state_path)
     context.ingest_source_records(
         [
@@ -542,7 +542,7 @@ def test_cli_rebuilds_retrieval_units_from_source_records(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "rebuild-retrieval-units",
             "--state",
             str(state_path),
@@ -571,7 +571,7 @@ def test_cli_rebuild_retrieval_units_requires_confirmation(monkeypatch, tmp_path
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "rebuild-retrieval-units",
             "--state",
             str(tmp_path / "state.sqlite"),
@@ -621,7 +621,7 @@ def test_cli_webhook_backlog_enqueues_processes_and_lists_events(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-enqueue",
             str(event_file),
             "--state",
@@ -636,7 +636,7 @@ def test_cli_webhook_backlog_enqueues_processes_and_lists_events(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-process",
             "--state",
             str(state_path),
@@ -650,7 +650,7 @@ def test_cli_webhook_backlog_enqueues_processes_and_lists_events(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-events",
             "--state",
             str(state_path),
@@ -678,7 +678,7 @@ def test_cli_webhook_process_uses_configured_retrieval_chunk_policy(
 ) -> None:
     state_path = tmp_path / "state.sqlite"
     raw_store = tmp_path / "raw-source-objects"
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text("[retrieval]\nmax_words = 6\noverlap_words = 2\n", encoding="utf-8")
     event_file = tmp_path / "webhook-event.json"
     event_file.write_text(
@@ -707,7 +707,7 @@ def test_cli_webhook_process_uses_configured_retrieval_chunk_policy(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-enqueue",
             str(event_file),
             "--state",
@@ -722,7 +722,7 @@ def test_cli_webhook_process_uses_configured_retrieval_chunk_policy(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-process",
             "--state",
             str(state_path),

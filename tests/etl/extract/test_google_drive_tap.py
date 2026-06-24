@@ -2,8 +2,8 @@ from pathlib import Path
 
 import pytest
 
-from gcb.etl.extract.connectors import land_singer_records, load_landed_source_records
-from gcb.etl.extract.google_drive_tap import GoogleDriveTapConfig, run_google_drive_tap
+from fourok.etl.extract.connectors import land_singer_records, load_landed_source_records
+from fourok.etl.extract.google_drive_tap import GoogleDriveTapConfig, run_google_drive_tap
 
 
 def test_google_drive_tap_emits_files_and_state() -> None:

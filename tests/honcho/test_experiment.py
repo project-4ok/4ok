@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from gcb.honcho.experiment import build_honcho_sync_plan
+from fourok.honcho.experiment import build_honcho_sync_plan
 
 FIXTURE = (
     Path(__file__).parent.parent.parent / "fixtures" / "honcho" / "linear_twenty_slack_sample.json"

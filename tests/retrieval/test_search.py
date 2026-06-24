@@ -3,10 +3,10 @@ from pathlib import Path
 from sqlalchemy import MetaData
 from sqlalchemy.dialects import postgresql
 
-from gcb.etl.extract.email_parser import load_email_dir
-from gcb.governance import GovernedContext
-from gcb.retrieval.search import postgres_source_record_search_statement
-from gcb.storage.models import RetrievalRecordRow, SourceRecordRow, table_for_model
+from fourok.etl.extract.email_parser import load_email_dir
+from fourok.governance import GovernedContext
+from fourok.retrieval.search import postgres_source_record_search_statement
+from fourok.storage.models import RetrievalRecordRow, SourceRecordRow, table_for_model
 
 FIXTURES = Path(__file__).parents[2] / "fixtures" / "emails"
 

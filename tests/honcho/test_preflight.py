@@ -1,4 +1,4 @@
-from gcb.honcho.preflight import (
+from fourok.honcho.preflight import (
     REQUIRED_SOURCE_SECRETS,
     source_connection_preflight,
     source_secret_preflight,

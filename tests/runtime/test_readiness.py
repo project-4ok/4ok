@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from gcb.runtime.readiness import internal_prod_readiness_report
+from fourok.runtime.readiness import internal_prod_readiness_report
 
 
 def test_internal_prod_readiness_report_passes_for_current_compose() -> None:
@@ -30,7 +30,7 @@ def test_internal_prod_readiness_report_catches_latest_app_tag(tmp_path: Path) -
         Path("docker-compose.yml")
         .read_text(encoding="utf-8")
         .replace(
-            "4ok-app:${GCB_IMAGE_TAG:?set GCB_IMAGE_TAG}",
+            "4ok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}",
             "4ok-app:latest",
         ),
         encoding="utf-8",
@@ -40,5 +40,5 @@ def test_internal_prod_readiness_report_catches_latest_app_tag(tmp_path: Path) -
 
     checks = {check["name"]: check for check in report["checks"]}
     assert report["status"] == "failed"
-    assert "app image must be tagged by GCB_IMAGE_TAG" in checks["pinned_images"]["missing"]
+    assert "app image must be tagged by FOUR_OK_IMAGE_TAG" in checks["pinned_images"]["missing"]
     assert "app uses latest image tag" in checks["pinned_images"]["missing"]

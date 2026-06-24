@@ -1,8 +1,8 @@
 import json
 from pathlib import Path
 
-from gcb.cli import main
-from gcb.governance import GovernedContext
+from fourok.cli import main
+from fourok.governance import GovernedContext
 
 FIXTURE = Path(__file__).parent.parent / "fixtures" / "openviking" / "messages_variants.jsonl"
 
@@ -12,14 +12,14 @@ def test_cli_backfills_openviking_messages_and_is_idempotent(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("GCB_DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("FOUR_OK_DATABASE_URL", "sqlite:///:memory:")
     state_path = tmp_path / "state.sqlite"
 
     def run_once() -> dict[str, object]:
         monkeypatch.setattr(
             "sys.argv",
             [
-                "gcb",
+                "fourok",
                 "backfill-openviking-messages",
                 str(FIXTURE),
                 "--state",
@@ -76,7 +76,7 @@ def test_cli_backfill_openviking_explicit_database_url_overrides_state(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "backfill-openviking-messages",
             str(FIXTURE),
             "--state",

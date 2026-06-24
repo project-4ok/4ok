@@ -1,6 +1,6 @@
 from datetime import UTC, datetime
 
-from gcb.etl.extract.sync_jobs import (
+from fourok.etl.extract.sync_jobs import (
     complete_connector_job,
     connector_checkpoint,
     connector_job_runs,
@@ -9,7 +9,7 @@ from gcb.etl.extract.sync_jobs import (
     start_connector_job,
     try_start_connector_job,
 )
-from gcb.governance.state import create_governed_context_state
+from fourok.governance.state import create_governed_context_state
 
 
 def test_connector_job_success_updates_checkpoint() -> None:

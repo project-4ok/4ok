@@ -11,11 +11,11 @@ from typing import Any
 
 from sqlalchemy import create_engine, text
 
-from gcb.etl.extract.connectors import land_singer_records
-from gcb.etl.extract.slack_adapter import load_slack_landed_source_records
-from gcb.etl.extract.slack_tap_env import apply_slack_tap_defaults
-from gcb.runtime import mcp_retrieval
-from gcb.secrets.infisical import InfisicalConfig, SecretProviderError, fetch_infisical_secrets
+from fourok.etl.extract.connectors import land_singer_records
+from fourok.etl.extract.slack_adapter import load_slack_landed_source_records
+from fourok.etl.extract.slack_tap_env import apply_slack_tap_defaults
+from fourok.runtime import mcp_retrieval
+from fourok.secrets.env import effective_env
 
 
 def main() -> int:
@@ -28,7 +28,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--database-url",
-        default=os.environ.get("GCB_DATABASE_URL", ""),
+        default=os.environ.get("FOUR_OK_DATABASE_URL", ""),
         help="Optional runtime database URL for active Slack message and retrieval proof.",
     )
     args = parser.parse_args()
@@ -43,7 +43,7 @@ def check_slack_live_contract(artifact_dir: Path, *, database_url: str = "") -> 
     artifact_dir.mkdir(parents=True, exist_ok=True)
     try:
         env = _slack_env()
-    except SecretProviderError as error:
+    except ValueError as error:
         return {
             "status": "blocked",
             "stage": "credentials",
@@ -52,9 +52,7 @@ def check_slack_live_contract(artifact_dir: Path, *, database_url: str = "") -> 
                 "has_slack_token": bool(
                     os.environ.get("SLACK_BOT_TOKEN") or os.environ.get("TAP_SLACK_API_KEY")
                 ),
-                "has_infisical_project_id": bool(
-                    _env_first("GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID")
-                ),
+                "has_dotenv": Path(".env").exists(),
             },
             "artifact_dir": str(artifact_dir),
             "runtime_database": _runtime_database_probe(database_url),
@@ -140,15 +138,9 @@ def check_slack_live_contract(artifact_dir: Path, *, database_url: str = "") -> 
 
 
 def _slack_env() -> dict[str, str]:
-    config = InfisicalConfig(
-        project_id=_env_first("GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID"),
-        environment=_env_first("GCB_INFISICAL_ENV", "INFISICAL_ENV") or "runtime",
-        path=_env_first("GCB_INFISICAL_PATH", "INFISICAL_PATH") or "/",
-        domain=_env_first("GCB_INFISICAL_DOMAIN", "INFISICAL_DOMAIN"),
-    )
-    env = dict(os.environ)
-    if config.project_id or not (env.get("SLACK_BOT_TOKEN") or env.get("TAP_SLACK_API_KEY")):
-        env.update(fetch_infisical_secrets(config))
+    env = effective_env()
+    if not (env.get("SLACK_BOT_TOKEN") or env.get("TAP_SLACK_API_KEY")):
+        raise ValueError("Slack auth requires SLACK_BOT_TOKEN or TAP_SLACK_API_KEY in env/.env")
     if env.get("SLACK_BOT_TOKEN") and not env.get("TAP_SLACK_API_KEY"):
         env["TAP_SLACK_API_KEY"] = env["SLACK_BOT_TOKEN"]
     return apply_slack_tap_defaults(env)
@@ -255,13 +247,13 @@ def _mcp_permission_gate_probe(
         return {"status": "skipped", "reason": "candidate_missing_query_or_permission"}
 
     try:
-        denied = mcp_retrieval.search_gcb(
+        denied = mcp_retrieval.search_fourok(
             query=query,
             limit=5,
             roles=["operator"],
             database_url=database_url,
         )
-        allowed = mcp_retrieval.search_gcb(
+        allowed = mcp_retrieval.search_fourok(
             query=query,
             limit=5,
             roles=["operator", *permission_refs],

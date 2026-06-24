@@ -2,58 +2,58 @@ import json
 from datetime import UTC, datetime
 from pathlib import Path
 
-from gcb.cli import main
-from gcb.cli_parts.commands_runtime import host_operator_database_url
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.etl.extract.sync_jobs import complete_connector_job, start_connector_job
-from gcb.governance import GovernedContext, SourceChange
-from gcb.governance.state import create_governed_context_state
-from gcb.runtime.dashboard import operator_status
+from fourok.cli import main
+from fourok.cli_parts.commands_runtime import host_operator_database_url
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.etl.extract.sync_jobs import complete_connector_job, start_connector_job
+from fourok.governance import GovernedContext, SourceChange
+from fourok.governance.state import create_governed_context_state
+from fourok.runtime.dashboard import operator_status
 
 
 def test_operator_status_default_resolves_compose_database_url_from_env_file(
     monkeypatch, tmp_path: Path
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("GCB_DATABASE_URL", raising=False)
-    monkeypatch.setattr("gcb.cli_parts.commands_runtime._running_app_database_url", lambda: "")
+    monkeypatch.delenv("FOUR_OK_DATABASE_URL", raising=False)
+    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
     (tmp_path / ".env").write_text(
         "POSTGRES_PASSWORD=secret\n"
-        "GCB_DATABASE_URL=postgresql+psycopg://gcb:secret@postgres:5432/gcb\n",
+        "FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:secret@postgres:5432/fourok\n",
         encoding="utf-8",
     )
 
     database_url = host_operator_database_url(
-        state=Path(".gcb-state.sqlite"),
+        state=Path(".fourok-state.sqlite"),
         state_explicit=False,
         explicit_database_url=None,
     )
 
-    assert database_url == "postgresql+psycopg://gcb:secret@127.0.0.1:5432/gcb"
+    assert database_url == "postgresql+psycopg://fourok:secret@127.0.0.1:5432/fourok"
 
 
 def test_operator_status_default_prefers_compose_env_over_stale_shell_env(
     monkeypatch,
 ) -> None:
     monkeypatch.setenv(
-        "GCB_DATABASE_URL",
-        "postgresql+psycopg://gcb:stale@127.0.0.1:5432/gcb",
+        "FOUR_OK_DATABASE_URL",
+        "postgresql+psycopg://fourok:stale@127.0.0.1:5432/fourok",
     )
-    monkeypatch.setattr("gcb.cli_parts.commands_runtime._running_app_database_url", lambda: "")
+    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.operator_environment",
+        "fourok.cli_parts.commands_runtime.operator_environment",
         lambda _root: {
-            "GCB_DATABASE_URL": "postgresql+psycopg://gcb:fresh@postgres:5432/gcb",
+            "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:fresh@postgres:5432/fourok",
         },
     )
 
     database_url = host_operator_database_url(
-        state=Path(".gcb-state.sqlite"),
+        state=Path(".fourok-state.sqlite"),
         state_explicit=False,
         explicit_database_url=None,
     )
 
-    assert database_url == "postgresql+psycopg://gcb:fresh@127.0.0.1:5432/gcb"
+    assert database_url == "postgresql+psycopg://fourok:fresh@127.0.0.1:5432/fourok"
 
 
 def test_operator_status_default_prefers_running_app_database_url(
@@ -61,29 +61,29 @@ def test_operator_status_default_prefers_running_app_database_url(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv(
-        "GCB_DATABASE_URL",
-        "postgresql+psycopg://gcb:stale@127.0.0.1:5432/gcb",
+        "FOUR_OK_DATABASE_URL",
+        "postgresql+psycopg://fourok:stale@127.0.0.1:5432/fourok",
     )
     (tmp_path / ".env").write_text(
-        "GCB_DATABASE_URL=postgresql+psycopg://gcb:dotenv@postgres:5432/gcb\n",
+        "FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:dotenv@postgres:5432/fourok\n",
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime._running_app_database_url",
-        lambda: "postgresql+psycopg://gcb:running@postgres:5432/gcb",
+        "fourok.cli_parts.commands_runtime._running_app_database_url",
+        lambda: "postgresql+psycopg://fourok:running@postgres:5432/fourok",
     )
 
     database_url = host_operator_database_url(
-        state=Path(".gcb-state.sqlite"),
+        state=Path(".fourok-state.sqlite"),
         state_explicit=False,
         explicit_database_url=None,
     )
 
-    assert database_url == "postgresql+psycopg://gcb:running@127.0.0.1:5432/gcb"
+    assert database_url == "postgresql+psycopg://fourok:running@127.0.0.1:5432/fourok"
 
 
 def test_running_app_database_url_discovers_compose_app_container(monkeypatch) -> None:
-    from gcb.cli_parts import commands_runtime
+    from fourok.cli_parts import commands_runtime
 
     calls: list[tuple[str, ...]] = []
 
@@ -96,14 +96,14 @@ def test_running_app_database_url_discovers_compose_app_container(monkeypatch) -
             "exec",
             "container-123",
             "printenv",
-            "GCB_DATABASE_URL",
+            "FOUR_OK_DATABASE_URL",
         ]:
             return type(
                 "Result",
                 (),
                 {
                     "returncode": 0,
-                    "stdout": "postgresql+psycopg://gcb:running@postgres:5432/gcb\n",
+                    "stdout": "postgresql+psycopg://fourok:running@postgres:5432/fourok\n",
                 },
             )()
         raise AssertionError(command)
@@ -112,18 +112,18 @@ def test_running_app_database_url_discovers_compose_app_container(monkeypatch) -
 
     assert (
         commands_runtime._running_app_database_url()
-        == "postgresql+psycopg://gcb:running@postgres:5432/gcb"
+        == "postgresql+psycopg://fourok:running@postgres:5432/fourok"
     )
     assert calls == [
         ("docker", "compose", "ps", "-q", "app"),
-        ("docker", "exec", "container-123", "printenv", "GCB_DATABASE_URL"),
+        ("docker", "exec", "container-123", "printenv", "FOUR_OK_DATABASE_URL"),
     ]
 
 
 def test_running_app_database_url_falls_back_to_docker_labels_when_compose_env_drifts(
     monkeypatch,
 ) -> None:
-    from gcb.cli_parts import commands_runtime
+    from fourok.cli_parts import commands_runtime
 
     calls: list[tuple[str, ...]] = []
 
@@ -151,14 +151,14 @@ def test_running_app_database_url_falls_back_to_docker_labels_when_compose_env_d
             "exec",
             "label-container",
             "printenv",
-            "GCB_DATABASE_URL",
+            "FOUR_OK_DATABASE_URL",
         ]:
             return type(
                 "Result",
                 (),
                 {
                     "returncode": 0,
-                    "stdout": "postgresql+psycopg://gcb:running@postgres:5432/gcb\n",
+                    "stdout": "postgresql+psycopg://fourok:running@postgres:5432/fourok\n",
                 },
             )()
         raise AssertionError(command)
@@ -167,7 +167,7 @@ def test_running_app_database_url_falls_back_to_docker_labels_when_compose_env_d
 
     assert (
         commands_runtime._running_app_database_url()
-        == "postgresql+psycopg://gcb:running@postgres:5432/gcb"
+        == "postgresql+psycopg://fourok:running@postgres:5432/fourok"
     )
     assert calls == [
         ("docker", "compose", "ps", "-q", "app"),
@@ -181,7 +181,7 @@ def test_running_app_database_url_falls_back_to_docker_labels_when_compose_env_d
             "--format",
             "{{.ID}}",
         ),
-        ("docker", "exec", "label-container", "printenv", "GCB_DATABASE_URL"),
+        ("docker", "exec", "label-container", "printenv", "FOUR_OK_DATABASE_URL"),
     ]
 
 
@@ -189,9 +189,9 @@ def test_operator_status_explicit_state_without_database_url_uses_state_file(
     monkeypatch, tmp_path: Path
 ) -> None:
     monkeypatch.chdir(tmp_path)
-    monkeypatch.delenv("GCB_DATABASE_URL", raising=False)
+    monkeypatch.delenv("FOUR_OK_DATABASE_URL", raising=False)
     (tmp_path / ".env").write_text(
-        "GCB_DATABASE_URL=postgresql+psycopg://gcb:secret@postgres:5432/gcb\n",
+        "FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:secret@postgres:5432/fourok\n",
         encoding="utf-8",
     )
 
@@ -212,27 +212,58 @@ def test_cli_health_defaults_to_host_runtime_database(capsys, monkeypatch) -> No
         return object()
 
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.operator_environment",
+        "fourok.cli_parts.commands_runtime.operator_environment",
         lambda _root: {
-            "GCB_DATABASE_URL": "postgresql+psycopg://gcb:secret@postgres:5432/gcb",
+            "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
         },
     )
-    monkeypatch.setattr("gcb.cli_parts.commands_runtime._running_app_database_url", lambda: "")
+    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.cli_parts.commands_runtime.create_governed_context_state",
         fake_create_state,
     )
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.cli_parts.commands_runtime.check_runtime_health",
         lambda _state: {"status": "ok", "checks": []},
     )
-    monkeypatch.setattr("sys.argv", ["gcb", "health"])
+    monkeypatch.setattr("sys.argv", ["fourok", "health"])
 
     main()
 
     output = json.loads(capsys.readouterr().out)
     assert output == {"status": "ok", "checks": []}
-    assert calls[0]["database_url"] == "postgresql+psycopg://gcb:secret@127.0.0.1:5432/gcb"
+    assert calls[0]["database_url"] == "postgresql+psycopg://fourok:secret@127.0.0.1:5432/fourok"
+
+
+def test_cli_health_keeps_explicit_database_url_container_valid(capsys, monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fake_create_state(**kwargs):
+        calls.append(kwargs)
+        return object()
+
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        fake_create_state,
+    )
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        lambda _state: {"status": "ok", "checks": []},
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "health",
+            "--database-url",
+            "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
+        ],
+    )
+
+    main()
+
+    assert json.loads(capsys.readouterr().out) == {"status": "ok", "checks": []}
+    assert calls[0]["database_url"] == "postgresql+psycopg://fourok:secret@postgres:5432/fourok"
 
 
 def test_cli_health_keeps_explicit_state_on_sqlite_path(
@@ -246,21 +277,21 @@ def test_cli_health_keeps_explicit_state_on_sqlite_path(
         return object()
 
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.operator_environment",
+        "fourok.cli_parts.commands_runtime.operator_environment",
         lambda _root: {
-            "GCB_DATABASE_URL": "postgresql+psycopg://gcb:secret@postgres:5432/gcb",
+            "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
         },
     )
-    monkeypatch.setattr("gcb.cli_parts.commands_runtime._running_app_database_url", lambda: "")
+    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.cli_parts.commands_runtime.create_governed_context_state",
         fake_create_state,
     )
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.cli_parts.commands_runtime.check_runtime_health",
         lambda _state: {"status": "ok", "checks": []},
     )
-    monkeypatch.setattr("sys.argv", ["gcb", "health", "--state", str(state)])
+    monkeypatch.setattr("sys.argv", ["fourok", "health", "--state", str(state)])
 
     main()
 
@@ -272,7 +303,7 @@ def test_cli_health_keeps_explicit_state_on_sqlite_path(
 def test_cli_operator_status_keeps_explicit_default_state_path(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
-    state = tmp_path / ".gcb-state.sqlite"
+    state = tmp_path / ".fourok-state.sqlite"
     calls: list[object] = []
 
     def fake_context_state(args):
@@ -280,24 +311,24 @@ def test_cli_operator_status_keeps_explicit_default_state_path(
         return object()
 
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.operator_environment",
+        "fourok.cli_parts.commands_runtime.operator_environment",
         lambda _root: {
-            "GCB_DATABASE_URL": "postgresql+psycopg://gcb:secret@postgres:5432/gcb",
+            "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
         },
     )
-    monkeypatch.setattr("gcb.cli_parts.commands_runtime._running_app_database_url", lambda: "")
+    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime._context_state_from_args",
+        "fourok.cli_parts.commands_runtime._context_state_from_args",
         fake_context_state,
     )
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.operator_status",
+        "fourok.cli_parts.commands_runtime.operator_status",
         lambda *_args, **_kwargs: {"status": "ok"},
     )
 
     monkeypatch.setattr(
         "sys.argv",
-        ["gcb", "operator-status", "--state", str(state)],
+        ["fourok", "operator-status", "--state", str(state)],
     )
 
     main()
@@ -365,7 +396,7 @@ def test_operator_status_counts_only_active_imported_source_records(tmp_path: Pa
 def test_cli_operator_status_prints_compact_import_counts_and_freshness(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
-    monkeypatch.delenv("GCB_DATABASE_URL", raising=False)
+    monkeypatch.delenv("FOUR_OK_DATABASE_URL", raising=False)
     state_path = tmp_path / "state.sqlite"
     context = GovernedContext(state_path)
     context.ingest_source_records(
@@ -423,7 +454,7 @@ def test_cli_operator_status_prints_compact_import_counts_and_freshness(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "operator-status",
             "--state",
             str(state_path),

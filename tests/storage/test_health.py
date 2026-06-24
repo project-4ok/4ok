@@ -3,10 +3,10 @@ from types import SimpleNamespace
 
 from sqlalchemy import create_engine
 
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.governance import GovernedContext
-from gcb.governance.state import create_governed_context_state
-from gcb.storage.health import check_runtime_health
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.governance import GovernedContext
+from fourok.governance.state import create_governed_context_state
+from fourok.storage.health import check_runtime_health
 
 
 def test_check_runtime_health_reports_database_without_records_as_failed(tmp_path: Path) -> None:
@@ -56,7 +56,7 @@ def test_check_runtime_health_reports_online_when_source_and_retrieval_records_e
                 source_id="health",
                 record_type="message",
                 title="Health smoke",
-                body="GCB health command should see records.",
+                body="4OK health command should see records.",
                 occurred_at="2026-06-15T12:00:00+00:00",
             )
         ]
@@ -94,7 +94,7 @@ def test_check_runtime_health_reports_online_when_source_and_retrieval_records_e
 
 
 def test_check_runtime_health_reports_database_connection_failure() -> None:
-    engine = create_engine("sqlite:////path/that/does/not/exist/gcb.sqlite")
+    engine = create_engine("sqlite:////path/that/does/not/exist/fourok.sqlite")
 
     report = check_runtime_health(SimpleNamespace(engine=engine, raw_store=None))
 

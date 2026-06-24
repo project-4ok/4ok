@@ -42,19 +42,18 @@ Minimum dimensions:
 The active registry is executable:
 
 ```bash
-uv run gcb dependency-contracts
+uv run fourok dependency-contracts
 ```
 
 Current covered dependencies:
 
 - Docker Compose runtime
 - PostgreSQL
-- Infisical SDK
+- env/.env secret loading
 - Singer/Meltano-style connector boundary
 - text-layer PDF extraction with `pypdf`
 - local OpenTelemetry LGTM backend
 - OpenClaw plugin boundary
-- deferred Cerbos policy experiment
 
 The command reports proof commands for each dependency. A new integration should
 not be added to the active runtime until this registry shows which executable
@@ -63,7 +62,7 @@ check proves the contract and which dimensions are intentionally out of scope.
 Internal-prod readiness is executable too:
 
 ```bash
-uv run gcb internal-prod-readiness
+uv run fourok internal-prod-readiness
 ```
 
 This is a static readiness check. It complements, but does not replace, the
@@ -92,8 +91,8 @@ OpenClaw plugin RAG hook:
 - primary product path is not agent-initiated CLI use
 - optional and explicitly enabled per OpenClaw runtime or agent
 - runs before prompt assembly, after the user turn is known
-- retrieves permitted GCB evidence through the in-process/plugin integration or
-  internal service boundary, not by asking the agent to call `gcb`
+- retrieves permitted 4OK evidence through the in-process/plugin integration or
+  internal service boundary, not by asking the agent to call `fourok`
 - injects a short source summary into the agent input: source refs, source URLs
   when available, timestamps, limitations, and audit refs
 - keeps the injected summary capped and purpose-built for the current user turn;
@@ -109,7 +108,7 @@ OpenClaw plugin RAG hook:
 
 Optional explicit tool surface:
 
-`gcb_search_context(query, limit?)`
+`fourok_search_context(query, limit?)`
 
 - returns the same evidence-pack shape as `search_context`
 - publish the schema from `openclaw_tool_contracts()`
@@ -119,10 +118,10 @@ Optional explicit tool surface:
 
 Local plugin package:
 
-- `plugins/openclaw-gcb/openclaw.plugin.json` declares the RAG hook capability
-  plus optional `gcb_search_context` and `gcb_health` tools
-- `plugins/openclaw-gcb/src/index.ts` registers the hook and optional tools
-- the plugin must not use the GCB CLI as the production product path; CLI checks
+- `plugins/openclaw-fourok/openclaw.plugin.json` declares the RAG hook capability
+  plus optional `fourok_search_context` and `fourok_health` tools
+- `plugins/openclaw-fourok/src/index.ts` registers the hook and optional tools
+- the plugin must not use the 4OK CLI as the production product path; CLI checks
   are operator/dev smoke equivalents only
 
 ## Source Record
@@ -254,7 +253,7 @@ Current defaults:
 Inspect current runtime boundaries with:
 
 ```bash
-uv run gcb runtime-services
+uv run fourok runtime-services
 ```
 
 Current boundaries:
@@ -262,10 +261,10 @@ Current boundaries:
 - `context-api`: search/source metadata facade
 - `connector-runner`: source sync, raw landing, job runs, checkpoints
 - `document-extraction-worker`: isolated attachment parsing experiments
-- `policy-engine`: static policy plus Cerbos adapter
+- `policy-engine`: static in-process policy only
 - `metadata-database`: SQLAlchemy state, PostgreSQL target
 - `raw-source-store`: restricted local filesystem now, object storage later
-- `secrets-provider`: Infisical SDK or runtime secret injection
+- `secrets-provider`: env/.env secret loading or runtime secret injection
 - `audit-store`: PostgreSQL-compatible audit events first
 
 No production broker is chosen yet. Internal v0 should use a durable

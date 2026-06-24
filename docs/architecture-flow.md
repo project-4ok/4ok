@@ -68,7 +68,7 @@ flowchart TD
   end
 
   subgraph ops["Implemented Runtime Proofs"]
-    Compose["Docker Compose<br/>app, PostgreSQL, Cerbos, observability"]
+    Compose["Docker Compose<br/>app, PostgreSQL, observability"]
     OTel["OpenTelemetry smoke<br/>local LGTM backend"]
     Readiness["internal-prod-readiness"]
     Acceptance["acceptance-proof<br/>import/search/audit/OTel/backup wiring"]
@@ -161,7 +161,7 @@ flowchart TD
   same `SourceChange` applier as connector imports.
 - Text-layer PDFs can be imported as `Document` source records through `pypdf`.
   OCR and layout extraction are not implemented.
-- OpenClaw chat capture is implemented as a GCB-side adapter that turns chat
+- OpenClaw chat capture is implemented as a 4OK-side adapter that turns chat
   messages into `Message` source records. It strips untrusted control metadata
   from retrieval text and preserves source provenance. The next product path is
   an OpenClaw plugin RAG hook that injects a short permission-aware source
@@ -169,20 +169,20 @@ flowchart TD
 - Scheduled imports are implemented through `run-imports`, connector job state,
   checkpoints, retry planning, and systemd/cron-oriented Compose commands.
 - Dependency contract spikes are implemented as an executable registry via
-  `uv run gcb dependency-contracts`.
+  `uv run fourok dependency-contracts`.
 
 ## Runtime Shape
 
-- Docker Compose can run PostgreSQL, Cerbos, local observability, and the
+- Docker Compose can run PostgreSQL, local observability, and the
   Python app container.
-- App images are tagged with the current commit hash through `GCB_IMAGE_TAG`.
+- App images are tagged with the current commit hash through `FOUR_OK_IMAGE_TAG`.
 - Active Compose services have restart policies, health checks, named
   persistent volumes, loopback-bound host ports, and no `.reference` runtime
   dependency.
 - PostgreSQL is the target store and uses JSONB for source/canonical metadata
   and entity-link evidence on new schemas.
 - SQLite remains a local fallback for fast tests and development.
-- `uv run gcb internal-prod-readiness` checks the static Compose/runbook
+- `uv run fourok internal-prod-readiness` checks the static Compose/runbook
   readiness claim.
 - `acceptance-proof` checks config loading, health, import, webhook processing,
   retrieval, evidence-pack shape, audit, source lifecycle behavior,

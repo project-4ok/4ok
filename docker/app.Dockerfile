@@ -30,4 +30,4 @@ COPY fixtures ./fixtures
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-group dev
 
-ENTRYPOINT ["/app/.venv/bin/gcb"]
+ENTRYPOINT ["/app/.venv/bin/fourok"]

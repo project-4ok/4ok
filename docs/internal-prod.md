@@ -12,7 +12,7 @@ that lets us use the system on actual data and learn from operations.
 In scope:
 
 - one controlled Gmail source
-- Infisical-backed connector credentials
+- env/.env-backed connector credentials
 - PostgreSQL as the internal runtime database
 - restricted filesystem raw store
 - scheduled Gmail sync/retry
@@ -41,35 +41,34 @@ systemd timers / manual operator commands
   -> docker compose run --rm app ...
 
 Docker Compose services
-  -> app service running gcb runtime-monitor
-  -> Python app / gcb CLI image for one-off operator commands
+  -> app service running fourok runtime-monitor
+  -> Python app / fourok CLI image for one-off operator commands
   -> PostgreSQL with pgvector
-  -> Cerbos
   -> optional local observability profile
 
 Host paths
-  -> .local/gcb.toml
-  -> /var/log/gcb
+  -> .local/fourok.toml
+  -> /var/log/fourok
 
 Compose volumes
-  -> gcb-data mounted at /var/lib/gcb
+  -> fourok-data mounted at /var/lib/fourok
   -> postgres-data mounted at /var/lib/postgresql/data
   -> observability-data mounted at /data
 ```
 
-Use Docker Compose locally/on the host for PostgreSQL, Cerbos, and the Python
-app. The resident `app` service runs `gcb runtime-monitor` so Compose restart
-state reflects a real long-running process, while `gcb health` remains the
+Use Docker Compose locally/on the host for PostgreSQL and the Python
+app. The resident `app` service runs `fourok runtime-monitor` so Compose restart
+state reflects a real long-running process, while `fourok health` remains the
 service healthcheck. The app container should be the only supported way to run
-one-off `gcb` and Gmail pilot commands in internal prod. Build the image from
+one-off `fourok` and Gmail pilot commands in internal prod. Build the image from
 the checked-out release or pull a tagged image once releases exist.
 
 The active Compose services use named persistent volumes for runtime state:
 
 - `postgres-data`
 - `observability-data`
-- `gcb-local`
-- `gcb-data`
+- `fourok-local`
+- `fourok-data`
 
 Keep project-local `.local` paths for local commands, experiments, and explicit
 host exports only. Internal-prod runtime state should live in Compose volumes
@@ -81,15 +80,14 @@ Do not add Kubernetes, a broker, or OpenSearch for v0.
 
 Internal prod v0 has no public service surface.
 
-- `app` does not publish an HTTP port; operators run `gcb` through
+- `app` does not publish an HTTP port; operators run `fourok` through
   `docker compose run --rm app ...`.
 - PostgreSQL is bound to `127.0.0.1:5432` for local operator/debug access only.
-- Cerbos is bound to `127.0.0.1:3592` and `127.0.0.1:3593`.
 - The optional observability profile binds Grafana and OTLP endpoints to
   `127.0.0.1`.
 - OpenClaw should use a trusted internal plugin/service integration for the RAG
   hook. The agent should receive a short source summary before prompt assembly;
-  it should not call the GCB CLI as the product path.
+  it should not call the 4OK CLI as the product path.
 
 If remote operator access is needed, use host-level SSH/VPN access and keep
 Compose ports loopback-bound.
@@ -100,7 +98,7 @@ Create a non-committed runtime config and mount it into the app container:
 
 ```bash
 mkdir -p .local
-export GCB_CONFIG_PATH="$PWD/.local/gcb.toml"
+export FOUR_OK_CONFIG_PATH="$PWD/.local/fourok.toml"
 ```
 
 ```toml
@@ -112,10 +110,10 @@ webhook_backlog_days = 14
 
 [raw_store]
 backend = "filesystem"
-path = "/var/lib/gcb/raw"
+path = "/var/lib/fourok/raw"
 
 [backup]
-path = "/var/lib/gcb/backups"
+path = "/var/lib/fourok/backups"
 
 [retrieval]
 max_words = 900
@@ -135,14 +133,14 @@ retry_delay_seconds = 60
 [telemetry]
 enabled = false
 endpoint = "http://observability:4318"
-service_name = "gcb-app"
+service_name = "fourok-app"
 
 [connectors]
 enabled = ["gmail-singer"]
 source_limit = 1000
 ```
 
-`gcb webhook-process --config /etc/gcb/gcb.toml` uses `[webhooks]` values for
+`fourok webhook-process --config /etc/fourok/fourok.toml` uses `[webhooks]` values for
 omitted processing flags. Explicit CLI flags still override them.
 
 For scheduled imports, `[connectors].enabled` is an allowlist when non-empty,
@@ -154,23 +152,17 @@ otherwise they fall back to the OpenTelemetry environment variables.
 Set non-secret environment:
 
 ```bash
-export GCB_IMAGE_TAG="$(git rev-parse --short HEAD)"
-export GCB_DATABASE_URL="postgresql+psycopg://gcb:<password>@postgres:5432/gcb"
+export FOUR_OK_IMAGE_TAG="$(git rev-parse --short HEAD)"
+export FOUR_OK_DATABASE_URL="postgresql+psycopg://fourok:<password>@postgres:5432/fourok"
 export POSTGRES_PASSWORD="<database-password>"
-export GCB_GMAIL_INFISICAL_PROJECT_ID="<project-id>"
-export GCB_GMAIL_INFISICAL_ENV="prod"
-export GCB_GMAIL_INFISICAL_PATH="/gmail-pilot"
-export GCB_EMBEDDING_PROVIDER="openai"
-export GCB_OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
-export GCB_EMBEDDING_DIMENSIONS="256"
-export INFISICAL_API_URL="<infisical-host>"
+export FOUR_OK_EMBEDDING_PROVIDER="openai"
+export FOUR_OK_OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
+export FOUR_OK_EMBEDDING_DIMENSIONS="256"
 ```
 
 Set machine identity through the host secret mechanism:
 
 ```bash
-export INFISICAL_CLIENT_ID="<machine-client-id>"
-export INFISICAL_CLIENT_SECRET="<machine-client-secret>"
 export OPENAI_API_KEY="<openai-api-key>"
 ```
 
@@ -178,10 +170,10 @@ Do not use the local env-file fallback for internal prod.
 
 ## Bring-Up Checklist
 
-1. Start PostgreSQL and Cerbos.
+1. Start PostgreSQL.
 
    ```bash
-   docker compose up -d postgres cerbos
+   docker compose up -d postgres
    docker compose build app
    ```
 
@@ -189,7 +181,7 @@ Do not use the local env-file fallback for internal prod.
 
    ```bash
    docker compose run --rm app \
-     health --database-url "$GCB_DATABASE_URL"
+     health --database-url "$FOUR_OK_DATABASE_URL"
    ```
 
 3. Verify Gmail credentials without printing secrets.
@@ -198,9 +190,6 @@ Do not use the local env-file fallback for internal prod.
    docker compose run --rm --entrypoint python app \
      scripts/run_gmail_pilot.py \
        --preflight \
-       --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
-       --infisical-env "$GCB_GMAIL_INFISICAL_ENV" \
-       --infisical-path "$GCB_GMAIL_INFISICAL_PATH"
    ```
 
 4. Run the Gmail sync into PostgreSQL.
@@ -209,10 +198,7 @@ Do not use the local env-file fallback for internal prod.
    docker compose run --rm --entrypoint python app \
      scripts/run_gmail_pilot.py \
        --inspect-output \
-       --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
-       --infisical-env "$GCB_GMAIL_INFISICAL_ENV" \
-       --infisical-path "$GCB_GMAIL_INFISICAL_PATH" \
-       --database-url "$GCB_DATABASE_URL"
+       --database-url "$FOUR_OK_DATABASE_URL"
    ```
 
 5. Ingest Gmail Singer records into governed state.
@@ -221,18 +207,18 @@ Do not use the local env-file fallback for internal prod.
    docker compose run --rm app \
      ingest-gmail-singer \
        .local/gmail-pilot/tap-gmail-output.jsonl \
-       --database-url "$GCB_DATABASE_URL" \
-       --config /etc/gcb/gcb.toml
+       --database-url "$FOUR_OK_DATABASE_URL" \
+       --config /etc/fourok/fourok.toml
    ```
 
 6. Validate operator queries.
 
    ```bash
-   docker compose run --rm app audit-summary --database-url "$GCB_DATABASE_URL"
-   docker compose run --rm app connector-jobs --database-url "$GCB_DATABASE_URL"
-   docker compose run --rm app retention-status --config /etc/gcb/gcb.toml
-   docker compose run --rm app dashboard --database-url "$GCB_DATABASE_URL" --config /etc/gcb/gcb.toml
-   docker compose run --rm app search-state "refund cancellation" --database-url "$GCB_DATABASE_URL"
+   docker compose run --rm app audit-summary --database-url "$FOUR_OK_DATABASE_URL"
+   docker compose run --rm app connector-jobs --database-url "$FOUR_OK_DATABASE_URL"
+   docker compose run --rm app retention-status --config /etc/fourok/fourok.toml
+   docker compose run --rm app dashboard --database-url "$FOUR_OK_DATABASE_URL" --config /etc/fourok/fourok.toml
+   docker compose run --rm app search-state "refund cancellation" --database-url "$FOUR_OK_DATABASE_URL"
    docker compose run --rm app access-smoke --compose-file /app/docker-compose.yml
    ```
 
@@ -257,10 +243,10 @@ Do not use the local env-file fallback for internal prod.
    ```bash
    docker compose run --rm app \
      acceptance-proof \
-       --database-url "$GCB_DATABASE_URL" \
-       --config /etc/gcb/gcb.toml \
+       --database-url "$FOUR_OK_DATABASE_URL" \
+       --config /etc/fourok/fourok.toml \
        --fixture /app/.local/seeds/context-substrate.json \
-       --backup-database-url "$GCB_DATABASE_URL" \
+       --backup-database-url "$FOUR_OK_DATABASE_URL" \
        --backup-output /app/.local/backups/acceptance-proof.dump \
        --observability-endpoint http://observability:4318
    ```
@@ -288,7 +274,7 @@ Do not use the local env-file fallback for internal prod.
 9. Check static internal-prod readiness.
 
    ```bash
-   uv run gcb internal-prod-readiness
+   uv run fourok internal-prod-readiness
    ```
 
    This checks the active Compose services, pinned image/tag policy, restart
@@ -302,8 +288,8 @@ Use systemd timers or cron for v0.
 
 Suggested jobs:
 
-- source import every 15-60 minutes through `gcb run-imports`
-- source retry every 5-15 minutes through `gcb run-imports --retry-failed`
+- source import every 15-60 minutes through `fourok run-imports`
+- source retry every 5-15 minutes through `fourok run-imports --retry-failed`
 - raw-source retention daily
 - audit retention daily
 - PostgreSQL backup nightly
@@ -311,36 +297,36 @@ Suggested jobs:
 
 Template units live in `deploy/systemd/`:
 
-- `gcb-run-imports.service`
-- `gcb-run-imports.timer`
-- `gcb-retry-imports.service`
-- `gcb-retry-imports.timer`
-- `gcb-postgres-backup.service`
-- `gcb-postgres-backup.timer`
-- `gcb-retention.service`
-- `gcb-retention.timer`
+- `fourok-run-imports.service`
+- `fourok-run-imports.timer`
+- `fourok-retry-imports.service`
+- `fourok-retry-imports.timer`
+- `fourok-postgres-backup.service`
+- `fourok-postgres-backup.timer`
+- `fourok-retention.service`
+- `fourok-retention.timer`
 
 Copy them to the host systemd unit directory, set `WorkingDirectory`,
-`GCB_IMAGE_TAG`, `GCB_CONFIG_PATH`, and connector-specific arguments for the
-deployed source. Copy `deploy/systemd/gcb.env.example` to `/etc/gcb/gcb.env`,
-set the real database URL and Infisical machine identity there, restrict it to
+`FOUR_OK_IMAGE_TAG`, `FOUR_OK_CONFIG_PATH`, and connector-specific arguments for the
+deployed source. Copy `deploy/systemd/fourok.env.example` to `/etc/fourok/fourok.env`,
+set the real database URL and external secret manager machine identity there, restrict it to
 the operator/service account, and do not commit it:
 
 ```bash
-sudo install -d -m 0750 /etc/gcb
-sudo install -m 0640 deploy/systemd/gcb.env.example /etc/gcb/gcb.env
-sudo editor /etc/gcb/gcb.env
+sudo install -d -m 0750 /etc/fourok
+sudo install -m 0640 deploy/systemd/fourok.env.example /etc/fourok/fourok.env
+sudo editor /etc/fourok/fourok.env
 ```
 
 Then enable the timers:
 
 ```bash
 sudo systemctl daemon-reload
-sudo systemctl enable --now gcb-run-imports.timer
-sudo systemctl enable --now gcb-retry-imports.timer
-sudo systemctl enable --now gcb-postgres-backup.timer
-sudo systemctl enable --now gcb-retention.timer
-systemctl list-timers 'gcb-*'
+sudo systemctl enable --now fourok-run-imports.timer
+sudo systemctl enable --now fourok-retry-imports.timer
+sudo systemctl enable --now fourok-postgres-backup.timer
+sudo systemctl enable --now fourok-retention.timer
+systemctl list-timers 'fourok-*'
 ```
 
 The committed service templates schedule the internal Gmail Singer path. Update
@@ -353,8 +339,8 @@ Example Docker Compose command for a scheduled internal Gmail import:
 docker compose run --rm app \
   run-imports \
     --connector gmail-singer \
-    --singer-file /var/lib/gcb/raw/gmail/tap-gmail-output.jsonl \
-    --database-url "$GCB_DATABASE_URL"
+    --singer-file /var/lib/fourok/raw/gmail/tap-gmail-output.jsonl \
+    --database-url "$FOUR_OK_DATABASE_URL"
 ```
 
 Example retry command:
@@ -363,9 +349,9 @@ Example retry command:
 docker compose run --rm app \
   run-imports \
     --connector gmail-singer \
-    --singer-file /var/lib/gcb/raw/gmail/tap-gmail-output.jsonl \
-    --database-url "$GCB_DATABASE_URL" \
-    --config /etc/gcb/gcb.toml \
+    --singer-file /var/lib/fourok/raw/gmail/tap-gmail-output.jsonl \
+    --database-url "$FOUR_OK_DATABASE_URL" \
+    --config /etc/fourok/fourok.toml \
     --retry-failed \
     --retry-base-delay-seconds 300
 ```
@@ -374,20 +360,20 @@ When `--config` is provided, omitted retry controls use `[scheduler]`
 `retry_delay_seconds` and `max_attempts`. Explicit CLI flags still override
 configured values where a flag exists.
 
-`gcb run-imports` refuses to start a second run for the same connector while a
+`fourok run-imports` refuses to start a second run for the same connector while a
 previous connector job is still marked `running`. The guard is enforced by a
 partial unique database index, so competing cron/systemd workers for the same
 connector resolve to one running job. Keep host timers simple and let the
 command own connector job state, retry timing, and dashboard visibility.
 
-`gcb-postgres-backup.timer` runs nightly at 02:15 and writes timestamped dump
-files under `/var/lib/gcb/backups` in the app container volume. Backup
-retention can be enforced with `gcb purge-backup-retention`; encryption and
+`fourok-postgres-backup.timer` runs nightly at 02:15 and writes timestamped dump
+files under `/var/lib/fourok/backups` in the app container volume. Backup
+retention can be enforced with `fourok purge-backup-retention`; encryption and
 off-host copy policy are still operator decisions for internal v0.
 
-`gcb-retention.timer` runs daily at 03:15 and applies the configured raw
+`fourok-retention.timer` runs daily at 03:15 and applies the configured raw
 source, audit-event, terminal webhook backlog, and backup dump retention
-windows from `/etc/gcb/gcb.toml`.
+windows from `/etc/fourok/fourok.toml`.
 
 ## Internal Rebuild Path
 
@@ -397,7 +383,7 @@ stored source records:
 ```bash
 docker compose run --rm app \
   rebuild-retrieval-units \
-    --config /etc/gcb/gcb.toml \
+    --config /etc/fourok/fourok.toml \
     --confirm-rebuild
 ```
 
@@ -411,8 +397,8 @@ Run backup:
 ```bash
 docker compose run --rm app \
   postgres-backup \
-    --database-url "$GCB_DATABASE_URL" \
-    --output /var/lib/gcb/backups/gcb-$(date +%Y%m%d-%H%M%S).dump
+    --database-url "$FOUR_OK_DATABASE_URL" \
+    --output /var/lib/fourok/backups/fourok-$(date +%Y%m%d-%H%M%S).dump
 ```
 
 Purge expired backup dumps:
@@ -420,7 +406,7 @@ Purge expired backup dumps:
 ```bash
 docker compose run --rm app \
   purge-backup-retention \
-    --config /etc/gcb/gcb.toml
+    --config /etc/fourok/fourok.toml
 ```
 
 Restore drill:
@@ -428,13 +414,13 @@ Restore drill:
 ```bash
 docker compose run --rm app \
   postgres-restore-drill \
-    --database-url "$GCB_DATABASE_URL" \
-    --restore-database-url "$GCB_RESTORE_DATABASE_URL" \
-    --backup-output /var/lib/gcb/backups/restore-drill.dump
+    --database-url "$FOUR_OK_DATABASE_URL" \
+    --restore-database-url "$FOUR_OK_RESTORE_DATABASE_URL" \
+    --backup-output /var/lib/fourok/backups/restore-drill.dump
 ```
 
-The drill refuses to run if `GCB_RESTORE_DATABASE_URL` points at the same
-database as `GCB_DATABASE_URL`. It runs a fresh backup, restores it into the
+The drill refuses to run if `FOUR_OK_RESTORE_DATABASE_URL` points at the same
+database as `FOUR_OK_DATABASE_URL`. It runs a fresh backup, restores it into the
 separate drill database, and verifies the restored database schema health
 without printing database passwords in command arguments.
 
@@ -448,9 +434,9 @@ Recorded local evidence:
 For manual follow-up after the drill, verify:
 
 ```bash
-docker compose run --rm -e GCB_DATABASE_URL="$GCB_RESTORE_DATABASE_URL" app health
-docker compose run --rm -e GCB_DATABASE_URL="$GCB_RESTORE_DATABASE_URL" app connector-jobs
-docker compose run --rm -e GCB_DATABASE_URL="$GCB_RESTORE_DATABASE_URL" app audit-summary
+docker compose run --rm -e FOUR_OK_DATABASE_URL="$FOUR_OK_RESTORE_DATABASE_URL" app health
+docker compose run --rm -e FOUR_OK_DATABASE_URL="$FOUR_OK_RESTORE_DATABASE_URL" app connector-jobs
+docker compose run --rm -e FOUR_OK_DATABASE_URL="$FOUR_OK_RESTORE_DATABASE_URL" app audit-summary
 ```
 
 ## Access Model
@@ -473,7 +459,7 @@ explicitly controlled now.
   restricted by default unless source permission mapping is added.
 - Current pilot sample had no attachments; attachment behavior still needs a
   seeded sample.
-- `gcb run-imports` prevents overlapping runs for the same connector with a
+- `fourok run-imports` prevents overlapping runs for the same connector with a
   database-backed running-job guard. A broader lock/lease is still a future
   hardening option if multiple worker types appear.
 - No production object store exists.
@@ -481,12 +467,12 @@ explicitly controlled now.
 
 ## Internal Prod V0 Acceptance Criteria
 
-- `gcb health` passes against PostgreSQL and configured raw store.
+- `fourok health` passes against PostgreSQL and configured raw store.
 - App commands run through the Docker Compose `app` service.
-- `gcb retention-status` reports configured raw/audit/webhook/backup windows,
+- `fourok retention-status` reports configured raw/audit/webhook/backup windows,
   current deletion-eligible counts, and source-record/retrieval-unit lifecycle
   coverage before destructive purge commands are run.
-- Gmail preflight passes through Infisical.
+- Gmail preflight passes through external secret manager.
 - Gmail sync writes job history and connector checkpoint to PostgreSQL.
 - Gmail records ingest into governed state.
 - Search, audit, and evidence links work against PostgreSQL.

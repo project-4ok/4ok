@@ -5,7 +5,7 @@ import os
 from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
-from gcb.devtools.diagnostics import agent_diagnostics
+from fourok.devtools.diagnostics import agent_diagnostics
 
 
 def test_agent_diagnostics_reports_recent_errors_without_printing_log_bodies(
@@ -67,4 +67,4 @@ def test_agent_diagnostics_json_shape_names_runtime_surfaces_and_next_commands(
     }
     assert checks["database"]["status"] == "skipped"
     assert checks["search"]["status"] == "skipped"
-    assert "uv run gcb-dev agent-diagnostics --json" in report["next_commands"]
+    assert "uv run fourok-dev agent-diagnostics --json" in report["next_commands"]

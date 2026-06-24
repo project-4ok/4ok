@@ -6,9 +6,9 @@ from pathlib import Path
 
 import pytest
 
-from gcb.cli import main
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.governance import GovernedContext
+from fourok.cli import main
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.governance import GovernedContext
 
 
 def _seed_state(state: Path) -> None:
@@ -44,7 +44,7 @@ def _seed_state(state: Path) -> None:
 def test_retrieve_rejects_limit_option(monkeypatch) -> None:
     monkeypatch.setattr(
         "sys.argv",
-        ["gcb", "retrieve", "query", "--limit", "2"],
+        ["fourok", "retrieve", "query", "--limit", "2"],
     )
 
     with pytest.raises(SystemExit):
@@ -70,7 +70,7 @@ def test_retrieve_defaults_to_five_results(capsys, monkeypatch, tmp_path: Path) 
     )
     monkeypatch.setattr(
         "sys.argv",
-        ["gcb", "retrieve", "default limit sentinel answer", "--state", str(state)],
+        ["fourok", "retrieve", "default limit sentinel answer", "--state", str(state)],
     )
 
     main()
@@ -85,7 +85,7 @@ def test_retrieve_prints_llm_ready_augmentation_block(capsys, monkeypatch, tmp_p
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "retrieve",
             "cancellation invoice follow-up",
             "--state",
@@ -96,7 +96,7 @@ def test_retrieve_prints_llm_ready_augmentation_block(capsys, monkeypatch, tmp_p
     main()
 
     output = capsys.readouterr().out
-    assert output.startswith("GCB RETRIEVAL FOR AGENTS\n")
+    assert output.startswith("4OK RETRIEVAL FOR AGENTS\n")
     assert "How to use this: Answer from these evidence cards only when relevant." in output
     assert "cancellation invoice follow-up" not in output
     assert "[1] Slack-Live message — #customer-success" in output
@@ -115,7 +115,7 @@ def test_retrieve_json_returns_stable_machine_shape_without_echoing_query(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "retrieve",
             "cancellation invoice follow-up",
             "--state",
@@ -130,7 +130,7 @@ def test_retrieve_json_returns_stable_machine_shape_without_echoing_query(
     output = json.loads(capsys.readouterr().out)
     assert "query" not in output
     assert output["status"] == "ok"
-    assert output["context_block"].startswith("GCB RETRIEVAL FOR AGENTS\n")
+    assert output["context_block"].startswith("4OK RETRIEVAL FOR AGENTS\n")
     assert output["results"][0] == {
         "source_ref": "slack:message:cancellation",
         "source_system": "slack-live",
@@ -157,7 +157,7 @@ def test_retrieve_records_privacy_safe_request_observability(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "retrieve",
             "cancellation invoice follow-up",
             "--state",
@@ -207,7 +207,7 @@ def test_retrieve_vector_snippet_does_not_repeat_title(capsys, monkeypatch, tmp_
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "retrieve",
             "booking link ICP outreach",
             "--state",
@@ -243,7 +243,7 @@ def test_retrieve_centers_evidence_snippet_on_query_terms(
                     "Developer Advocate. "
                     + "generic CRM metadata without task evidence. " * 18
                     + "The useful evidence says the runtime deployment decision "
-                    "belongs with the GCB OpenClaw rollout notes."
+                    "belongs with the 4OK OpenClaw rollout notes."
                 ),
                 occurred_at="2026-06-15T12:00:00+00:00",
             )
@@ -252,7 +252,7 @@ def test_retrieve_centers_evidence_snippet_on_query_terms(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "retrieve",
             "runtime deployment decision",
             "--state",
@@ -266,7 +266,7 @@ def test_retrieve_centers_evidence_snippet_on_query_terms(
 
     output = capsys.readouterr().out
     assert "evidence: Developer Advocate." not in output
-    assert "runtime deployment decision belongs with the GCB OpenClaw rollout notes" in output
+    assert "runtime deployment decision belongs with the 4OK OpenClaw rollout notes" in output
 
 
 def test_retrieve_no_results_is_successful_augmentation_block(
@@ -277,7 +277,7 @@ def test_retrieve_no_results_is_successful_augmentation_block(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "retrieve",
             "quantum bananas unrelated",
             "--state",

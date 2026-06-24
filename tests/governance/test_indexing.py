@@ -1,16 +1,16 @@
 import inspect
 
-from gcb.etl.extract.email_parser import EmailMessage
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.governance import GovernedContext
-from gcb.governance.indexing import (
+from fourok.etl.extract.email_parser import EmailMessage
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.governance import GovernedContext
+from fourok.governance.indexing import (
     IndexingTables,
     email_compatibility_chunk_rows,
     ingest_messages,
     raw_source_refs,
     replace_messages,
 )
-from gcb.governance.state import create_governed_context_state
+from fourok.governance.state import create_governed_context_state
 
 
 def indexing_tables(state) -> IndexingTables:

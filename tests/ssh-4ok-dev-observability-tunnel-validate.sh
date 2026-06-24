@@ -10,7 +10,7 @@ urls_output="$(${TARGET} --print-urls)"
 help_output="$(${TARGET} --help)"
 
 case "${urls_output}" in
-  *"Grafana: http://127.0.0.1:13000/d/gcb-local-runtime-logs/gcb-local-runtime-logs"* ) ;;
+  *"Grafana: http://127.0.0.1:13000/d/fourok-local-runtime-logs/fourok-local-runtime-logs"* ) ;;
   *) echo "missing Grafana URL output" >&2; exit 1 ;;
 esac
 

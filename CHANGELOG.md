@@ -9,10 +9,10 @@ still needs to be done lives in [docs/plan.md](docs/plan.md).
 
 - Added Docker Compose runtime for the Honcho experiment with PostgreSQL,
   Cerbos, Honcho, Honcho Postgres/Redis, and the Python app container.
-- Added `gcb honcho-preflight`, `gcb honcho-sync`, `gcb honcho-smoke`, and
-  `gcb honcho-receipt` for local operation and verification.
-- Wired Infisical SDK machine-identity auth into the app container and fixed
-  Honcho preflight to use the same Infisical environment defaults as sync.
+- Added `fourok honcho-preflight`, `fourok honcho-sync`, `fourok honcho-smoke`, and
+  `fourok honcho-receipt` for local operation and verification.
+- Wired env/.env secret loading machine-identity auth into the app container and fixed
+  Honcho preflight to use the same external secret manager environment defaults as sync.
 - Added bounded live source collection for Linear, Twenty workspace members,
   and Slack user identity.
 - Added email-based employee linking across Twenty workspace members, Linear
@@ -24,13 +24,13 @@ still needs to be done lives in [docs/plan.md](docs/plan.md).
 - Added source-ref based Honcho idempotency, write receipts, source imports,
   catalog refresh state, Linear checkpoints, overlap windows, changed-record
   superseding metadata, and receipt inspection.
-- Verified local Docker E2E with Infisical-backed live sources:
+- Verified local Docker E2E with env/.env-backed live sources:
   preflight passed for Linear, Slack, and Twenty; first bounded sync wrote 4
   Honcho messages; second sync wrote 0 messages and skipped already imported
   source refs.
 - Split Honcho event import limits from identity/catalog refresh limits so a
   bounded Linear import no longer truncates employee catalogs.
-- Added a `gcb honcho-eval` retrieval-quality harness for workspace, peer, and
+- Added a `fourok honcho-eval` retrieval-quality harness for workspace, peer, and
   session search checks against expected source refs.
 - Recorded that the first Honcho experiment is internal-only and intentionally
   skips governance, PII masking, tokenization, reveal policy, and sensitive
@@ -43,12 +43,12 @@ still needs to be done lives in [docs/plan.md](docs/plan.md).
 - Added an OSS ownership map for connector/parser/policy/search decisions.
 - Added a Gmail/Workspace connector pilot checklist.
 - Added `scripts/run_gmail_pilot.py` to fetch Gmail pilot credentials from
-  Infisical or an ignored local fallback, validate required settings, and
+  external secret manager or an ignored local fallback, validate required settings, and
   capture raw tap output without printing secret values.
-- Added Gmail pilot preflight handling for environment-based Infisical metadata
-  and Infisical credential source errors.
-- Replaced the first Infisical CLI shell-out with a reusable
-  `gcb.secrets.infisical` provider backed by the official `infisicalsdk`
+- Added Gmail pilot preflight handling for environment-based external secret manager metadata
+  and external secret manager credential source errors.
+- Replaced the first external secret manager CLI shell-out with a reusable
+  `fourok.secrets.env` provider backed by the official `env secret loading`
   package.
 - Added `scripts/inspect_gmail_pilot_output.py` to summarize raw Singer output
   shape without printing email body, attachment body, or secret values.
@@ -63,8 +63,8 @@ still needs to be done lives in [docs/plan.md](docs/plan.md).
   connector behavior, ETL triggering/checkpointing, document extraction,
   identity/groups, policy, demo workflow, and operations requirements before
   detailed production infrastructure design.
-- Added a local Meltano/Singer fixture boundary with `tap-gcb-fixture`,
-  `target-gcb-raw-jsonl`, and `meltano.yml`.
+- Added a local Meltano/Singer fixture boundary with `tap-fourok-fixture`,
+  `target-fourok-raw-jsonl`, and `meltano.yml`.
 - Added Singer raw landing and adapter support for source records.
 - Added connector permission snapshot semantics:
   `missing`, `stale`, and `revoked` restrict retrieval.
@@ -74,7 +74,7 @@ still needs to be done lives in [docs/plan.md](docs/plan.md).
 
 ### Document Extraction
 
-- Added optional Docling adapter boundary in `gcb.etl.extract.document_extraction`.
+- Added optional Docling adapter boundary in `fourok.etl.extract.document_extraction`.
 - Added `scripts/evaluate_document_extraction.py` for ignored synthetic
   Markdown/HTML/DOCX/PPTX/PDF smoke fixtures.
 - Added a containerized Docling worker experiment service that keeps Docling
@@ -106,17 +106,17 @@ still needs to be done lives in [docs/plan.md](docs/plan.md).
 - Added explicit raw-source store backend selection with filesystem support.
 - Added config-backed restricted raw-source retention purge.
 - Added timestamped audit events plus config-backed audit retention purge.
-- Added `gcb audit-summary` for basic audit activity counts.
+- Added `fourok audit-summary` for basic audit activity counts.
 - Added SQLAlchemy database URL configuration and PostgreSQL-compatible state
   paths.
 - Added local Docker Compose services for PostgreSQL and Cerbos.
 - Added `scripts/smoke_runtime.py` for local runtime validation.
 - Added local SQLite backup/restore commands for prototype state.
-- Added `gcb health` for database/schema and filesystem raw-store readiness
+- Added `fourok health` for database/schema and filesystem raw-store readiness
   checks.
-- Added `gcb postgres-backup`, `gcb postgres-restore`, and the PostgreSQL
+- Added `fourok postgres-backup`, `fourok postgres-restore`, and the PostgreSQL
   backup/restore drill doc.
-- Added `gcb runtime-services` to make the current service/worker boundaries
+- Added `fourok runtime-services` to make the current service/worker boundaries
   and deferred broker decision inspectable.
 
 ### Retrieval and Policy
@@ -149,7 +149,7 @@ still needs to be done lives in [docs/plan.md](docs/plan.md).
 - Moved source modules into clearer package boundaries:
   `extract`, `transform`, `retrieval`, `storage`, `governance`, and
   `workflows`.
-- Moved tests to mirror the `src/gcb` package structure.
+- Moved tests to mirror the `src/fourok` package structure.
 - Fixed refactor-era documentation paths.
 
 ## 2026-05-23

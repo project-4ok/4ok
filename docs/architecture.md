@@ -61,13 +61,13 @@ active in this stage.
 
 The active implementation follows the ETL split:
 
-- `src/gcb/etl/extract`: source connectors, source adapters, raw landing helpers,
+- `src/fourok/etl/extract`: source connectors, source adapters, raw landing helpers,
   PDF text extraction, and connector job inputs
-- `src/gcb/etl/transform`: deferred transformation experiments such as entity
+- `src/fourok/etl/transform`: deferred transformation experiments such as entity
   resolution and PII/tokenization
-- `src/gcb/etl/load`: import-pipeline loading behavior for source changes,
+- `src/fourok/etl/load`: import-pipeline loading behavior for source changes,
   source metadata, context objects, entity links, and retrieval records
-- `src/gcb/storage`: persistence and runtime state: ORM models, schema
+- `src/fourok/storage`: persistence and runtime state: ORM models, schema
   compatibility, config, raw store, health checks, schema contract checks, and
   PostgreSQL backup/restore helpers
 
@@ -125,7 +125,7 @@ Source-specific objects map into a small set of context object types:
 
 The canonical object taxonomy is represented as stored object-type values, not
 as a separate domain-object class hierarchy. ORM table definitions live in
-`src/gcb/storage/models`.
+`src/fourok/storage/models`.
 
 Keep this taxonomy deliberately small. Source-specific distinctions remain in
 `SourceRecord.record_type` and canonical-object metadata:
@@ -240,16 +240,15 @@ Internal v0 runs as Docker Compose on one host:
 
 - Python app container
 - PostgreSQL
-- Cerbos only for deferred policy experiments unless actively needed
 - local observability backend
 - persistent volumes
 - pinned image references
-- Infisical-backed secrets
+- env/.env-backed secrets
 
 The next production-readiness release should add Dagster as the pipeline
 orchestrator and visual control plane. Dagster owns the asset graph, schedules,
 run history, failure visibility, retries, and operator-facing pipeline state.
-Meltano/Singer owns batch source extraction where suitable taps exist. GCB owns
+Meltano/Singer owns batch source extraction where suitable taps exist. 4OK owns
 raw landing, SourceRecord adapters, source-change application, storage,
 retrieval, evidence packs, and audit.
 
@@ -261,8 +260,8 @@ fanout, delayed retries, or backpressure require it.
 
 PII masking, tokenization, and reveal are intentionally not active in the
 current runtime. Existing deferred modules such as
-`gcb.governance.deferred_reveal_policy`, `gcb.governance.reveal`,
-`gcb.governance.token_store`, and `gcb.etl.transform.pii` are experimental and
+`fourok.governance.deferred_reveal_policy`, `fourok.governance.reveal`,
+`fourok.governance.token_store`, and `fourok.etl.transform.pii` are experimental and
 must not be presented as the current product surface.
 
 Production still needs a defended governance design:

@@ -5,8 +5,8 @@ from pathlib import Path
 
 import pytest
 
-from gcb.cli import main
-from gcb.runtime.stage1_acceptance import _dagster_gate_report, stage1_acceptance_report
+from fourok.cli import main
+from fourok.runtime.stage1_acceptance import _dagster_gate_report, stage1_acceptance_report
 
 
 def test_stage1_acceptance_report_requires_all_gate_checks_ok() -> None:
@@ -29,9 +29,9 @@ def test_stage1_acceptance_report_requires_all_gate_checks_ok() -> None:
     assert report["grafana"] == {"status": "failed", "dashboard_uid": "missing"}
     assert report["resume"] == {
         "open_gates": ["grafana"],
-        "last_verification": "uv run gcb stage1-acceptance --json",
+        "last_verification": "uv run fourok stage1-acceptance --json",
         "blockers": ["grafana"],
-        "next_command": "uv run gcb stage1-acceptance --json",
+        "next_command": "uv run fourok stage1-acceptance --json",
     }
 
 
@@ -40,8 +40,8 @@ def test_dagster_gate_fails_when_runtime_status_reports_latest_failed_step() -> 
         {
             "status": "ok",
             "repository_status": "ok",
-            "schedules": {"gcb_hourly_live_backfill_schedule": "RUNNING"},
-            "sensors": {"gcb_webhook_backlog_sensor": "RUNNING"},
+            "schedules": {"fourok_hourly_live_backfill_schedule": "RUNNING"},
+            "sensors": {"fourok_webhook_backlog_sensor": "RUNNING"},
             "runtime_status": {
                 "status": "failed",
                 "latest_run_status": "FAILURE",
@@ -79,7 +79,7 @@ def test_stage1_acceptance_cli_prints_json_and_exits_nonzero_on_failed_gate(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "stage1-acceptance",
             "--json",
             "--state",

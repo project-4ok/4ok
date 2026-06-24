@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from gcb.retrieval.evidence_baseline import evaluate_evidence_baseline, search_evidence
+from fourok.retrieval.evidence_baseline import evaluate_evidence_baseline, search_evidence
 
 FIXTURE = (
     Path(__file__).parent.parent.parent / "fixtures" / "honcho" / "linear_twenty_slack_sample.json"

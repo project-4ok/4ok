@@ -54,7 +54,7 @@ def test_graphiti_eval_scores_permission_refs_from_fact_text() -> None:
 
     class FakeGraphiti:
         async def search(self, *, group_ids, query, num_results):
-            assert group_ids == ["gcb-fixture"]
+            assert group_ids == ["fourok-fixture"]
             assert query == "renewal meeting"
             assert num_results == 3
             return [
@@ -86,7 +86,7 @@ def test_graphiti_eval_scores_permission_refs_from_fact_text() -> None:
                     ],
                 }
             ],
-            group_id="gcb-fixture",
+            group_id="fourok-fixture",
             limit=3,
         )
     )
@@ -114,7 +114,7 @@ def test_graphiti_eval_scores_source_refs_from_structured_episode_content() -> N
     class FakeGraphiti:
         async def search_(self, *, query, group_ids, config):
             assert query == "renewal meeting"
-            assert group_ids == ["gcb-fixture"]
+            assert group_ids == ["fourok-fixture"]
             assert config is None
             edge = type("FakeEdge", (), {"fact": "Robin Scharf moved the meeting."})()
             episode = type(
@@ -143,7 +143,7 @@ def test_graphiti_eval_scores_source_refs_from_structured_episode_content() -> N
                     "expected_permission_refs": ["linear:team:sales"],
                 }
             ],
-            group_id="gcb-fixture",
+            group_id="fourok-fixture",
             limit=5,
         )
     )
@@ -160,7 +160,7 @@ def test_graphiti_eval_joins_edge_episode_uuids_to_source_provenance() -> None:
     class FakeGraphiti:
         async def search_(self, *, query, group_ids, config):
             assert query == "renewal meeting"
-            assert group_ids == ["gcb-fixture"]
+            assert group_ids == ["fourok-fixture"]
             assert config is None
             edge = type(
                 "FakeEdge",
@@ -184,7 +184,7 @@ def test_graphiti_eval_joins_edge_episode_uuids_to_source_provenance() -> None:
                     "expected_permission_refs": ["linear:team:sales"],
                 }
             ],
-            group_id="gcb-fixture",
+            group_id="fourok-fixture",
             limit=5,
             episode_lookup={
                 "episode-abc-123": (
@@ -208,7 +208,7 @@ def test_graphiti_eval_can_use_source_record_fallback_for_unprovenanced_facts() 
     class FakeGraphiti:
         async def search_(self, *, query, group_ids, config):
             assert query == "Olivia Slack Linear Twenty employee"
-            assert group_ids == ["gcb-fixture"]
+            assert group_ids == ["fourok-fixture"]
             assert config is None
             edge = type(
                 "FakeEdge",
@@ -267,7 +267,7 @@ def test_graphiti_eval_can_use_source_record_fallback_for_unprovenanced_facts() 
                     "expected_entities": ["employee:email:olivia@example.com"],
                 }
             ],
-            group_id="gcb-fixture",
+            group_id="fourok-fixture",
             limit=5,
             source_data=source_data,
         )

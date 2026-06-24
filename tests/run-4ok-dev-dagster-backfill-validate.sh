@@ -9,12 +9,12 @@ bash -n "${TARGET}"
 help_output="$(${TARGET} --help)"
 
 for expected in \
-  "Launch and poll gcb_hourly_live_backfill through the deployed Dagster webserver GraphQL API" \
+  "Launch and poll fourok_hourly_live_backfill through the deployed Dagster webserver GraphQL API" \
   "CHECK_TARGET=ssh" \
   "DAGSTER_GRAPHQL_URL=http://127.0.0.1:13001/graphql" \
-  "DAGSTER_REPOSITORY_LOCATION=gcb_pipeline" \
+  "DAGSTER_REPOSITORY_LOCATION=fourok_pipeline" \
   "DAGSTER_REPOSITORY_NAME=__repository__" \
-  "DAGSTER_JOB_NAME=gcb_hourly_live_backfill" \
+  "DAGSTER_JOB_NAME=fourok_hourly_live_backfill" \
   "DAGSTER_POLL_TIMEOUT_SECONDS=600"
 do
   if [[ "${help_output}" != *"${expected}"* ]]; then

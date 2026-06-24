@@ -1,7 +1,7 @@
 from pathlib import Path
 
-from gcb.honcho.catalog import CatalogEmployee
-from gcb.honcho.state import HonchoSyncState
+from fourok.honcho.catalog import CatalogEmployee
+from fourok.honcho.state import HonchoSyncState
 
 
 def test_honcho_sync_state_records_write_receipts_by_source_ref(tmp_path: Path) -> None:

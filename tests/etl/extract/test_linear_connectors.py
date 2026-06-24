@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from gcb.etl.extract.connectors import (
+from fourok.etl.extract.connectors import (
     land_singer_records,
     linear_issue_source_record_from_raw,
     load_landed_source_records,
     load_linear_source_records,
 )
-from gcb.etl.extract.linear_tap import LinearTapConfig, run_linear_tap
+from fourok.etl.extract.linear_tap import LinearTapConfig, run_linear_tap
 
 FIXTURES = Path(__file__).parents[3] / "fixtures" / "connectors"
 SINGER_LINEAR_WORK_ITEMS = FIXTURES / "singer_linear_work_items.jsonl"
@@ -84,10 +84,10 @@ def test_linear_issue_adapter_rejects_missing_identifier_before_source_records()
 def test_committed_meltano_config_wires_linear_fixture_job() -> None:
     config = (Path(__file__).parents[3] / "meltano.yml").read_text(encoding="utf-8")
 
-    assert "tap-gcb-linear-fixture" in config
+    assert "tap-fourok-linear-fixture" in config
     assert "fixtures/connectors/singer_linear_work_items.jsonl" in config
     assert "singer-linear-fixture-to-raw" in config
-    assert "tap-gcb-linear-fixture target-gcb-raw-jsonl" in config
+    assert "tap-fourok-linear-fixture target-fourok-raw-jsonl" in config
 
 
 def test_linear_tap_emits_users_issues_comments_and_state() -> None:

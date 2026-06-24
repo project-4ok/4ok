@@ -3,7 +3,7 @@ from urllib.error import HTTPError
 
 import pytest
 
-from gcb.honcho.sources import (
+from fourok.honcho.sources import (
     LinearClient,
     SlackClient,
     SourceClientError,
@@ -416,7 +416,7 @@ def test_graphql_transport_can_send_raw_authorization_header(monkeypatch) -> Non
         captured["authorization"] = dict(request.header_items())["Authorization"]
         return _Response({"data": {"ok": True}})
 
-    monkeypatch.setattr("gcb.honcho.sources.urlopen", fake_urlopen)
+    monkeypatch.setattr("fourok.honcho.sources.urlopen", fake_urlopen)
     transport = graphql_transport(
         endpoint="https://api.linear.app/graphql",
         api_key="linear-secret",
@@ -437,7 +437,7 @@ def test_graphql_transport_raises_clean_source_error_on_http_failure(monkeypatch
             fp=BytesIO(b"error code: 1010"),
         )
 
-    monkeypatch.setattr("gcb.honcho.sources.urlopen", fake_urlopen)
+    monkeypatch.setattr("fourok.honcho.sources.urlopen", fake_urlopen)
     transport = graphql_transport(endpoint="https://api.twenty.com/graphql", api_key="secret")
 
     with pytest.raises(SourceClientError, match="Source request failed with HTTP 403"):
@@ -457,7 +457,7 @@ def test_graphql_transport_raises_clean_source_error_on_graphql_errors(monkeypat
             }
         )
 
-    monkeypatch.setattr("gcb.honcho.sources.urlopen", fake_urlopen)
+    monkeypatch.setattr("fourok.honcho.sources.urlopen", fake_urlopen)
     transport = graphql_transport(endpoint="https://api.linear.app/graphql", api_key="secret")
 
     with pytest.raises(SourceClientError, match="GraphQL request returned errors"):
@@ -472,13 +472,13 @@ def test_rest_transport_uses_bearer_auth_and_query_params(monkeypatch) -> None:
         captured["headers"] = dict(request.header_items())
         return _Response({"data": {"workspaceMembers": []}})
 
-    monkeypatch.setattr("gcb.honcho.sources.urlopen", fake_urlopen)
+    monkeypatch.setattr("fourok.honcho.sources.urlopen", fake_urlopen)
     transport = rest_transport(base_url="https://api.twenty.com/rest/", api_key="secret")
 
     assert transport("workspaceMembers", {"limit": 2}) == {"data": {"workspaceMembers": []}}
     assert captured["url"] == "https://api.twenty.com/rest/workspaceMembers?limit=2"
     assert captured["headers"]["Authorization"] == "Bearer secret"
-    assert captured["headers"]["User-agent"] == "gcb-honcho-source/0.1"
+    assert captured["headers"]["User-agent"] == "fourok-honcho-source/0.1"
 
 
 def test_slack_transport_retries_once_on_rate_limit(monkeypatch) -> None:
@@ -498,8 +498,8 @@ def test_slack_transport_retries_once_on_rate_limit(monkeypatch) -> None:
             )
         return _Response({"ok": True, "members": []})
 
-    monkeypatch.setattr("gcb.honcho.sources.urlopen", fake_urlopen)
-    monkeypatch.setattr("gcb.honcho.sources.sleep", sleeps.append)
+    monkeypatch.setattr("fourok.honcho.sources.urlopen", fake_urlopen)
+    monkeypatch.setattr("fourok.honcho.sources.sleep", sleeps.append)
     transport = slack_transport(api_key="secret")
 
     assert transport("users.list", {"limit": 2}) == {"ok": True, "members": []}

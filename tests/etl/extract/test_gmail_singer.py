@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import pytest
 
-from gcb.etl.extract.gmail_singer import gmail_message_to_source_record
+from fourok.etl.extract.gmail_singer import gmail_message_to_source_record
 
 
 def test_gmail_message_to_source_record_accepts_singer_record_message() -> None:

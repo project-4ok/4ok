@@ -8,9 +8,9 @@ from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
-from gcb.honcho.experiment import load_honcho_fixture
-from gcb.retrieval.evidence_baseline import search_evidence
-from gcb.retrieval.graphiti_episodes import graphiti_episodes_from_source_snapshot
+from fourok.honcho.experiment import load_honcho_fixture
+from fourok.retrieval.evidence_baseline import search_evidence
+from fourok.retrieval.graphiti_episodes import graphiti_episodes_from_source_snapshot
 
 DEFAULT_FIXTURE = Path("fixtures/context_substrate/source_snapshot_eval.json")
 DEFAULT_CASES = Path("fixtures/context_substrate/context_substrate_cases.json")
@@ -413,7 +413,7 @@ def _parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(description="Run the Graphiti context-substrate eval.")
     parser.add_argument("--fixture", type=Path, default=DEFAULT_FIXTURE)
     parser.add_argument("--cases", type=Path, default=DEFAULT_CASES)
-    parser.add_argument("--group-id", default=os.environ.get("GRAPHITI_GROUP_ID", "gcb-eval"))
+    parser.add_argument("--group-id", default=os.environ.get("GRAPHITI_GROUP_ID", "fourok-eval"))
     parser.add_argument("--limit", type=int, default=5)
     parser.add_argument("--clear", action="store_true")
     parser.add_argument("--neo4j-uri", default=os.environ.get("NEO4J_URI", "bolt://localhost:7687"))

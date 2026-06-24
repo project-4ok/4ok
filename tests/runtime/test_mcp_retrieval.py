@@ -6,12 +6,12 @@ from typing import ClassVar
 
 import pytest
 
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.governance import GovernedContext, SearchContextResponse, SourceChange
-from gcb.governance.policy import PrincipalContext
-from gcb.retrieval.search import SearchResult
-from gcb.runtime import mcp_retrieval
-from gcb.storage.config import RetrievalConfig
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.governance import GovernedContext, SearchContextResponse, SourceChange
+from fourok.governance.policy import PrincipalContext
+from fourok.retrieval.search import SearchResult
+from fourok.runtime import mcp_retrieval
+from fourok.storage.config import RetrievalConfig
 
 
 @dataclass
@@ -96,9 +96,9 @@ class FakeContext:
 def test_mcp_tool_schemas_are_discoverable_without_stdio_server() -> None:
     tools = {tool["name"]: tool for tool in mcp_retrieval.tool_schemas()}
 
-    assert set(tools) == {"search_gcb", "operator_status"}
-    assert tools["search_gcb"]["input_schema"]["required"] == ["query"]
-    assert set(tools["search_gcb"]["input_schema"]["properties"]) >= {
+    assert set(tools) == {"search_fourok", "operator_status"}
+    assert tools["search_fourok"]["input_schema"]["required"] == ["query"]
+    assert set(tools["search_fourok"]["input_schema"]["properties"]) >= {
         "query",
         "limit",
         "roles",
@@ -118,20 +118,20 @@ async def test_fastmcp_server_registers_public_tool_names() -> None:
 
     tools = await server.list_tools()
 
-    assert [tool.name for tool in tools] == ["search_gcb", "operator_status"]
+    assert [tool.name for tool in tools] == ["search_fourok", "operator_status"]
 
 
 def test_search_handler_returns_agent_ready_evidence_contract() -> None:
     FakeContext.created.clear()
 
-    response = mcp_retrieval.search_gcb(
+    response = mcp_retrieval.search_fourok(
         query="refund escalation",
         limit=2,
         roles=["support", "operator"],
         human_id="human-1",
         agent_id="agent-1",
         state="state.sqlite",
-        database_url="postgresql+psycopg://gcb:secret@localhost:5432/gcb",
+        database_url="postgresql+psycopg://fourok:secret@localhost:5432/fourok",
         context_factory=FakeContext,
     )
 
@@ -172,10 +172,10 @@ def test_search_handler_returns_agent_ready_evidence_contract() -> None:
 
 def test_search_handler_loads_optional_runtime_config(tmp_path: Path) -> None:
     FakeContext.created.clear()
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text("[retrieval]\nmax_words = 12\noverlap_words = 3\n", encoding="utf-8")
 
-    mcp_retrieval.search_gcb(
+    mcp_retrieval.search_fourok(
         query="refund escalation",
         limit=2,
         roles=["support", "operator"],
@@ -196,9 +196,9 @@ def test_status_handler_uses_config_env_fallback(
     tmp_path: Path,
 ) -> None:
     FakeContext.created.clear()
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text("[retrieval]\nmax_words = 20\noverlap_words = 5\n", encoding="utf-8")
-    monkeypatch.setenv("GCB_CONFIG_PATH", str(config_path))
+    monkeypatch.setenv("FOUR_OK_CONFIG_PATH", str(config_path))
 
     mcp_retrieval.operator_status(context_factory=FakeContext)
 
@@ -210,12 +210,12 @@ def test_status_handler_uses_config_env_fallback(
 
 def test_search_handler_rejects_empty_query_before_opening_state() -> None:
     with pytest.raises(ValueError, match="query is required"):
-        mcp_retrieval.search_gcb(query=" ", context_factory=FakeContext)
+        mcp_retrieval.search_fourok(query=" ", context_factory=FakeContext)
 
 
 @pytest.mark.anyio
 async def test_mcp_search_tool_enforces_slack_channel_permission_refs(tmp_path: Path) -> None:
-    state_path = tmp_path / "gcb.sqlite"
+    state_path = tmp_path / "fourok.sqlite"
     context = GovernedContext(state_path)
     context.ingest_source_records(
         [
@@ -233,7 +233,7 @@ async def test_mcp_search_tool_enforces_slack_channel_permission_refs(tmp_path: 
     server = mcp_retrieval.build_mcp_server()
 
     _, denied = await server.call_tool(
-        "search_gcb",
+        "search_fourok",
         {
             "query": "mcppermissionmarker",
             "state": str(state_path),
@@ -241,7 +241,7 @@ async def test_mcp_search_tool_enforces_slack_channel_permission_refs(tmp_path: 
         },
     )
     _, allowed = await server.call_tool(
-        "search_gcb",
+        "search_fourok",
         {
             "query": "mcppermissionmarker",
             "state": str(state_path),
@@ -258,14 +258,14 @@ async def test_mcp_search_tool_enforces_slack_channel_permission_refs(tmp_path: 
 def test_operator_status_returns_counts_and_freshness_without_secrets() -> None:
     response = mcp_retrieval.operator_status(
         state="state.sqlite",
-        database_url="postgresql+psycopg://gcb:secret@localhost:5432/gcb",
+        database_url="postgresql+psycopg://fourok:secret@localhost:5432/fourok",
         context_factory=FakeContext,
     )
 
     assert response == {
         "status": "ok",
         "state_path": "state.sqlite",
-        "database_url": "postgresql+psycopg://gcb:[REDACTED]@localhost:5432/gcb",
+        "database_url": "postgresql+psycopg://fourok:[REDACTED]@localhost:5432/fourok",
         "imported_items_by_source": {"linear": 1, "slack": 1},
         "retrieval_records": {
             "total": 3,
@@ -278,7 +278,7 @@ def test_operator_status_returns_counts_and_freshness_without_secrets() -> None:
 def test_operator_status_tool_counts_only_active_imported_source_records(
     tmp_path: Path,
 ) -> None:
-    state_path = tmp_path / "gcb.sqlite"
+    state_path = tmp_path / "fourok.sqlite"
     context = GovernedContext(state_path)
     context.ingest_source_records(
         [

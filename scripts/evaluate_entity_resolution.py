@@ -4,7 +4,7 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from gcb.etl.transform.entity_resolution import (
+from fourok.etl.transform.entity_resolution import (
     display_name_email_alias_clusters,
     evaluate_clusters,
     exact_email_clusters,

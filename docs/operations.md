@@ -8,12 +8,12 @@ For the internal production v0 runbook, see
 ## Runtime Checks
 
 ```bash
-uv run gcb health
-uv run gcb dashboard
+uv run fourok health
+uv run fourok dashboard
 uv run python scripts/smoke_runtime.py
 ```
 
-Host-side `gcb health` and `gcb operator-status` default to the intended local
+Host-side `fourok health` and `fourok operator-status` default to the intended local
 Compose runtime database when `--state` and `--database-url` are omitted. The
 commands resolve the same runtime configuration used by the app container, then
 map the internal `postgres` hostname to `127.0.0.1` for host access. They do not
@@ -24,29 +24,29 @@ Resolution order for these host-side operator checks:
 1. `--database-url`, when provided.
 2. Explicit `--state`, which keeps the command on SQLite and ignores ambient
    runtime database variables.
-3. The running Compose `app` container's `GCB_DATABASE_URL`.
-4. `.env` `GCB_DATABASE_URL`, then `.env` `POSTGRES_PASSWORD` composed into the
+3. The running Compose `app` container's `FOUR_OK_DATABASE_URL`.
+4. `.env` `FOUR_OK_DATABASE_URL`, then `.env` `POSTGRES_PASSWORD` composed into the
    local Postgres URL.
 5. Compose runtime defaults.
-6. Ambient shell `GCB_DATABASE_URL`.
+6. Ambient shell `FOUR_OK_DATABASE_URL`.
 
-If a stale exported `GCB_DATABASE_URL` or stale `.env` password disagrees with a
+If a stale exported `FOUR_OK_DATABASE_URL` or stale `.env` password disagrees with a
 running app container, trust the running container first and refresh the stale
 host setting after the smoke check passes.
 
 Use this redacted check before debugging local operator DB drift:
 
 ```bash
-uv run gcb-dev compose-env
-uv run gcb health
-uv run gcb operator-status
+uv run fourok-dev compose-env
+uv run fourok health
+uv run fourok operator-status
 ```
 
 Use `--state` only when you intentionally want to inspect a SQLite state file:
 
 ```bash
-uv run gcb health --state .local/context.sqlite
-uv run gcb operator-status --state .local/context.sqlite
+uv run fourok health --state .local/context.sqlite
+uv run fourok operator-status --state .local/context.sqlite
 ```
 
 Use `--database-url` for an intentional override. Prefer setting it in the
@@ -57,7 +57,7 @@ environment and avoid pasting database URLs into logs or reports.
 Hermes/Codex agents should start local runtime triage with:
 
 ```bash
-uv run gcb-dev agent-diagnostics --json
+uv run fourok-dev agent-diagnostics --json
 ```
 
 The command prints sanitized JSON with:
@@ -77,13 +77,13 @@ surfaces as `skipped` rather than creating project state.
 Search an existing governed runtime database without loading local fixtures:
 
 ```bash
-uv run gcb search-state "refund cancellation" --database-url "$GCB_DATABASE_URL"
+uv run fourok search-state "refund cancellation" --database-url "$FOUR_OK_DATABASE_URL"
 ```
 
 Inspect operator stats for an existing governed runtime database:
 
 ```bash
-uv run gcb dashboard --database-url "$GCB_DATABASE_URL" --config gcb.toml
+uv run fourok dashboard --database-url "$FOUR_OK_DATABASE_URL" --config fourok.toml
 ```
 
 Connector job stats include `recent_failure_count` for retryable failures and
@@ -109,9 +109,9 @@ For local recurring live ingestion, run the hourly-safe backfill command from a
 host scheduler or manually while testing:
 
 ```bash
-uv run gcb run-live-ingestion \
-  --database-url "$GCB_DATABASE_URL" \
-  --config gcb.toml
+uv run fourok run-live-ingestion \
+  --database-url "$FOUR_OK_DATABASE_URL" \
+  --config fourok.toml
 ```
 
 The command runs the current Dagster live connector path for Twenty, Slack,
@@ -144,17 +144,17 @@ permission refs, source path, and raw metadata. It intentionally excluded
 Safe local proof commands:
 
 ```bash
-uv run gcb backfill-openviking-messages \
+uv run fourok backfill-openviking-messages \
   .local/openviking/messages.jsonl \
-  --database-url "$GCB_DATABASE_URL" \
+  --database-url "$FOUR_OK_DATABASE_URL" \
   > .local/openviking/backfill-runtime-db-report.json
 
-uv run gcb operator-status \
-  --database-url "$GCB_DATABASE_URL" \
+uv run fourok operator-status \
+  --database-url "$FOUR_OK_DATABASE_URL" \
   > .local/openviking/operator-status-after-openviking.json
 
-uv run gcb search-state OpenClaw \
-  --database-url "$GCB_DATABASE_URL" \
+uv run fourok search-state OpenClaw \
+  --database-url "$FOUR_OK_DATABASE_URL" \
   --role customer:4ok \
   --limit 10 \
   > .local/openviking/search-openclaw-customer-role-results.json
@@ -169,9 +169,9 @@ not include raw `content`, `body`, or `text` values in reports.
 Check freshness and idempotency status for every recurring live source:
 
 ```bash
-uv run gcb live-ingestion-status \
-  --database-url "$GCB_DATABASE_URL" \
-  --config gcb.toml
+uv run fourok live-ingestion-status \
+  --database-url "$FOUR_OK_DATABASE_URL" \
+  --config fourok.toml
 ```
 
 `freshness_status` is `fresh`, `stale`, `missing`, `failed`, or `invalid`.
@@ -181,31 +181,31 @@ minutes unless configured otherwise.
 
 Local Dagster also exposes:
 
-- `gcb_hourly_live_backfill`: hourly asset job for the four live connector
+- `fourok_hourly_live_backfill`: hourly asset job for the four live connector
   backfills.
-- `gcb_hourly_live_backfill_schedule`: `0 * * * *` reconciliation schedule.
-- `gcb_webhook_backlog_sensor`: polling event bridge for pending durable
+- `fourok_hourly_live_backfill_schedule`: `0 * * * *` reconciliation schedule.
+- `fourok_webhook_backlog_sensor`: polling event bridge for pending durable
   webhook events.
-- `gcb_process_webhook_backlog`: asset job that processes queued webhook
+- `fourok_process_webhook_backlog`: asset job that processes queued webhook
   events and refreshes derived/searchable rows.
 
 Use host cron or systemd timers to call one scheduler-safe import command
 against the approved internal connector output:
 
 ```bash
-uv run gcb run-imports \
+uv run fourok run-imports \
   --connector gmail-singer \
   --singer-file .local/gmail-pilot/tap-gmail-output.jsonl \
-  --database-url "$GCB_DATABASE_URL"
+  --database-url "$FOUR_OK_DATABASE_URL"
 ```
 
 Retry a failed connector job after its backoff window is due:
 
 ```bash
-uv run gcb run-imports \
+uv run fourok run-imports \
   --connector gmail-singer \
   --singer-file .local/gmail-pilot/tap-gmail-output.jsonl \
-  --database-url "$GCB_DATABASE_URL" \
+  --database-url "$FOUR_OK_DATABASE_URL" \
   --retry-failed \
   --retry-base-delay-seconds 300
 ```
@@ -216,7 +216,7 @@ JSON for dashboards and scheduler logs. Gmail Singer imports record connector
 job state and checkpoint output so repeated scheduled imports can be inspected
 through `connector-jobs`, `connector-checkpoint`, and `dashboard`.
 
-Pass `--config gcb.toml` to `run-imports`, `import-context-fixture`,
+Pass `--config fourok.toml` to `run-imports`, `import-context-fixture`,
 `ingest-gmail-singer`, or `ingest-pdf` to apply configured retrieval-unit chunk
 settings and `[raw_store]` during import. For retry runs, omitted
 `run-imports --retry-failed` retry flags use `[scheduler]` values:
@@ -228,10 +228,10 @@ caps loaded records before they enter the import pipeline.
 Fixture-only deterministic regression path:
 
 ```bash
-uv run gcb run-imports \
+uv run fourok run-imports \
   --connector context-fixture \
   --fixture fixtures/context_substrate/source_snapshot_eval.json \
-  --database-url "$GCB_DATABASE_URL"
+  --database-url "$FOUR_OK_DATABASE_URL"
 ```
 
 Use this only for narrow local regression checks where deterministic fixture
@@ -248,13 +248,13 @@ The first OpenClaw integration boundary is local and explicit:
 
 - adapt captured OpenClaw turns with `openclaw_messages_to_source_records`
 - or call `capture_openclaw_messages` to adapt and ingest in one step
-- package the local OpenClaw plugin from `plugins/openclaw-gcb`
+- package the local OpenClaw plugin from `plugins/openclaw-fourok`
 - implement RAG as a before-prompt hook, not as an instruction for the agent to
-  call the GCB CLI
-- keep optional explicit tools such as `gcb_search_context` for follow-up/debugging
+  call the 4OK CLI
+- keep optional explicit tools such as `fourok_search_context` for follow-up/debugging
 - do not expose reveal in this stage
 
-The product path is: user message -> OpenClaw plugin hook -> permitted GCB
+The product path is: user message -> OpenClaw plugin hook -> permitted 4OK
 retrieval -> short source summary injected into the agent input. The summary must
 include source refs and limitations, preserve the full evidence pack for
 follow-up inspection, and stay independently disableable from chat capture. It
@@ -264,8 +264,8 @@ reveal-only fields.
 CLI checks are operator/dev smoke equivalents only, for example:
 
 ```bash
-uv run gcb search-state "refund cancellation" --state .local/context.sqlite
-uv run gcb health --state .local/context.sqlite --raw-store .local/raw
+uv run fourok search-state "refund cancellation" --state .local/context.sqlite
+uv run fourok health --state .local/context.sqlite --raw-store .local/raw
 ```
 
 When chat capture is wired into an OpenClaw runtime, call the adapter after
@@ -277,7 +277,7 @@ agent turns and before compaction/reset, matching the hook timing documented in
 Land a source-change webhook event into the durable database-backed backlog:
 
 ```bash
-uv run gcb webhook-enqueue .local/webhooks/linear-issue-updated.json \
+uv run fourok webhook-enqueue .local/webhooks/linear-issue-updated.json \
   --state .local/context.sqlite \
   --raw-store .local/raw/webhooks
 ```
@@ -286,10 +286,10 @@ Process pending webhook events through the same source-change applier used by
 connector imports:
 
 ```bash
-uv run gcb webhook-process \
+uv run fourok webhook-process \
   --state .local/context.sqlite \
   --raw-store .local/raw/webhooks \
-  --config gcb.toml \
+  --config fourok.toml \
   --max-attempts 3 \
   --retry-delay-seconds 60
 ```
@@ -301,9 +301,9 @@ CLI flags override the config values.
 Inspect backlog status:
 
 ```bash
-uv run gcb webhook-events --state .local/context.sqlite
-uv run gcb webhook-events --state .local/context.sqlite --status invalid
-uv run gcb webhook-events --state .local/context.sqlite --status failed
+uv run fourok webhook-events --state .local/context.sqlite
+uv run fourok webhook-events --state .local/context.sqlite --status invalid
+uv run fourok webhook-events --state .local/context.sqlite --status failed
 ```
 
 `invalid` events are permanently malformed or unsupported source payloads and
@@ -317,7 +317,7 @@ for text-layer extraction and does not run OCR, image understanding, layout
 reconstruction, or table extraction.
 
 ```bash
-uv run gcb ingest-pdf ./contract.pdf \
+uv run fourok ingest-pdf ./contract.pdf \
   --state .local/context.sqlite \
   --landing-dir .local/raw/pdf
 ```
@@ -329,23 +329,23 @@ as connectors and webhooks.
 Docker-backed local services:
 
 ```bash
-export GCB_IMAGE_TAG="$(git rev-parse --short HEAD)"
+export FOUR_OK_IMAGE_TAG="$(git rev-parse --short HEAD)"
 export POSTGRES_PASSWORD="local-dev-password"
-export GCB_DATABASE_URL="postgresql+psycopg://gcb:${POSTGRES_PASSWORD}@postgres:5432/gcb"
-docker compose up -d postgres cerbos
+export FOUR_OK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
+docker compose up -d postgres
 ```
 
 For rebuild/restart checks, start the resident app service too:
 
 ```bash
-uv run gcb-dev app-up
-uv run gcb-dev pipeline-ps
+uv run fourok-dev app-up
+uv run fourok-dev pipeline-ps
 ```
 
 `app-up` wraps the long direct Compose form (`docker compose up --build
---force-recreate -d postgres cerbos app`) and injects the same project `.env`,
-`GCB_IMAGE_TAG`, `POSTGRES_PASSWORD`, `DAGSTER_POSTGRES_PASSWORD`, and
-`GCB_DATABASE_URL` defaults used by the other `gcb-dev` Docker helpers.
+--force-recreate -d postgres app`) and injects the same project `.env`,
+`FOUR_OK_IMAGE_TAG`, `POSTGRES_PASSWORD`, `DAGSTER_POSTGRES_PASSWORD`, and
+`FOUR_OK_DATABASE_URL` defaults used by the other `fourok-dev` Docker helpers.
 
 ## Dagster Pipeline
 
@@ -353,24 +353,24 @@ Dagster runs under the Docker Compose `pipeline` profile. It is an internal
 operator surface, not a public service.
 
 Start the pipeline services through the local dev wrapper. It loads project
-`.env`, maps Infisical aliases for the Dagster code container, and supplies
+`.env`, maps external secret manager aliases for the Dagster code container, and supplies
 stable local-only Compose defaults so direct `docker compose` interpolation does
 not fail when password variables are absent from the shell. It derives
-`GCB_IMAGE_TAG` from the current Git commit, rebuilds tagged Dagster images, and
+`FOUR_OK_IMAGE_TAG` from the current Git commit, rebuilds tagged Dagster images, and
 recreates the pipeline containers so Dagster loads current source rather than a
 stale local image:
 
 ```bash
-uv run gcb-dev pipeline-up
+uv run fourok-dev pipeline-up
 ```
 
 Equivalent direct Compose form when debugging the wrapper:
 
 ```bash
-export GCB_IMAGE_TAG="$(git rev-parse --short HEAD)"
+export FOUR_OK_IMAGE_TAG="$(git rev-parse --short HEAD)"
 export POSTGRES_PASSWORD="local-check"
 export DAGSTER_POSTGRES_PASSWORD="local-check"
-export GCB_DATABASE_URL="postgresql+psycopg://gcb:${POSTGRES_PASSWORD}@postgres:5432/gcb"
+export FOUR_OK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
 
 docker compose --profile pipeline up -d \
   --build \
@@ -388,12 +388,12 @@ Operator access:
 - Dagster webserver: loopback-bound only
 - Dagster code server and daemon: internal Compose network only
 - Dagster metadata database: `dagster-postgres` volume only
-- GCB runtime database: `postgres` service, loopback-bound on `127.0.0.1:5432`
+- 4OK runtime database: `postgres` service, loopback-bound on `127.0.0.1:5432`
 
 Check service health:
 
 ```bash
-uv run gcb-dev pipeline-ps
+uv run fourok-dev pipeline-ps
 uv run python - <<'PY'
 import urllib.request
 print(urllib.request.urlopen("http://127.0.0.1:3001/server_info", timeout=5).read().decode())
@@ -403,13 +403,13 @@ PY
 Confirm the operator-visible runtime counts:
 
 ```bash
-uv run gcb health
-uv run gcb operator-status
+uv run fourok health
+uv run fourok operator-status
 ```
 
 From the host, the no-arg operator commands use the runtime database URL from
 the running Compose `app` container when available, then fall back through
-`.env`, Compose defaults, and ambient shell `GCB_DATABASE_URL`; the container
+`.env`, Compose defaults, and ambient shell `FOUR_OK_DATABASE_URL`; the container
 hostname is rewritten to `127.0.0.1`. Keep `--database-url` for deliberate
 overrides and `--state` for intentional SQLite checks.
 
@@ -431,14 +431,14 @@ curl -s http://127.0.0.1:3001/graphql \
   | python -m json.tool
 ```
 
-The response should include `gcb_hourly_live_backfill_schedule`,
-`gcb_webhook_backlog_sensor`, and the `__ASSET_JOB` pipeline. If schedules or
-sensors are missing, restart with `uv run gcb-dev pipeline-up` before debugging
+The response should include `fourok_hourly_live_backfill_schedule`,
+`fourok_webhook_backlog_sensor`, and the `__ASSET_JOB` pipeline. If schedules or
+sensors are missing, restart with `uv run fourok-dev pipeline-up` before debugging
 Dagster code.
 
-Dagster pipeline services default `GCB_OBSERVABILITY_ENABLED=true` and export
+Dagster pipeline services default `FOUR_OK_OBSERVABILITY_ENABLED=true` and export
 OTLP to `http://observability:4318` with service names
-`gcb-dagster-code`, `gcb-dagster-webserver`, and `gcb-dagster-daemon`. Start the
+`fourok-dagster-code`, `fourok-dagster-webserver`, and `fourok-dagster-daemon`. Start the
 observability profile before running live proofs when Grafana traces/logs are
 part of the check:
 
@@ -455,27 +455,27 @@ uv run --group pipeline python scripts/check_dagster_pipeline.py
 Run the internal live ingestion operator command:
 
 ```bash
-uv run gcb-dev operator-live
+uv run fourok-dev operator-live
 ```
 
 Use the dry-run first when checking local wiring or credentials:
 
 ```bash
-uv run gcb-dev operator-live --dry-run
+uv run fourok-dev operator-live --dry-run
 ```
 
-The command loads project `.env`, passes Infisical settings through to the
+The command loads project `.env`, passes external secret manager settings through to the
 Dagster live assets, starts and checks the local Dagster Compose services, runs
 the live Slack, Twenty, Linear, and Google Drive landing/import assets, and
-prints JSON with the raw landing path, redacted GCB database URL, source-record
+prints JSON with the raw landing path, redacted 4OK database URL, source-record
 counts by source system, retrieval count, and Dagster status. Output must not
 contain secret values. Live materialization requires configured source
-credentials or Infisical settings; without them, use the dry-run and connector
+credentials or external secret manager settings; without them, use the dry-run and connector
 contract checks below.
 
 The lower-level live Dagster proof remains available when debugging asset
 selection directly. Materialize live connector assets through Dagster with
-Infisical-backed credentials:
+env/.env-backed credentials:
 
 ```bash
 uv run --group pipeline python scripts/check_dagster_pipeline.py \
@@ -499,8 +499,8 @@ This proves the repository definitions expose the raw extraction,
 source-record import, canonical-object/entity-link, and retrieval-record
 assets plus webhook backlog, operator dashboard, golden retrieval eval, and
 audit metadata assets. The fixture-backed materialization proves only the
-deterministic regression path: local fixture taps can reach GCB through the
-Dagster materialization path, the resulting GCB state has retrieval units,
+deterministic regression path: local fixture taps can reach 4OK through the
+Dagster materialization path, the resulting 4OK state has retrieval units,
 search results, evidence items, and search/source-access audit events, and a
 seeded webhook event is processed through the durable backlog into searchable
 source material.
@@ -509,7 +509,7 @@ The raw Singer landing target preserves the latest Singer `STATE` message as
 `state.json` inside each landing directory when a tap emits state. Dagster raw
 landing materializations expose the checkpoint file path and top-level
 checkpoint keys as metadata. Full connector job checkpoint history remains in
-the GCB connector state tables for scheduler-safe imports.
+the 4OK connector state tables for scheduler-safe imports.
 
 Check the configured Singer tap contract for deterministic adapter regression
 coverage:
@@ -525,7 +525,7 @@ behavior. This is a fixture-backed tap-boundary regression proof only; live
 SaaS auth and incremental semantics are covered by the live connector proofs
 below before production credentials are wired.
 
-Check the live Slack tap contract with Infisical-backed credentials:
+Check the live Slack tap contract with env/.env-backed credentials:
 
 ```bash
 uv run --group pipeline python scripts/check_slack_live_contract.py
@@ -538,27 +538,27 @@ adapts the landed `channels`, `users`, `channel_members`, `messages`, or
 names, record types, and artifact paths only; it must not print Slack message
 text or credential values.
 
-When `TAP_SLACK_CHANNEL_TYPES` is unset, GCB defaults live Slack extraction to
+When `TAP_SLACK_CHANNEL_TYPES` is unset, 4OK defaults live Slack extraction to
 `["im","mpim","private_channel"]` because the current bot token can read those
 conversation histories. Public-channel history still requires inviting the app
 to each public channel, or adding a separately proved auto-join workflow with
 `channels:join`; operators can set `TAP_SLACK_CHANNEL_TYPES` explicitly to
 override the default.
 
-Check the live Twenty connector contract with Infisical-backed credentials:
+Check the live Twenty connector contract with env/.env-backed credentials:
 
 ```bash
 uv run --group pipeline python scripts/check_twenty_live_contract.py
 ```
 
 There is no suitable `tap-twenty` extractor in Meltano Hub, so internal v0 uses
-the narrow repository-owned `tap-gcb-twenty` Singer-compatible extractor for
+the narrow repository-owned `tap-fourok-twenty` Singer-compatible extractor for
 Twenty companies and people. The proof runs the extractor through Meltano,
-lands raw JSONL, verifies state, and adapts landed records into GCB
+lands raw JSONL, verifies state, and adapts landed records into 4OK
 `SourceRecord`s. Output reports counts and stream names only; it must not print
 CRM field values or credential values.
 
-Check the live Linear connector contract with Infisical-backed credentials:
+Check the live Linear connector contract with env/.env-backed credentials:
 
 ```bash
 uv run --group pipeline python scripts/check_linear_live_contract.py
@@ -566,23 +566,23 @@ uv run --group pipeline python scripts/check_linear_live_contract.py
 
 Meltano Hub has a public `tap-linear`, but it requires a separate Python 3.12
 runtime. Internal v0 therefore uses the narrow repository-owned
-`tap-gcb-linear` Singer-compatible extractor for Linear users, issues, and
+`tap-fourok-linear` Singer-compatible extractor for Linear users, issues, and
 comments so it runs inside the project Python 3.13 app image. The proof runs
 the extractor through Meltano, lands raw JSONL, verifies state, and adapts
-landed records into GCB `SourceRecord`s. Output reports counts and stream names
+landed records into 4OK `SourceRecord`s. Output reports counts and stream names
 only; it must not print Linear field values or credential values.
 
-Check the live Google Drive connector contract with Infisical-backed OAuth
+Check the live Google Drive connector contract with env/.env-backed OAuth
 credentials:
 
 ```bash
 uv run --group pipeline python scripts/check_google_drive_live_contract.py
 ```
 
-Internal v0 uses the narrow repository-owned `tap-gcb-google-drive`
+Internal v0 uses the narrow repository-owned `tap-fourok-google-drive`
 Singer-compatible extractor for Drive files that already have retrievable text.
 It lists Drive files, exports Google Docs as `text/plain`, downloads plain text
-files, lands raw JSONL, verifies state, and adapts landed records into GCB
+files, lands raw JSONL, verifies state, and adapts landed records into 4OK
 `SourceRecord`s. OCR, binary PDFs, images, and layout reconstruction remain
 outside this connector proof. Output reports counts and stream names only; it
 must not print document text or credential values.
@@ -594,7 +594,7 @@ uv run --group pipeline dagster definitions validate -f deploy/dagster/definitio
 uv run --group pipeline dagster asset list -f deploy/dagster/definitions.py
 uv run --group pipeline dagster asset materialize \
   -f deploy/dagster/definitions.py \
-  --select meltano_slack_raw_landing,gcb_slack_source_records_from_raw_landing
+  --select meltano_slack_raw_landing,fourok_slack_source_records_from_raw_landing
 ```
 
 Use the UI to view the asset graph, inspect materialization metadata, read run
@@ -608,7 +608,7 @@ Import the current Linear/Twenty/Slack context-substrate fixture into local
 state for deterministic regression checks only:
 
 ```bash
-uv run gcb import-context-fixture \
+uv run fourok import-context-fixture \
   --fixture fixtures/context_substrate/source_snapshot_eval.json \
   --state .local/context-substrate.sqlite
 ```
@@ -616,7 +616,7 @@ uv run gcb import-context-fixture \
 Query that imported state:
 
 ```bash
-uv run gcb search-state \
+uv run fourok search-state \
   "renewal meeting Thursday" \
   --state .local/context-substrate.sqlite \
   --role linear:team:sales
@@ -626,7 +626,7 @@ Prepare a repeatable ignored seed snapshot for local or Docker Compose
 acceptance checks:
 
 ```bash
-uv run gcb prepare-seed-snapshot \
+uv run fourok prepare-seed-snapshot \
   --input fixtures/context_substrate/source_snapshot_eval.json \
   --output .local/seeds/context-substrate.json
 ```
@@ -650,7 +650,7 @@ Run the local golden-query check against the active governed context retrieval
 path:
 
 ```bash
-uv run gcb eval-retrieval
+uv run fourok eval-retrieval
 ```
 
 By default this imports the fixture records into an in-memory governed context
@@ -663,13 +663,12 @@ bad candidate. It uses:
 - `fixtures/context_substrate/source_snapshot_eval.json`
 - `fixtures/context_substrate/evidence_baseline_cases.json`
 
-To evaluate a bounded live source snapshot instead, use Infisical-backed
+To evaluate a bounded live source snapshot instead, use env/.env-backed
 credentials and pass `--live-sources`:
 
 ```bash
-uv run gcb eval-retrieval \
+uv run fourok eval-retrieval \
   --live-sources \
-  --infisical-project-id "$INFISICAL_PROJECT_ID" \
   --sources linear,twenty,slack
 ```
 
@@ -677,9 +676,9 @@ Run the same fixture regression import against the Docker Compose PostgreSQL
 service:
 
 ```bash
-export GCB_IMAGE_TAG="$(git rev-parse --short HEAD)"
+export FOUR_OK_IMAGE_TAG="$(git rev-parse --short HEAD)"
 export POSTGRES_PASSWORD="local-dev-password"
-export GCB_DATABASE_URL="postgresql+psycopg://gcb:${POSTGRES_PASSWORD}@postgres:5432/gcb"
+export FOUR_OK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
 docker compose up -d postgres
 
 docker compose build app
@@ -690,7 +689,7 @@ docker compose run --rm app \
 ```
 
 The active Compose services use named volumes for internal runtime state:
-`postgres-data`, `observability-data`, `gcb-local`, and `gcb-data`.
+`postgres-data`, `observability-data`, `fourok-local`, and `fourok-data`.
 
 Query the Docker Compose PostgreSQL state:
 
@@ -722,10 +721,10 @@ Run the internal v0 acceptance proof against the Docker Compose app image:
 ```bash
 docker compose run --rm app \
   acceptance-proof \
-    --config /etc/gcb/gcb.toml \
+    --config /etc/fourok/fourok.toml \
     --fixture /app/.local/seeds/context-substrate.json \
     --query "Robin Scharf" \
-    --backup-database-url "$GCB_DATABASE_URL" \
+    --backup-database-url "$FOUR_OK_DATABASE_URL" \
     --backup-output /app/.local/backups/acceptance-proof.dump \
     --observability-endpoint http://observability:4318
 ```
@@ -760,10 +759,10 @@ docker compose run --rm app \
 
 docker compose run --rm app \
   acceptance-proof \
-    --config /etc/gcb/gcb.toml \
+    --config /etc/fourok/fourok.toml \
     --fixture /app/.local/seeds/context-substrate.json \
     --query "Robin Scharf" \
-    --backup-database-url "$GCB_DATABASE_URL" \
+    --backup-database-url "$FOUR_OK_DATABASE_URL" \
     --backup-output /app/.local/backups/acceptance-proof.dump \
     --observability-endpoint http://observability:4318
 ```
@@ -797,9 +796,9 @@ Limitations:
 Start the local OpenTelemetry backend:
 
 ```bash
-export GCB_IMAGE_TAG="$(git rev-parse --short HEAD)"
+export FOUR_OK_IMAGE_TAG="$(git rev-parse --short HEAD)"
 export POSTGRES_PASSWORD="local-dev-password"
-export GCB_DATABASE_URL="postgresql+psycopg://gcb:${POSTGRES_PASSWORD}@postgres:5432/gcb"
+export FOUR_OK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
 
 docker compose --profile observability up -d observability
 ```
@@ -810,35 +809,35 @@ The local OTLP HTTP endpoint is `http://localhost:4318`.
 Emit a safe smoke trace and log without application payloads:
 
 ```bash
-uv run gcb observability-smoke
+uv run fourok observability-smoke
 ```
 
 Trace CLI runs into the local backend:
 
 ```bash
-GCB_OBSERVABILITY_ENABLED=true \
+FOUR_OK_OBSERVABILITY_ENABLED=true \
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 \
-OTEL_SERVICE_NAME=gcb-local \
-  uv run gcb health
+OTEL_SERVICE_NAME=fourok-local \
+  uv run fourok health
 ```
 
 Implemented runtime spans use safe operational attributes only:
 
-- `gcb.run_imports` for scheduled connector imports
-- `gcb.source_records.ingest` for SourceRecord import/adaptation boundaries
-- `gcb.retrieval.prepare` for retrieval-unit preparation
-- `gcb.search_context` for search and evidence-pack assembly
-- `gcb.dashboard` for operator dashboard checks
-- `gcb.openclaw.capture` for OpenClaw chat capture
+- `fourok.run_imports` for scheduled connector imports
+- `fourok.source_records.ingest` for SourceRecord import/adaptation boundaries
+- `fourok.retrieval.prepare` for retrieval-unit preparation
+- `fourok.search_context` for search and evidence-pack assembly
+- `fourok.dashboard` for operator dashboard checks
+- `fourok.openclaw.capture` for OpenClaw chat capture
 
-`gcb.run_imports` includes:
+`fourok.run_imports` includes:
 
-- `gcb.connector.name`
-- `gcb.connector.attempt`
-- `gcb.import.status`
-- `gcb.import.record_count`
-- `gcb.import.deleted_record_count`
-- `gcb.import.restricted_count`
+- `fourok.connector.name`
+- `fourok.connector.attempt`
+- `fourok.import.status`
+- `fourok.import.record_count`
+- `fourok.import.deleted_record_count`
+- `fourok.import.restricted_count`
 
 Other spans use the same pattern: counts, limits, statuses, and booleans. They
 must not include raw queries, raw source text, chat message content, credentials,
@@ -847,11 +846,11 @@ or connector payloads.
 Trace the Docker `app` service when the observability profile is running:
 
 ```bash
-GCB_OBSERVABILITY_ENABLED=true \
+FOUR_OK_OBSERVABILITY_ENABLED=true \
 docker compose run --rm app \
   observability-smoke \
     --endpoint http://observability:4318 \
-    --service-name gcb-compose-smoke
+    --service-name fourok-compose-smoke
 ```
 
 Expected smoke output includes `status: ok`, `exporter: otlp-http`, and
@@ -861,20 +860,20 @@ Recorded local proof on 2026-06-07 used app image
 `4ok-app:b75b3b9` and ran:
 
 ```bash
-GCB_IMAGE_TAG=b75b3b9 \
+FOUR_OK_IMAGE_TAG=b75b3b9 \
 POSTGRES_PASSWORD=local-check \
-GCB_DATABASE_URL=postgresql+psycopg://gcb:local-check@postgres:5432/gcb \
+FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:local-check@postgres:5432/fourok \
   docker compose run --rm app \
     observability-smoke \
       --endpoint http://observability:4318 \
-      --service-name gcb-compose-smoke
+      --service-name fourok-compose-smoke
 ```
 
 The command returned `status: ok`, `exporter: otlp-http`, and
 `sensitive_payload_exported: false`.
 
 Commands that accept `--config` use `[telemetry]` when `enabled = true`;
-otherwise they fall back to `GCB_OBSERVABILITY_ENABLED`,
+otherwise they fall back to `FOUR_OK_OBSERVABILITY_ENABLED`,
 `OTEL_EXPORTER_OTLP_ENDPOINT`, and `OTEL_SERVICE_NAME`.
 
 Limitations:
@@ -892,33 +891,33 @@ Production direction is PostgreSQL. SQLite remains a fast local fallback.
 Backup:
 
 ```bash
-uv run gcb postgres-backup \
-  --database-url "$GCB_DATABASE_URL" \
-  --output .local/backups/gcb.dump
+uv run fourok postgres-backup \
+  --database-url "$FOUR_OK_DATABASE_URL" \
+  --output .local/backups/fourok.dump
 ```
 
 Internal v0 includes a nightly systemd template:
 
 ```bash
-sudo install -d -m 0750 /etc/gcb
-sudo install -m 0640 deploy/systemd/gcb.env.example /etc/gcb/gcb.env
-sudo editor /etc/gcb/gcb.env
-sudo systemctl enable --now gcb-postgres-backup.timer
+sudo install -d -m 0750 /etc/fourok
+sudo install -m 0640 deploy/systemd/fourok.env.example /etc/fourok/fourok.env
+sudo editor /etc/fourok/fourok.env
+sudo systemctl enable --now fourok-postgres-backup.timer
 ```
 
 The timer runs the Docker Compose app image and writes timestamped dumps under
-`/var/lib/gcb/backups`. Systemd services read database and Infisical settings
-from `/etc/gcb/gcb.env`; do not put real passwords into committed unit files.
+`/var/lib/fourok/backups`. Systemd services read database and external secret manager settings
+from `/etc/fourok/fourok.env`; do not put real passwords into committed unit files.
 Backup retention, encryption, and off-host copy policy remain operator
 decisions for this internal stage.
 
 Restore drill:
 
 ```bash
-uv run gcb postgres-restore-drill \
-  --database-url "$GCB_DATABASE_URL" \
-  --restore-database-url "$GCB_RESTORE_DATABASE_URL" \
-  --backup-output .local/backups/gcb.dump
+uv run fourok postgres-restore-drill \
+  --database-url "$FOUR_OK_DATABASE_URL" \
+  --restore-database-url "$FOUR_OK_RESTORE_DATABASE_URL" \
+  --backup-output .local/backups/fourok.dump
 ```
 
 The restore drill refuses to run when the restore database URL points at the
@@ -970,7 +969,7 @@ retry_delay_seconds = 60
 [telemetry]
 enabled = false
 endpoint = "http://localhost:4318"
-service_name = "gcb-local"
+service_name = "fourok-local"
 
 [connectors]
 enabled = ["gmail-singer"]
@@ -980,17 +979,17 @@ source_limit = 1000
 Run:
 
 ```bash
-uv run gcb retention-status --config gcb.toml
-uv run gcb purge-raw-retention --config gcb.toml
-uv run gcb purge-audit-retention --config gcb.toml
-uv run gcb purge-webhook-retention --config gcb.toml
-uv run gcb purge-backup-retention --config gcb.toml
+uv run fourok retention-status --config fourok.toml
+uv run fourok purge-raw-retention --config fourok.toml
+uv run fourok purge-audit-retention --config fourok.toml
+uv run fourok purge-webhook-retention --config fourok.toml
+uv run fourok purge-backup-retention --config fourok.toml
 ```
 
 Internal v0 includes a daily systemd retention template:
 
 ```bash
-sudo systemctl enable --now gcb-retention.timer
+sudo systemctl enable --now fourok-retention.timer
 ```
 
 `retention-status` is non-destructive. It reports configured raw, audit,
@@ -1004,7 +1003,7 @@ During internal development, derived retrieval units can be recreated from
 stored source records:
 
 ```bash
-uv run gcb rebuild-retrieval-units --config gcb.toml --confirm-rebuild
+uv run fourok rebuild-retrieval-units --config fourok.toml --confirm-rebuild
 ```
 
 This deletes and recreates `retrieval_records` only. It does not restore old
@@ -1012,28 +1011,18 @@ schema versions, roll back source records, or recover deleted raw data.
 
 ## Secrets
 
-Use Infisical for connector credentials.
+Use external secret manager for connector credentials.
 
 Dagster/Meltano runtime secret injection is controlled by non-committed
 environment variables on the host or service manager:
 
-- `GCB_INFISICAL_ENABLED`: set to `true` to force Infisical lookup.
-- `GCB_INFISICAL_PROJECT_ID`: Infisical project id. If set, lookup is enabled.
-- `GCB_INFISICAL_ENV`: Infisical environment, default `runtime`.
-- `GCB_INFISICAL_PATH`: Infisical secret path, default `/`.
-- `GCB_INFISICAL_DOMAIN`: optional Infisical host/domain.
 
 Supported auth:
 
-- `INFISICAL_TOKEN`
 - Universal Auth:
-  - `INFISICAL_UNIVERSAL_AUTH_CLIENT_ID`
-  - `INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET`
-  - `INFISICAL_CLIENT_ID`
-  - `INFISICAL_CLIENT_SECRET`
 
 The Dagster code container receives these variables from Compose and uses the
-Python Infisical SDK in process. Fetched key/value secrets are merged into the
+Python env/.env secret loading in process. Fetched key/value secrets are merged into the
 environment of the `meltano run ...` subprocess only. Dagster materialization
 metadata exposes only the count of injected secret keys, never values.
 
@@ -1049,7 +1038,6 @@ portable between direct Meltano runs and Dagster-triggered runs:
   `GOOGLE_SERVICE_ACCOUNT_JSON`, or selected tap-specific `TAP_GOOGLE_*` /
   `TAP_GOOGLE_DRIVE_*` keys depending on the chosen tap.
 
-If `INFISICAL_API_URL` comes from the 4ok self-hosted host and includes a
 trailing `/api`, the Gmail pilot preflight normalizes it before calling the
 Python SDK.
 
@@ -1065,9 +1053,6 @@ Preflight:
 ```bash
 uv run python scripts/run_gmail_pilot.py \
   --preflight \
-  --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
-  --infisical-env dev \
-  --infisical-path /gmail-pilot
 ```
 
 Never print or commit secrets, raw connector output, local DBs, generated
@@ -1080,7 +1065,6 @@ Run after preflight:
 ```bash
 uv run python scripts/run_gmail_pilot.py \
   --inspect-output \
-  --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
   --state-path .local/gmail-pilot/gmail-pilot.sqlite
 ```
 
@@ -1105,7 +1089,6 @@ Retry a failed Gmail pilot job:
 ```bash
 uv run python scripts/run_gmail_pilot.py \
   --inspect-output \
-  --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
   --state-path .local/gmail-pilot/gmail-pilot.sqlite \
   --retry-failed
 ```
@@ -1115,7 +1098,6 @@ Tune the retry backoff base delay:
 ```bash
 uv run python scripts/run_gmail_pilot.py \
   --inspect-output \
-  --infisical-project-id "$GCB_GMAIL_INFISICAL_PROJECT_ID" \
   --state-path .local/gmail-pilot/gmail-pilot.sqlite \
   --retry-failed \
   --retry-base-delay-seconds 300

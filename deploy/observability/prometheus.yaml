@@ -17,6 +17,6 @@ storage:
   tsdb:
     out_of_order_time_window: 10m
 scrape_configs:
-  - job_name: gcb-dagster-runtime
+  - job_name: fourok-dagster-runtime
     static_configs:
-      - targets: ["gcb-metrics-exporter:9108"]
+      - targets: ["fourok-metrics-exporter:9108"]

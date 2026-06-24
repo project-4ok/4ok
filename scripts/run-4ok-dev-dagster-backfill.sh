@@ -4,9 +4,9 @@ set -euo pipefail
 CHECK_TARGET="${CHECK_TARGET:-ssh}"
 GATEWAY_SSH_TARGET="${GATEWAY_SSH_TARGET:-root@178.105.10.7}"
 DAGSTER_GRAPHQL_URL="${DAGSTER_GRAPHQL_URL:-http://127.0.0.1:13001/graphql}"
-DAGSTER_REPOSITORY_LOCATION="${DAGSTER_REPOSITORY_LOCATION:-gcb_pipeline}"
+DAGSTER_REPOSITORY_LOCATION="${DAGSTER_REPOSITORY_LOCATION:-fourok_pipeline}"
 DAGSTER_REPOSITORY_NAME="${DAGSTER_REPOSITORY_NAME:-__repository__}"
-DAGSTER_JOB_NAME="${DAGSTER_JOB_NAME:-gcb_hourly_live_backfill}"
+DAGSTER_JOB_NAME="${DAGSTER_JOB_NAME:-fourok_hourly_live_backfill}"
 DAGSTER_POLL_TIMEOUT_SECONDS="${DAGSTER_POLL_TIMEOUT_SECONDS:-600}"
 DAGSTER_POLL_INTERVAL_SECONDS="${DAGSTER_POLL_INTERVAL_SECONDS:-10}"
 
@@ -14,16 +14,16 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [--json]
 
-Launch and poll gcb_hourly_live_backfill through the deployed Dagster webserver GraphQL API.
+Launch and poll fourok_hourly_live_backfill through the deployed Dagster webserver GraphQL API.
 This proves the same operator-visible Dagster instance used by stage1 acceptance.
 
 Environment overrides:
   CHECK_TARGET=ssh|local
   GATEWAY_SSH_TARGET=root@178.105.10.7
   DAGSTER_GRAPHQL_URL=http://127.0.0.1:13001/graphql
-  DAGSTER_REPOSITORY_LOCATION=gcb_pipeline
+  DAGSTER_REPOSITORY_LOCATION=fourok_pipeline
   DAGSTER_REPOSITORY_NAME=__repository__
-  DAGSTER_JOB_NAME=gcb_hourly_live_backfill
+  DAGSTER_JOB_NAME=fourok_hourly_live_backfill
   DAGSTER_POLL_TIMEOUT_SECONDS=600
   DAGSTER_POLL_INTERVAL_SECONDS=10
 EOF

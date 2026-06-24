@@ -6,8 +6,8 @@ from urllib.request import Request
 
 import pytest
 
-from gcb.honcho.client import HonchoHttpClient
-from gcb.honcho.experiment import HonchoMessagePlan
+from fourok.honcho.client import HonchoHttpClient
+from fourok.honcho.experiment import HonchoMessagePlan
 
 
 def test_honcho_client_posts_message_batch_with_v3_payload(monkeypatch) -> None:
@@ -20,10 +20,10 @@ def test_honcho_client_posts_message_batch_with_v3_payload(monkeypatch) -> None:
         captured["body"] = json.loads(request.data.decode("utf-8"))
         return _Response([{"id": "msg-1"}])
 
-    monkeypatch.setattr("gcb.honcho.client.urlopen", fake_urlopen)
+    monkeypatch.setattr("fourok.honcho.client.urlopen", fake_urlopen)
     client = HonchoHttpClient(
         base_url="http://honcho:8000/",
-        workspace_id="gcb internal",
+        workspace_id="fourok internal",
         api_key="secret-token",
         timeout_seconds=2.5,
     )
@@ -39,7 +39,7 @@ def test_honcho_client_posts_message_batch_with_v3_payload(monkeypatch) -> None:
 
     assert response == [{"id": "msg-1"}]
     assert captured["url"] == (
-        "http://honcho:8000/v3/workspaces/gcb%20internal/"
+        "http://honcho:8000/v3/workspaces/fourok%20internal/"
         "sessions/slack_U123456_linear_2026-06/messages"
     )
     assert captured["timeout"] == 2.5
@@ -66,10 +66,10 @@ def test_honcho_client_updates_message_metadata_with_v3_payload(monkeypatch) -> 
         captured["body"] = json.loads(request.data.decode("utf-8"))
         return _Response({"id": "msg-old", "metadata": captured["body"]["metadata"]})
 
-    monkeypatch.setattr("gcb.honcho.client.urlopen", fake_urlopen)
+    monkeypatch.setattr("fourok.honcho.client.urlopen", fake_urlopen)
     client = HonchoHttpClient(
         base_url="http://honcho:8000/",
-        workspace_id="gcb internal",
+        workspace_id="fourok internal",
         api_key="secret-token",
         timeout_seconds=2.5,
     )
@@ -85,7 +85,7 @@ def test_honcho_client_updates_message_metadata_with_v3_payload(monkeypatch) -> 
         "metadata": {"source_ref": "linear:issue:ABC-123", "source_status": "superseded"},
     }
     assert captured["url"] == (
-        "http://honcho:8000/v3/workspaces/gcb%20internal/"
+        "http://honcho:8000/v3/workspaces/fourok%20internal/"
         "sessions/slack_U123456_linear_2026-06/messages/msg-old"
     )
     assert captured["method"] == "PUT"
@@ -107,10 +107,10 @@ def test_honcho_client_searches_workspace_with_v3_payload(monkeypatch) -> None:
         captured["body"] = json.loads(request.data.decode("utf-8"))
         return _Response([{"id": "msg-1", "metadata": {"source_ref": "linear:issue:ABC-123"}}])
 
-    monkeypatch.setattr("gcb.honcho.client.urlopen", fake_urlopen)
+    monkeypatch.setattr("fourok.honcho.client.urlopen", fake_urlopen)
     client = HonchoHttpClient(
         base_url="http://honcho:8000/",
-        workspace_id="gcb internal",
+        workspace_id="fourok internal",
         api_key="secret-token",
         timeout_seconds=2.5,
     )
@@ -122,7 +122,7 @@ def test_honcho_client_searches_workspace_with_v3_payload(monkeypatch) -> None:
     )
 
     assert response == [{"id": "msg-1", "metadata": {"source_ref": "linear:issue:ABC-123"}}]
-    assert captured["url"] == "http://honcho:8000/v3/workspaces/gcb%20internal/search"
+    assert captured["url"] == "http://honcho:8000/v3/workspaces/fourok%20internal/search"
     assert captured["method"] == "POST"
     assert captured["timeout"] == 2.5
     assert captured["headers"]["Authorization"] == "Bearer secret-token"
@@ -142,14 +142,14 @@ def test_honcho_client_searches_peer_with_v3_payload(monkeypatch) -> None:
         captured["body"] = json.loads(request.data.decode("utf-8"))
         return _Response([{"id": "msg-1"}])
 
-    monkeypatch.setattr("gcb.honcho.client.urlopen", fake_urlopen)
-    client = HonchoHttpClient(base_url="http://honcho:8000/", workspace_id="gcb internal")
+    monkeypatch.setattr("fourok.honcho.client.urlopen", fake_urlopen)
+    client = HonchoHttpClient(base_url="http://honcho:8000/", workspace_id="fourok internal")
 
     response = client.search_peer(peer_id="slack:U123456", query="meeting", limit=2)
 
     assert response == [{"id": "msg-1"}]
     assert captured["url"] == (
-        "http://honcho:8000/v3/workspaces/gcb%20internal/peers/slack_U123456/search"
+        "http://honcho:8000/v3/workspaces/fourok%20internal/peers/slack_U123456/search"
     )
     assert captured["method"] == "POST"
     assert captured["body"] == {"query": "meeting", "filters": None, "limit": 2}
@@ -164,8 +164,8 @@ def test_honcho_client_searches_session_with_v3_payload(monkeypatch) -> None:
         captured["body"] = json.loads(request.data.decode("utf-8"))
         return _Response([{"id": "msg-1"}])
 
-    monkeypatch.setattr("gcb.honcho.client.urlopen", fake_urlopen)
-    client = HonchoHttpClient(base_url="http://honcho:8000/", workspace_id="gcb internal")
+    monkeypatch.setattr("fourok.honcho.client.urlopen", fake_urlopen)
+    client = HonchoHttpClient(base_url="http://honcho:8000/", workspace_id="fourok internal")
 
     response = client.search_session(
         session_id="slack_U123456:linear:2026-06",
@@ -175,7 +175,7 @@ def test_honcho_client_searches_session_with_v3_payload(monkeypatch) -> None:
 
     assert response == [{"id": "msg-1"}]
     assert captured["url"] == (
-        "http://honcho:8000/v3/workspaces/gcb%20internal/"
+        "http://honcho:8000/v3/workspaces/fourok%20internal/"
         "sessions/slack_U123456_linear_2026-06/search"
     )
     assert captured["method"] == "POST"
@@ -186,8 +186,8 @@ def test_honcho_client_health_raises_when_server_is_unavailable(monkeypatch) -> 
     def fake_urlopen(request: Request, timeout: float):
         raise URLError("connection refused")
 
-    monkeypatch.setattr("gcb.honcho.client.urlopen", fake_urlopen)
-    client = HonchoHttpClient(base_url="http://honcho:8000", workspace_id="gcb")
+    monkeypatch.setattr("fourok.honcho.client.urlopen", fake_urlopen)
+    client = HonchoHttpClient(base_url="http://honcho:8000", workspace_id="fourok")
 
     with pytest.raises(URLError):
         client.health()

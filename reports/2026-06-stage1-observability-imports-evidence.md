@@ -8,12 +8,12 @@ Scope: evidence for `docs/goal.md` Stage 1. This report records safe command res
 
 Status: COMPLETE for Stage 1 local acceptance as of commit `c6710ad`.
 
-- Stage 1 acceptance gate `uv run gcb stage1-acceptance --json` exists and
+- Stage 1 acceptance gate `uv run fourok stage1-acceptance --json` exists and
   passed after a rebuild/restart on commit `c6710ad`.
 - Live retrieval case set now passes against current runtime source refs for
   Slack, Google Drive, OpenViking, Linear, and Twenty.
 - Dagster repository discovery, hourly schedule, and webhook sensor report `ok`.
-- Grafana canonical dashboard `gcb-local-runtime-logs` is healthy and query-smoke
+- Grafana canonical dashboard `fourok-local-runtime-logs` is healthy and query-smoke
   checked.
 - The Stage 1 command emits resume state with no open gates and the next command
   for Stage 2 OpenClaw plugin RAG.
@@ -77,13 +77,8 @@ Additional Codex workers fixed run-live-ingestion subprocess/runtime-state defec
 ```bash
 env -u POSTGRES_PASSWORD \
   -u DAGSTER_POSTGRES_PASSWORD \
-  -u GCB_IMAGE_TAG \
-  -u GCB_DATABASE_URL \
-  -u INFISICAL_TOKEN \
-  -u INFISICAL_CLIENT_ID \
-  -u INFISICAL_CLIENT_SECRET \
-  -u INFISICAL_UNIVERSAL_AUTH_CLIENT_ID \
-  -u INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET \
+  -u FOUR_OK_IMAGE_TAG \
+  -u FOUR_OK_DATABASE_URL \
   -u TAP_GMAIL_USER_ID \
   -u TAP_GMAIL_OAUTH_CREDENTIALS_CLIENT_ID \
   uv run pytest -q
@@ -125,10 +120,10 @@ passed with safe local env values
 Google Drive + Slack:
 
 ```bash
-uv run gcb run-live-ingestion \
+uv run fourok run-live-ingestion \
   --source google_drive \
   --source slack \
-  --database-url 'postgresql+psycopg://gcb:***@127.0.0.1:5432/gcb' \
+  --database-url 'postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok' \
   --artifact-dir .local/stage1-live-checks/run-live-dedup-fixed \
   --verify-live-db
 ```
@@ -148,10 +143,10 @@ Result summary from `.local/stage1-live-checks/run-live-dedup-fixed.json`:
 Linear + Twenty:
 
 ```bash
-uv run gcb run-live-ingestion \
+uv run fourok run-live-ingestion \
   --source linear \
   --source twenty \
-  --database-url 'postgresql+psycopg://gcb:***@127.0.0.1:5432/gcb' \
+  --database-url 'postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok' \
   --artifact-dir .local/stage1-live-checks/run-live-all-final \
   --verify-live-db
 ```
@@ -171,8 +166,8 @@ Result summary from `.local/stage1-live-checks/run-live-linear-twenty-final.json
 Freshness check:
 
 ```bash
-uv run gcb live-ingestion-status \
-  --database-url 'postgresql+psycopg://gcb:***@127.0.0.1:5432/gcb' \
+uv run fourok live-ingestion-status \
+  --database-url 'postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok' \
   --now '2026-06-10T11:55:00+00:00'
 ```
 
@@ -276,7 +271,7 @@ application/vnd.openxmlformats-officedocument.presentationml.presentation metada
 Retrieval proof:
 
 ```bash
-uv run gcb search-state "Plastic Labs Meeting prep" --database-url 'postgresql+psycopg://gcb:***@127.0.0.1:5432/gcb' --limit 2
+uv run fourok search-state "Plastic Labs Meeting prep" --database-url 'postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok' --limit 2
 ```
 
 Result refs:
@@ -289,7 +284,7 @@ google_drive:file:1NbqkAfQHZ26cMb9Rtyg1QvyLSrOc62iy
 Metadata-only retrieval proof:
 
 ```bash
-uv run gcb search-state "image/png" --database-url 'postgresql+psycopg://gcb:***@127.0.0.1:5432/gcb' --limit 3
+uv run fourok search-state "image/png" --database-url 'postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok' --limit 3
 ```
 
 Result refs:
@@ -305,12 +300,12 @@ google_drive:file:1_2jCrzIC7fR2H-VApIxm_y_unb81QW5s
 Latest gate run on 2026-06-10 from the `codex/slack-gate` worktree:
 
 ```bash
-GCB_DATABASE_URL="$(docker exec 4ok-app-1 printenv GCB_DATABASE_URL)"
-GCB_DATABASE_URL="${GCB_DATABASE_URL/@postgres:/@127.0.0.1:}"
-export GCB_DATABASE_URL
+FOUR_OK_DATABASE_URL="$(docker exec 4ok-app-1 printenv FOUR_OK_DATABASE_URL)"
+FOUR_OK_DATABASE_URL="${FOUR_OK_DATABASE_URL/@postgres:/@127.0.0.1:}"
+export FOUR_OK_DATABASE_URL
 uv run --group pipeline python scripts/check_slack_live_contract.py \
   --artifact-dir .local/stage1-live-checks/slack-contract \
-  --database-url "$GCB_DATABASE_URL"
+  --database-url "$FOUR_OK_DATABASE_URL"
 ```
 
 Safe result summary:
@@ -320,7 +315,6 @@ Safe result summary:
   "status": "blocked",
   "stage": "credentials",
   "credential_inputs": {
-    "has_infisical_project_id": false,
     "has_slack_token": false
   },
   "runtime_database": {
@@ -370,7 +364,7 @@ No final-run `messages.jsonl` or `threads.jsonl` exists under the Slack raw land
 Codex audit conclusion in `.local/codex-reports/slack-live-gate-audit.md`:
 
 - The tap discovers `messages` and `threads` streams.
-- GCB adapter code maps landed `messages` and `threads` to `record_type="message"`.
+- 4OK adapter code maps landed `messages` and `threads` to `record_type="message"`.
 - The blocker is live Slack history access/content for the configured token/channel selection: current live token/config can enumerate public channels, members, and users, but returns no message/thread records.
 
 Completion command once Slack access is fixed:
@@ -391,7 +385,7 @@ Required result:
 Implemented command:
 
 ```bash
-uv run gcb backfill-openviking-messages <messages_file> --state <state.sqlite>
+uv run fourok backfill-openviking-messages <messages_file> --state <state.sqlite>
 ```
 
 Focused tests:
@@ -436,7 +430,7 @@ No production `messages.jsonl` was copied or normalized. The live production
 OpenViking/OpenClaw export proof remains blocked on SSH credentials or gateway
 authorization for the production source path.
 
-Runtime DB proof was also blocked in this shell because `GCB_DATABASE_URL` was
+Runtime DB proof was also blocked in this shell because `FOUR_OK_DATABASE_URL` was
 unset and `docker compose ps postgres app` returned no running services for this
 checkout. No runtime DB backfill was attempted without an explicit database URL.
 
@@ -444,9 +438,9 @@ Deterministic local-state proof was rerun against the synthetic OpenViking
 fixture only:
 
 ```bash
-uv run gcb backfill-openviking-messages fixtures/openviking/messages_variants.jsonl --state .local/openviking/local-proof-state.sqlite
-uv run gcb backfill-openviking-messages fixtures/openviking/messages_variants.jsonl --state .local/openviking/local-proof-state.sqlite
-uv run gcb search-state "Alpine Robotics checklist" --state .local/openviking/local-proof-state.sqlite --limit 5
+uv run fourok backfill-openviking-messages fixtures/openviking/messages_variants.jsonl --state .local/openviking/local-proof-state.sqlite
+uv run fourok backfill-openviking-messages fixtures/openviking/messages_variants.jsonl --state .local/openviking/local-proof-state.sqlite
+uv run fourok search-state "Alpine Robotics checklist" --state .local/openviking/local-proof-state.sqlite --limit 5
 ```
 
 Safe fixture evidence:
@@ -508,7 +502,7 @@ openviking:conversation:conv-product:session:sess-alpha:message:m-001
 Linear:
 
 ```bash
-uv run gcb search-state "Codex employee" --database-url 'postgresql+psycopg://gcb:***@127.0.0.1:5432/gcb' --limit 2
+uv run fourok search-state "Codex employee" --database-url 'postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok' --limit 2
 ```
 
 Result refs:
@@ -520,7 +514,7 @@ linear:user:b1a18acc-66e8-4e70-aa86-f35301c4b463
 Twenty:
 
 ```bash
-uv run gcb search-state "Morgan Bros" --database-url 'postgresql+psycopg://gcb:***@127.0.0.1:5432/gcb' --limit 2
+uv run fourok search-state "Morgan Bros" --database-url 'postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok' --limit 2
 ```
 
 Result refs:
@@ -543,47 +537,47 @@ The live case set is not complete because Slack message and OpenViking productio
 Smoke command:
 
 ```bash
-uv run gcb observability-smoke > .local/stage1-live-checks/observability-smoke.json
+uv run fourok observability-smoke > .local/stage1-live-checks/observability-smoke.json
 ```
 
 Result:
 
 ```json
-{"status": "ok", "exporter": "otlp-http", "service_name": "gcb-local-smoke", "sensitive_payload_exported": false}
+{"status": "ok", "exporter": "otlp-http", "service_name": "fourok-local-smoke", "sensitive_payload_exported": false}
 ```
 
 Tempo query results after final live runs:
 
 ```text
-Tempo TraceQL { name = "gcb.retrieval.prepare" }: trace_count=10
-Tempo service.name=gcb-stage1-run-live-all-final: trace_count=10
+Tempo TraceQL { name = "fourok.retrieval.prepare" }: trace_count=10
+Tempo service.name=fourok-stage1-run-live-all-final: trace_count=10
 ```
 
 Loki/Grafana/Prometheus checks:
 
 ```text
 Loki query for recent Dagster RUN_SUCCESS: streams=1
-Grafana Prometheus proxy query gcb_source_records_total: result_count=12
-Grafana dashboard GCB Local Runtime Logs exists and includes Loki, Prometheus, and Tempo panels.
+Grafana Prometheus proxy query fourok_source_records_total: result_count=12
+Grafana dashboard 4OK Local Runtime Logs exists and includes Loki, Prometheus, and Tempo panels.
 ```
 
 Ignored observability audit report:
 
 - `.local/codex-reports/observability-gate-audit.md`
 
-Known caveat: earlier audit found not all latest Dagster run IDs correlated to Tempo by `gcb.dagster.run_id`, and live search/MCP metrics were sparse. After final run, Tempo has service traces and retrieval-prepare traces, but this report does not claim exhaustive trace hierarchy completeness beyond the checked critical-path evidence.
+Known caveat: earlier audit found not all latest Dagster run IDs correlated to Tempo by `fourok.dagster.run_id`, and live search/MCP metrics were sparse. After final run, Tempo has service traces and retrieval-prepare traces, but this report does not claim exhaustive trace hierarchy completeness beyond the checked critical-path evidence.
 
 ### Grafana-first runtime state slice
 
 Implementation added deterministic Grafana-first visibility for routine runtime
 state review:
 
-- `gcb_dagster_latest_run_status` exposes the latest Dagster run status for the
+- `fourok_dagster_latest_run_status` exposes the latest Dagster run status for the
   hourly live backfill.
-- `gcb_connector_latest_run_status` and
-  `gcb_connector_latest_finished_timestamp_seconds` expose latest live connector
+- `fourok_connector_latest_run_status` and
+  `fourok_connector_latest_finished_timestamp_seconds` expose latest live connector
   state and freshness through Prometheus.
-- The provisioned `GCB Local Runtime Logs` dashboard includes panels for runtime
+- The provisioned `4OK Local Runtime Logs` dashboard includes panels for runtime
   service log activity, recent runtime errors, latest Dagster run status, latest
   connector run status, connector freshness, source freshness, source/retrieval
   counts, Dagster step failures, Loki logs, and representative Tempo traces.
@@ -591,7 +585,7 @@ state review:
 Focused regression checks:
 
 ```text
-uv run pytest tests/runtime/test_metrics_exporter.py tests/runtime/test_compose.py::test_observability_files_define_gcb_log_dashboard_and_docker_labels -q
+uv run pytest tests/runtime/test_metrics_exporter.py tests/runtime/test_compose.py::test_observability_files_define_fourok_log_dashboard_and_docker_labels -q
 2 passed in 0.09s
 ```
 
@@ -601,8 +595,8 @@ Safe live Grafana API checks:
 GET /api/health
 database=ok, version=13.0.1
 
-GET /api/search?query=GCB
-found dashboard uid=gcb-local-runtime-logs, title="GCB Local Runtime Logs"
+GET /api/search?query=4OK
+found dashboard uid=fourok-local-runtime-logs, title="4OK Local Runtime Logs"
 ```
 
 The running local Grafana initially served the older provisioned dashboard with
@@ -612,8 +606,8 @@ panel definition without restarting unrelated local services, the checked-in
 dashboard JSON was imported as a temporary proof dashboard:
 
 ```text
-uid=gcb-local-runtime-logs-codex-proof
-url=/d/gcb-local-runtime-logs-codex-proof/gcb-local-runtime-logs-codex-proof
+uid=fourok-local-runtime-logs-codex-proof
+url=/d/fourok-local-runtime-logs-codex-proof/fourok-local-runtime-logs-codex-proof
 panel_count=23
 has_runtime_activity=true
 has_recent_errors=true
@@ -626,11 +620,11 @@ has_trace=true
 Grafana datasource checks through the API:
 
 ```text
-Prometheus gcb_source_records_total: 15 result series
-Prometheus gcb_retrieval_records_total: current=7879
+Prometheus fourok_source_records_total: 15 result series
+Prometheus fourok_retrieval_records_total: current=7879
 Loki runtime service activity query: 9 compose_service series
 Loki recent ERROR count_over_time query: 3 result series
-Tempo TraceQL { resource.service.name =~ "gcb.*" }: 5 traces returned with limit=5
+Tempo TraceQL { resource.service.name =~ "fourok.*" }: 5 traces returned with limit=5
 ```
 
 Non-Grafana drilldown gaps:
@@ -640,13 +634,13 @@ Non-Grafana drilldown gaps:
   recent errors, but `docker compose ps` remains the exact health drilldown.
 - The running metrics exporter had not been rebuilt from this slice when the
   live Grafana checks ran, so live Prometheus did not yet return the new
-  `gcb_dagster_latest_run_status` metric. The exporter behavior is covered by
+  `fourok_dagster_latest_run_status` metric. The exporter behavior is covered by
   deterministic regression tests and will become live after the local
   observability profile is rebuilt from this branch.
 
 ## Local runtime rebuild/restart status
 
-Docker images were rebuilt from commit `7e79b9d` and the local pipeline/app services were restarted with `GCB_IMAGE_TAG=7e79b9d` after the app-service fix:
+Docker images were rebuilt from commit `7e79b9d` and the local pipeline/app services were restarted with `FOUR_OK_IMAGE_TAG=7e79b9d` after the app-service fix:
 
 ```bash
 docker compose --profile pipeline build dagster-code dagster-webserver dagster-daemon app
@@ -665,7 +659,7 @@ dagster-webserver: healthy
 Dagster server_info returned dagster_webserver_version=1.13.8 and dagster_version=1.13.8
 ```
 
-The `app` Compose service now runs the resident `gcb runtime-monitor` command while retaining `gcb health --config /etc/gcb/gcb.toml` as its healthcheck. This removed the previous restart-loop noise from the one-shot health command.
+The `app` Compose service now runs the resident `fourok runtime-monitor` command while retaining `fourok health --config /etc/fourok/fourok.toml` as its healthcheck. This removed the previous restart-loop noise from the one-shot health command.
 
 ## Blocker matrix
 
@@ -688,28 +682,28 @@ Scope: Stage 1 Grafana-first state review proof for local runtime health/log/met
 ### Commands
 
 - `curl -sS http://127.0.0.1:3000/api/health`
-- `curl -sS 'http://127.0.0.1:3000/api/search?query=GCB'`
-- `curl -sS 'http://127.0.0.1:3000/api/dashboards/uid/gcb-local-runtime-logs'`
-- `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=gcb_source_records_total'`
-- `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=gcb_raw_landed_records_total'`
-- `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=gcb_retrieval_records_total'`
-- `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=gcb_search_requests_total'`
-- `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=gcb_retrieval_prepare_total'`
+- `curl -sS 'http://127.0.0.1:3000/api/search?query=4OK'`
+- `curl -sS 'http://127.0.0.1:3000/api/dashboards/uid/fourok-local-runtime-logs'`
+- `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=fourok_source_records_total'`
+- `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=fourok_raw_landed_records_total'`
+- `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=fourok_retrieval_records_total'`
+- `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=fourok_search_requests_total'`
+- `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=fourok_retrieval_prepare_total'`
 - `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/loki/loki/api/v1/query_range' --data-urlencode 'query={compose_project="4ok"}' --data-urlencode 'limit=20'`
 - `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/loki/loki/api/v1/query_range' --data-urlencode 'query={compose_project="4ok"} |= "ERROR"' --data-urlencode 'limit=5'`
 - `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/loki/loki/api/v1/query_range' --data-urlencode 'query=count_over_time({compose_project="4ok"} |= "ERROR" [1h])'`
-- `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/tempo/api/search' --data-urlencode 'q={ resource.service.name = "gcb-local-smoke" }' --data-urlencode 'limit=5'`
-- `uv run gcb observability-smoke`
-- `uv run gcb operator-status --database-url 'postgresql+psycopg://gcb:***@127.0.0.1:5432/gcb' --now '2026-06-10T13:00:00+00:00'`
+- `curl -Gs 'http://127.0.0.1:3000/api/datasources/proxy/uid/tempo/api/search' --data-urlencode 'q={ resource.service.name = "fourok-local-smoke" }' --data-urlencode 'limit=5'`
+- `uv run fourok observability-smoke`
+- `uv run fourok operator-status --database-url 'postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok' --now '2026-06-10T13:00:00+00:00'`
 
 ### Summary
 
-- Grafana is healthy and serving the canonical `gcb-local-runtime-logs` dashboard (`uid=gcb-local-runtime-logs`, version 12, refresh 10s).
-- Prometheus datasource proxy responds and returns live metric vectors for source/raw/retrieval totals (`gcb_source_records_total`, `gcb_raw_landed_records_total`, `gcb_retrieval_records_total`).
-- `gcb_retrieval_records_total` current status is 7888.
-- `gcb_search_requests_total` and `gcb_retrieval_prepare_total` returned zero series at query time; metrics are still exposed by scrape labels for future telemetry.
+- Grafana is healthy and serving the canonical `fourok-local-runtime-logs` dashboard (`uid=fourok-local-runtime-logs`, version 12, refresh 10s).
+- Prometheus datasource proxy responds and returns live metric vectors for source/raw/retrieval totals (`fourok_source_records_total`, `fourok_raw_landed_records_total`, `fourok_retrieval_records_total`).
+- `fourok_retrieval_records_total` current status is 7888.
+- `fourok_search_requests_total` and `fourok_retrieval_prepare_total` returned zero series at query time; metrics are still exposed by scrape labels for future telemetry.
 - Loki queries returned compose/project log streams and ERROR samples for recent windows.
-- Tempo initially returned no live `gcb.*` traces on direct query; after `gcb observability-smoke`, Tempo search returned trace `1703924fd23b829189c4badd2e481aa3` for `gcb.observability_smoke`.
+- Tempo initially returned no live `fourok.*` traces on direct query; after `fourok observability-smoke`, Tempo search returned trace `1703924fd23b829189c4badd2e481aa3` for `fourok.observability_smoke`.
 - Operator status returned:
   - status=`ok`, freshness=`fresh`
   - connector jobs by_status: `failed=12`, `invalid=1`, `succeeded=113`
@@ -718,7 +712,7 @@ Scope: Stage 1 Grafana-first state review proof for local runtime health/log/met
 
 ### Open items (evidence gap)
 
-- `gcb_search_requests_total` and `gcb_retrieval_prepare_total` were empty for the query window when checked.
+- `fourok_search_requests_total` and `fourok_retrieval_prepare_total` were empty for the query window when checked.
 - Docker service health remains an explicit non-Grafana drilldown in this local profile.
 
 ## Dagster partial-failure (Phase 6.6) proof
@@ -730,7 +724,7 @@ Date: 2026-06-10
 Command:
 
 ```bash
-uv run gcb-dev dagster-status
+uv run fourok-dev dagster-status
 ```
 
 Result summary (excerpt):
@@ -742,9 +736,9 @@ step_statuses:
   meltano_linear_live_raw_landing: SUCCESS
   meltano_twenty_live_raw_landing: SUCCESS
   meltano_slack_live_raw_landing: FAILURE
-  gcb_google_drive_live_source_records_from_raw_landing: SUCCESS
-  gcb_linear_live_source_records_from_raw_landing: SUCCESS
-  gcb_twenty_live_source_records_from_raw_landing: SUCCESS
+  fourok_google_drive_live_source_records_from_raw_landing: SUCCESS
+  fourok_linear_live_source_records_from_raw_landing: SUCCESS
+  fourok_twenty_live_source_records_from_raw_landing: SUCCESS
 ```
 
 GraphQL detail query confirmed step-level truth for that run ID.
@@ -759,9 +753,9 @@ curl -sS -X POST http://127.0.0.1:3001/graphql -H 'content-type: application/jso
 Command (run against live runtime DB):
 
 ```bash
-GCB_DATABASE_URL='postgresql+psycopg://gcb:local-check@127.0.0.1:5432/gcb' \
+FOUR_OK_DATABASE_URL='postgresql+psycopg://fourok:local-check@127.0.0.1:5432/fourok' \
 uv run --group pipeline dagster asset materialize -f deploy/dagster/definitions.py \
-  --select gcb_canonical_objects_and_entity_links,gcb_retrieval_records,gcb_operator_dashboard,gcb_audit_metadata
+  --select fourok_canonical_objects_and_entity_links,fourok_retrieval_records,fourok_operator_dashboard,fourok_audit_metadata
 ```
 
 Result:
@@ -769,10 +763,10 @@ Result:
 - Run ID: `70239e39-463b-48d0-9bd3-f5f149a7f3f2`
 - Dagster execution status: success (all selected steps succeeded)
 - Step statuses observed in output logs:
-  - `gcb_canonical_objects_and_entity_links = STEP_SUCCESS`
-  - `gcb_retrieval_records = STEP_SUCCESS`
-  - `gcb_operator_dashboard = STEP_SUCCESS`
-  - `gcb_audit_metadata = STEP_SUCCESS`
+  - `fourok_canonical_objects_and_entity_links = STEP_SUCCESS`
+  - `fourok_retrieval_records = STEP_SUCCESS`
+  - `fourok_operator_dashboard = STEP_SUCCESS`
+  - `fourok_audit_metadata = STEP_SUCCESS`
 
 ### Requirement 3: Failure remains visible in logs/traces/operator view
 
@@ -786,7 +780,7 @@ c6a6662f-6d6d-45c7-80a9-519e3d585756 ... RUN_FAILURE
 Operator visibility command:
 
 ```bash
-uv run gcb operator-status
+uv run fourok operator-status
 ```
 
 Result summary:
@@ -803,7 +797,7 @@ DB-level failure evidence (runtime DB):
 uv run python - <<'PY'
 from sqlalchemy import create_engine, text
 
-url = 'postgresql+psycopg://gcb:local-check@127.0.0.1:5432/gcb'
+url = 'postgresql+psycopg://fourok:local-check@127.0.0.1:5432/fourok'
 engine = create_engine(url)
 with engine.connect() as conn:
     counts = conn.execute(text("SELECT connector_name, status, COUNT(*) AS count FROM connector_job_runs GROUP BY 1,2 ORDER BY 1,2")).fetchall()
@@ -827,7 +821,7 @@ latest_failed_rows sample includes job_id=a64224ea-aae0-4c8d-92e0-4ece911d4755, 
 ### Requirement 4: Safe evidence bundle and next action traces
 
 - Run IDs captured: `c6a6662f-6d6d-45c7-80a9-519e3d585756`, `70239e39-463b-48d0-9bd3-f5f149a7f3f2`
-- Commands captured: `uv run gcb-dev dagster-status`; GraphQL run detail query above; documented equivalent Dagster materialize command; `uv run gcb operator-status`; connector-job DB query.
+- Commands captured: `uv run fourok-dev dagster-status`; GraphQL run detail query above; documented equivalent Dagster materialize command; `uv run fourok operator-status`; connector-job DB query.
 - Operator counts at report time remained stable for downstream surfaces: `source_records=7764`, `retrieval_records=7888`, `slack.message=1`, `google_drive.document=102`, `openviking.message=5029`.
 - Note: `operator_audit_metadata` table variants vary by local schema revision; this proof uses currently existing tables and live operator output.
 
@@ -836,8 +830,8 @@ latest_failed_rows sample includes job_id=a64224ea-aae0-4c8d-92e0-4ece911d4755, 
 Runtime command:
 
 ```bash
-GCB_DATABASE_URL=postgresql+psycopg://gcb:***@127.0.0.1:5432/gcb \
-uv run gcb live-retrieval-case-set \
+FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok \
+uv run fourok live-retrieval-case-set \
   --cases fixtures/retrieval_eval/live_retrieval_case_set.json \
   --case-limit 5 \
   --report .local/codex-runs/runtime-retrieval-proof/report.md
@@ -901,13 +895,13 @@ Commit under test: `c6710ad feat(runtime): add stage1 acceptance gate`.
 Final restart/rebuild proof:
 
 ```bash
-uv run gcb-dev app-up
-uv run gcb-dev pipeline-up
-uv run gcb-dev observability-up
-GCB_IMAGE_TAG=$(git rev-parse --short HEAD) \
+uv run fourok-dev app-up
+uv run fourok-dev pipeline-up
+uv run fourok-dev observability-up
+FOUR_OK_IMAGE_TAG=$(git rev-parse --short HEAD) \
   docker compose --profile observability up --build --force-recreate -d \
-  gcb-metrics-exporter promtail
-uv run gcb stage1-acceptance --json \
+  fourok-metrics-exporter promtail
+uv run fourok stage1-acceptance --json \
   --report reports/stage1-acceptance-live-retrieval.md
 ```
 
@@ -925,7 +919,7 @@ Result summary:
   },
   "resume": {
     "blockers": [],
-    "last_verification": "uv run gcb stage1-acceptance --json",
+    "last_verification": "uv run fourok stage1-acceptance --json",
     "next_command": "Start Stage 2 OpenClaw plugin before-prompt RAG summary.",
     "open_gates": []
   }

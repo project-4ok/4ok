@@ -1,6 +1,6 @@
 from pathlib import Path
 
-from gcb.etl.extract.email_parser import (
+from fourok.etl.extract.email_parser import (
     load_email_dir,
     load_email_dir_with_report,
     parse_email_file,

@@ -1,9 +1,9 @@
 import json
 from pathlib import Path
 
-from gcb.cli import main
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.governance import GovernedContext
+from fourok.cli import main
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.governance import GovernedContext
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "emails"
 CONNECTOR_FIXTURES = Path(__file__).parent.parent / "fixtures" / "connectors"
@@ -30,7 +30,7 @@ def _source_record_legacy_fields(row: dict[str, object]) -> dict[str, object]:
 def test_cli_dashboard_uses_configured_raw_store(capsys, monkeypatch, tmp_path: Path) -> None:
     state_path = tmp_path / "state.sqlite"
     raw_store = tmp_path / "raw-source-objects"
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text(
         "\n".join(
             [
@@ -58,7 +58,7 @@ def test_cli_dashboard_uses_configured_raw_store(capsys, monkeypatch, tmp_path: 
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "dashboard",
             "--state",
             str(state_path),
@@ -111,7 +111,7 @@ def test_cli_webhook_process_accepts_retry_controls(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-enqueue",
             str(event_file),
             "--state",
@@ -126,7 +126,7 @@ def test_cli_webhook_process_accepts_retry_controls(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-process",
             "--state",
             str(state_path),
@@ -144,7 +144,7 @@ def test_cli_webhook_process_accepts_retry_controls(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-events",
             "--state",
             str(state_path),
@@ -170,7 +170,7 @@ def test_cli_webhook_process_uses_configured_processing_controls(
     tmp_path: Path,
 ) -> None:
     state_path = tmp_path / "state.sqlite"
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     captured = {}
 
     def fake_process_pending_webhook_events(state, context, **kwargs):
@@ -180,7 +180,7 @@ def test_cli_webhook_process_uses_configured_processing_controls(
         return {"claimed": 0, "failed": 0, "invalid": 0, "succeeded": 0}
 
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_webhooks.process_pending_webhook_events",
+        "fourok.cli_parts.commands_webhooks.process_pending_webhook_events",
         fake_process_pending_webhook_events,
     )
     config_path.write_text(
@@ -198,7 +198,7 @@ def test_cli_webhook_process_uses_configured_processing_controls(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-process",
             "--state",
             str(state_path),
@@ -223,7 +223,7 @@ def test_cli_webhook_process_flags_override_configured_processing_controls(
     tmp_path: Path,
 ) -> None:
     state_path = tmp_path / "state.sqlite"
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     captured = {}
 
     def fake_process_pending_webhook_events(state, context, **kwargs):
@@ -231,7 +231,7 @@ def test_cli_webhook_process_flags_override_configured_processing_controls(
         return {"claimed": 0, "failed": 0, "invalid": 0, "succeeded": 0}
 
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_webhooks.process_pending_webhook_events",
+        "fourok.cli_parts.commands_webhooks.process_pending_webhook_events",
         fake_process_pending_webhook_events,
     )
     config_path.write_text(
@@ -248,7 +248,7 @@ def test_cli_webhook_process_flags_override_configured_processing_controls(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-process",
             "--state",
             str(state_path),
@@ -297,7 +297,7 @@ def test_cli_webhook_lifecycle_event_without_source_ref_is_invalid(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-enqueue",
             str(event_file),
             "--state",
@@ -310,7 +310,7 @@ def test_cli_webhook_lifecycle_event_without_source_ref_is_invalid(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-process",
             "--state",
             str(state_path),
@@ -322,7 +322,7 @@ def test_cli_webhook_lifecycle_event_without_source_ref_is_invalid(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "webhook-events",
             "--state",
             str(state_path),
@@ -364,11 +364,11 @@ def test_cli_ingests_text_layer_pdf_source_record(
             metadata={"ocr_used": False},
         )
 
-    monkeypatch.setattr("gcb.cli_parts.commands_imports.pdf_source_record", fake_pdf_source_record)
+    monkeypatch.setattr("fourok.cli_parts.commands_imports.pdf_source_record", fake_pdf_source_record)
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "ingest-pdf",
             str(pdf_file),
             "--state",

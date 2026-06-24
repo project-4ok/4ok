@@ -1,14 +1,14 @@
 from sqlalchemy import MetaData, select
 
-from gcb.governance.deferred_reveal_policy import (
+from fourok.governance.deferred_reveal_policy import (
     RevealPolicy,
     RevealPolicyDecision,
     StaticRevealPolicy,
 )
-from gcb.governance.policy import PrincipalContext
-from gcb.governance.reveal import request_reveal
-from gcb.governance.state import create_governed_context_state
-from gcb.governance.token_store import token_for, token_store_table
+from fourok.governance.policy import PrincipalContext
+from fourok.governance.reveal import request_reveal
+from fourok.governance.state import create_governed_context_state
+from fourok.governance.token_store import token_for, token_store_table
 
 PRINCIPAL = PrincipalContext(human_id="human:finance", agent_id="agent:context")
 

@@ -1,16 +1,16 @@
 from datetime import UTC, datetime
 
-from gcb.etl.extract.source_records import SourceIdentity, SourceRecord
-from gcb.etl.extract.sync_jobs import (
+from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
+from fourok.etl.extract.sync_jobs import (
     complete_connector_job,
     fail_connector_job,
     mark_connector_job_invalid,
     start_connector_job,
 )
-from gcb.governance import GovernedContext, SourceChange
-from gcb.governance.state import create_governed_context_state
-from gcb.runtime.dashboard import operator_dashboard
-from gcb.runtime.webhooks import WebhookEventInput, enqueue_webhook_event
+from fourok.governance import GovernedContext, SourceChange
+from fourok.governance.state import create_governed_context_state
+from fourok.runtime.dashboard import operator_dashboard
+from fourok.runtime.webhooks import WebhookEventInput, enqueue_webhook_event
 
 
 def test_operator_dashboard_reports_import_link_lifecycle_and_audit_stats(tmp_path) -> None:
@@ -185,8 +185,8 @@ def test_operator_dashboard_reports_import_link_lifecycle_and_audit_stats(tmp_pa
                 "threshold": "count > 0",
                 "message": "Connector jobs failed recently.",
                 "next_step": (
-                    "Run `gcb connector-jobs` and retry due jobs with "
-                    "`gcb run-imports --retry-failed` after the configured backoff."
+                    "Run `fourok connector-jobs` and retry due jobs with "
+                    "`fourok run-imports --retry-failed` after the configured backoff."
                 ),
             },
             {
@@ -196,7 +196,7 @@ def test_operator_dashboard_reports_import_link_lifecycle_and_audit_stats(tmp_pa
                 "threshold": "count > 0",
                 "message": "Connector jobs were rejected as malformed or unsupported.",
                 "next_step": (
-                    "Run `gcb connector-jobs`, inspect the raw_output_ref, then fix or "
+                    "Run `fourok connector-jobs`, inspect the raw_output_ref, then fix or "
                     "skip the malformed source payload."
                 ),
             },
@@ -207,8 +207,8 @@ def test_operator_dashboard_reports_import_link_lifecycle_and_audit_stats(tmp_pa
                 "threshold": "count > 0",
                 "message": "Webhook events are waiting to be processed.",
                 "next_step": (
-                    "Run `gcb webhook-events --status pending`, then process due "
-                    "events with `gcb webhook-process`."
+                    "Run `fourok webhook-events --status pending`, then process due "
+                    "events with `fourok webhook-process`."
                 ),
             },
         ],

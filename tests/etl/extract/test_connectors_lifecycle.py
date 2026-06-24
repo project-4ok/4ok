@@ -2,13 +2,13 @@ from pathlib import Path
 
 import pytest
 
-from gcb.etl.extract.connectors import (
+from fourok.etl.extract.connectors import (
     load_singer_email_messages,
     load_singer_source_records,
 )
-from gcb.etl.extract.source_records import SourceAttachment, SourceRecord
-from gcb.governance import GovernedContext
-from gcb.governance.policy import PrincipalContext
+from fourok.etl.extract.source_records import SourceAttachment, SourceRecord
+from fourok.governance import GovernedContext
+from fourok.governance.policy import PrincipalContext
 
 FIXTURES = Path(__file__).parents[3] / "fixtures" / "connectors"
 SINGER_EMAILS = FIXTURES / "singer_email_messages.jsonl"

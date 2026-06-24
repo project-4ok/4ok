@@ -1,7 +1,7 @@
 import json
 from pathlib import Path
 
-from gcb.retrieval.graphiti_episodes import graphiti_episodes_from_source_snapshot
+from fourok.retrieval.graphiti_episodes import graphiti_episodes_from_source_snapshot
 
 FIXTURE = (
     Path(__file__).parent.parent.parent / "fixtures" / "honcho" / "linear_twenty_slack_sample.json"
@@ -12,11 +12,11 @@ def test_graphiti_episode_conversion_preserves_linear_issue_provenance() -> None
     data = json.loads(FIXTURE.read_text(encoding="utf-8"))
     data["linear_issues"][0]["permission_refs"] = ["linear:team:ops", "workflow:renewals"]
 
-    episodes = graphiti_episodes_from_source_snapshot(data, group_id="gcb-fixture")
+    episodes = graphiti_episodes_from_source_snapshot(data, group_id="fourok-fixture")
 
     assert episodes[0] == {
-        "uuid": "gcb:graphiti:linear:issue:ABC-123",
-        "group_id": "gcb-fixture",
+        "uuid": "fourok:graphiti:linear:issue:ABC-123",
+        "group_id": "fourok-fixture",
         "name": "linear:issue:ABC-123",
         "episode_body": (
             "source_ref: linear:issue:ABC-123\n"
@@ -47,14 +47,14 @@ def test_graphiti_episode_conversion_preserves_linear_issue_provenance() -> None
 def test_graphiti_episode_conversion_includes_catalog_json_episodes() -> None:
     data = json.loads(FIXTURE.read_text(encoding="utf-8"))
 
-    episodes = graphiti_episodes_from_source_snapshot(data, group_id="gcb-fixture")
+    episodes = graphiti_episodes_from_source_snapshot(data, group_id="fourok-fixture")
 
     catalog_episode = next(
         item for item in episodes if item["name"] == "twenty:workspaceMember:twenty-member-olivia"
     )
     assert catalog_episode == {
-        "uuid": "gcb:graphiti:twenty:workspaceMember:twenty-member-olivia",
-        "group_id": "gcb-fixture",
+        "uuid": "fourok:graphiti:twenty:workspaceMember:twenty-member-olivia",
+        "group_id": "fourok-fixture",
         "name": "twenty:workspaceMember:twenty-member-olivia",
         "episode_body": (
             "source_ref: twenty:workspaceMember:twenty-member-olivia\n"
@@ -91,7 +91,7 @@ def test_graphiti_episode_conversion_includes_catalog_json_episodes() -> None:
 def test_graphiti_episode_conversion_is_deterministically_ordered() -> None:
     data = json.loads(FIXTURE.read_text(encoding="utf-8"))
 
-    episodes = graphiti_episodes_from_source_snapshot(data, group_id="gcb-fixture")
+    episodes = graphiti_episodes_from_source_snapshot(data, group_id="fourok-fixture")
 
     assert [episode["name"] for episode in episodes] == [
         "linear:issue:ABC-123",

@@ -3,15 +3,15 @@ from pathlib import Path
 from sqlalchemy import MetaData, create_engine, inspect, text
 from sqlalchemy.dialects import postgresql
 
-from gcb.governance.state import create_governed_context_state
-from gcb.storage.config import RawStoreConfig
-from gcb.storage.models import (
+from fourok.governance.state import create_governed_context_state
+from fourok.storage.config import RawStoreConfig
+from fourok.storage.models import (
     CanonicalObjectRow,
     EntityLinkRow,
     SourceRecordRow,
     table_for_model,
 )
-from gcb.storage.schema_contract import active_schema_contract
+from fourok.storage.schema_contract import active_schema_contract
 
 
 def test_create_governed_context_state_bootstraps_tables() -> None:

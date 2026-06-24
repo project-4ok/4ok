@@ -1,4 +1,4 @@
-# GCB local runtime, observability, import counts, and MCP retrieval goal
+# 4OK local runtime, observability, import counts, and MCP retrieval goal
 
 Use this file as the authoritative implementation prompt for the next Hermes `/goal` run. The goal is **not** complete until the real local system is operator-visible and retrieval is testable through an MCP server/tool path.
 
@@ -14,43 +14,43 @@ Use this file as the authoritative implementation prompt for the next Hermes `/g
   - Grafana: `http://127.0.0.1:3000`
   - Loki API: host `http://127.0.0.1:3100`, inside observability container `http://localhost:3100`
   - Tempo API: host `http://127.0.0.1:3200`, inside observability container `http://localhost:3200`
-  - GCB local runtime dashboard: `http://127.0.0.1:3000/d/gcb-local-runtime-logs/gcb-local-runtime-logs`
-  - GCB metrics exporter: `gcb-metrics-exporter:9108/metrics`, scraped by Prometheus job `gcb-dagster-runtime`
+  - 4OK local runtime dashboard: `http://127.0.0.1:3000/d/fourok-local-runtime-logs/fourok-local-runtime-logs`
+  - 4OK metrics exporter: `fourok-metrics-exporter:9108/metrics`, scraped by Prometheus job `fourok-dagster-runtime`
 - User preference constraints:
   - Use live connector/data evidence where possible. Do not default to fixture/synthetic data except narrow deterministic regression tests.
   - Do not claim completion from commits/tests alone.
   - Do not edit Hermes source or Hermes runtime state for this project goal.
-  - Prefer Codex/worktree orchestration for substantial GCB coding; direct edits are acceptable for small integration/debug fixes when needed.
+  - Prefer Codex/worktree orchestration for substantial 4OK coding; direct edits are acceptable for small integration/debug fixes when needed.
   - Do not preserve or print credentials. Redact passwords/tokens/API keys as `[REDACTED]`.
 
 ## Current state and known gaps
 
 The previous work found and partially fixed real issues. This file was updated after adding local log aggregation and runtime metrics/traces dashboard support.
 
-1. Dagster schedules/sensors are currently running and the latest inspected `gcb_hourly_live_backfill` run succeeded:
+1. Dagster schedules/sensors are currently running and the latest inspected `fourok_hourly_live_backfill` run succeeded:
    - Latest inspected successful run ID: `de36c858-93ec-4e2d-9cbb-fe890b21812b`
-   - Job: `gcb_hourly_live_backfill`
+   - Job: `fourok_hourly_live_backfill`
    - Status: `SUCCESS`
-   - Successful steps included all live Meltano raw landing assets, all live source-record conversion assets, `gcb_retrieval_records`, and `gcb_operator_dashboard`.
+   - Successful steps included all live Meltano raw landing assets, all live source-record conversion assets, `fourok_retrieval_records`, and `fourok_operator_dashboard`.
 2. The hourly backfill job includes retrieval rebuild and operator dashboard and uses the in-process executor.
 3. Observability is now substantially improved and should be kept green while continuing product implementation:
    - Docker stdout/stderr logs are aggregated by Promtail into Loki with labels including `compose_project`, `compose_service`, and `container_name`.
-   - Grafana dashboard `GCB Local Runtime Logs` is provisioned and has Loki, Prometheus, and Tempo panels.
-   - `gcb-metrics-exporter` is running and Prometheus target `gcb-dagster-runtime` is `up`.
-   - OTLP metrics export was smoke-tested with `gcb_smoke_requests_total`.
+   - Grafana dashboard `4OK Local Runtime Logs` is provisioned and has Loki, Prometheus, and Tempo panels.
+   - `fourok-metrics-exporter` is running and Prometheus target `fourok-dagster-runtime` is `up`.
+   - OTLP metrics export was smoke-tested with `fourok_smoke_requests_total`.
 4. The Dagster lineage still shows red/unmaterialized assets for non-live/legacy/example assets, including the inspected asset nodes with no latest materialization:
-   - `gcb_audit_metadata`
-   - `gcb_canonical_objects_and_entity_links`
-   - `gcb_golden_retrieval_eval`
-   - `gcb_google_drive_source_records_from_raw_landing`
-   - `gcb_linear_source_records_from_raw_landing`
-   - `gcb_slack_source_records_from_raw_landing`
-   - `gcb_source_records_from_raw_landing`
-   - `gcb_twenty_source_records_from_raw_landing`
-   - `gcb_webhook_backlog`
+   - `fourok_audit_metadata`
+   - `fourok_canonical_objects_and_entity_links`
+   - `fourok_golden_retrieval_eval`
+   - `fourok_google_drive_source_records_from_raw_landing`
+   - `fourok_linear_source_records_from_raw_landing`
+   - `fourok_slack_source_records_from_raw_landing`
+   - `fourok_source_records_from_raw_landing`
+   - `fourok_twenty_source_records_from_raw_landing`
+   - `fourok_webhook_backlog`
    These red nodes make the product/operator lineage incomplete even though the live hourly backfill path is partly green. The next implementation effort must either implement/materialize these assets, retire/hide obsolete non-product assets from the main Dagster Definitions, or split demo/fixture assets into a non-default group so the product lineage is green and honest.
 5. Operator-visible counts/freshness are still the main product gap:
-   - `gcb operator-status`, `gcb-dev logs-status`, the metrics exporter, Grafana panels, and MCP `operator_status` must agree on the same live DB-backed source of truth.
+   - `fourok operator-status`, `fourok-dev logs-status`, the metrics exporter, Grafana panels, and MCP `operator_status` must agree on the same live DB-backed source of truth.
    - Freshness must reflect the latest successful Dagster live backfill or an explicitly documented unified source of truth.
    - The Twenty pagination/truncation bug must not be treated as isolated: audit the Slack, Linear, and Google Drive live extractors for the same class of bug (default limits, API page caps, missing/incorrect pagination cursors, and latest-snapshot vs append-log count semantics), then either add fixes with regressions or document tool-backed proof that each extractor is not affected.
 6. MCP retrieval server code/tests exist, but the proof is not strong enough:
@@ -76,14 +76,14 @@ The previous work found and partially fixed real issues. This file was updated a
 
 Required proof:
 
-1. `uv run gcb-dev pipeline-up` succeeds from the GCB repo.
+1. `uv run fourok-dev pipeline-up` succeeds from the 4OK repo.
 2. Dagster GraphQL proves:
    - repository loads successfully,
-   - `gcb_hourly_live_backfill_schedule` is `RUNNING`,
-   - `gcb_webhook_backlog_sensor` is `RUNNING`,
-   - `gcb_hourly_live_backfill` exists,
-   - latest manually launched or scheduled `gcb_hourly_live_backfill` run is `SUCCESS`.
-3. The successful run includes evidence that live source import assets, `gcb_retrieval_records`, and `gcb_operator_dashboard` actually executed after the live import assets.
+   - `fourok_hourly_live_backfill_schedule` is `RUNNING`,
+   - `fourok_webhook_backlog_sensor` is `RUNNING`,
+   - `fourok_hourly_live_backfill` exists,
+   - latest manually launched or scheduled `fourok_hourly_live_backfill` run is `SUCCESS`.
+3. The successful run includes evidence that live source import assets, `fourok_retrieval_records`, and `fourok_operator_dashboard` actually executed after the live import assets.
 4. A regression test prevents the backfill job from excluding retrieval/dashboard or running them before live source imports.
 5. If the schedule itself is expected to fire hourly, prove either:
    - a schedule-created run appears after waiting for the next tick, or
@@ -99,12 +99,12 @@ Required proof:
    - known blocker with explicit reason.
 2. The main product Dagster lineage shown to the operator has no unexplained red assets.
 3. Specifically address these currently red/unmaterialized assets:
-   - `gcb_audit_metadata`
-   - `gcb_canonical_objects_and_entity_links`
-   - `gcb_golden_retrieval_eval`
-   - `gcb_*_source_records_from_raw_landing` non-live variants
-   - `gcb_source_records_from_raw_landing`
-   - `gcb_webhook_backlog`
+   - `fourok_audit_metadata`
+   - `fourok_canonical_objects_and_entity_links`
+   - `fourok_golden_retrieval_eval`
+   - `fourok_*_source_records_from_raw_landing` non-live variants
+   - `fourok_source_records_from_raw_landing`
+   - `fourok_webhook_backlog`
 4. If the correct product decision is to remove/hide/split obsolete assets rather than implement them, document why and add tests so they do not reappear in the default product Definitions unintentionally.
 5. Save before/after asset-node evidence in the evidence report.
 
@@ -140,21 +140,21 @@ Required proof:
 
 Required proof:
 
-1. Loki has recent logs for GCB services using a working **range** query, e.g. `{service_name="gcb-dagster-code"}`.
-2. Tempo has recent traces for GCB services, e.g. `resource.service.name="gcb-dagster-code"`.
+1. Loki has recent logs for 4OK services using a working **range** query, e.g. `{service_name="fourok-dagster-code"}`.
+2. Tempo has recent traces for 4OK services, e.g. `resource.service.name="fourok-dagster-code"`.
 3. Grafana dashboards or documented Explore links/queries let the user see:
    - recent Dagster/code logs,
    - recent traces,
    - current import/retrieval counts or a link/panel to the operator status surface.
-4. If existing Grafana dashboards are broken, update or add dashboards/provisioning so the panels work after `uv run gcb-dev pipeline-up`.
+4. If existing Grafana dashboards are broken, update or add dashboards/provisioning so the panels work after `uv run fourok-dev pipeline-up`.
 5. Add/keep regression/config tests where feasible for dashboard/provisioning/query labels.
 
 ### Gate 4 — MCP retrieval server is real and usable by an agent
 
 Required proof:
 
-1. The GCB repo contains an MCP server implementation with tools at least:
-   - `search_gcb`
+1. The 4OK repo contains an MCP server implementation with tools at least:
+   - `search_fourok`
    - `operator_status`
 2. Tool schemas are discoverable by tests without launching the full server.
 3. The server can be launched via a documented command from the repo, and there is an exact Hermes MCP config snippet or command showing how to wire it as a native MCP server.
@@ -174,7 +174,7 @@ Required proof:
 
 Required proof:
 
-1. Rebuild/restart the local stack with `uv run gcb-dev pipeline-up` after changes.
+1. Rebuild/restart the local stack with `uv run fourok-dev pipeline-up` after changes.
 2. Run or wait for a fresh live backfill.
 3. Verify after restart:
    - Dagster run success,

@@ -10,20 +10,20 @@ from typing import Any
 from dagster import materialize
 from sqlalchemy import create_engine, text
 
-from gcb.governance.context import GovernedContext
-from gcb.governance.state import create_governed_context_state
-from gcb.runtime.webhooks import WebhookEventInput, enqueue_webhook_event, webhook_event_rows
+from fourok.governance.context import GovernedContext
+from fourok.governance.state import create_governed_context_state
+from fourok.runtime.webhooks import WebhookEventInput, enqueue_webhook_event, webhook_event_rows
 
 EXPECTED_ASSETS = {
-    "gcb_audit_metadata",
-    "gcb_canonical_objects_and_entity_links",
-    "gcb_google_drive_live_source_records_from_raw_landing",
-    "gcb_linear_live_source_records_from_raw_landing",
-    "gcb_operator_dashboard",
-    "gcb_retrieval_records",
-    "gcb_slack_live_source_records_from_raw_landing",
-    "gcb_twenty_live_source_records_from_raw_landing",
-    "gcb_webhook_backlog",
+    "fourok_audit_metadata",
+    "fourok_canonical_objects_and_entity_links",
+    "fourok_google_drive_live_source_records_from_raw_landing",
+    "fourok_linear_live_source_records_from_raw_landing",
+    "fourok_operator_dashboard",
+    "fourok_retrieval_records",
+    "fourok_slack_live_source_records_from_raw_landing",
+    "fourok_twenty_live_source_records_from_raw_landing",
+    "fourok_webhook_backlog",
     "meltano_google_drive_live_raw_landing",
     "meltano_linear_live_raw_landing",
     "meltano_slack_live_raw_landing",
@@ -48,12 +48,12 @@ def main() -> None:
     parser.add_argument(
         "--materialize-live-connectors",
         action="store_true",
-        help="Run the live connector asset path through Dagster with Infisical-backed credentials.",
+        help="Run the live connector asset path through Dagster with env/.env credentials.",
     )
     parser.add_argument(
         "--verify-live-db",
         action="store_true",
-        help="Require GCB_DATABASE_URL and verify live Dagster import changes runtime DB rows.",
+        help="Require FOUR_OK_DATABASE_URL and verify live Dagster import changes runtime DB rows.",
     )
     parser.add_argument(
         "--live-connector",
@@ -64,7 +64,7 @@ def main() -> None:
     parser.add_argument(
         "--verify-retrieval",
         action="store_true",
-        help="Verify search, evidence, and audit against the materialized GCB state.",
+        help="Verify search, evidence, and audit against the materialized 4OK state.",
     )
     parser.add_argument(
         "--verify-webhook",
@@ -98,7 +98,7 @@ def main() -> None:
             args.artifact_dir,
             seed_webhook=args.verify_webhook,
             asset_names=FIXTURE_ASSETS,
-            infisical_enabled=False,
+            load_dotenv=False,
         )
         print("materialize_status=ok")
     if args.materialize_live_connectors:
@@ -108,21 +108,21 @@ def main() -> None:
             args.artifact_dir,
             seed_webhook=False,
             asset_names=_live_connector_asset_names(args.live_connector),
-            infisical_enabled=True,
-            database_url=os.environ.get("GCB_DATABASE_URL", "") if args.verify_live_db else "",
+            load_dotenv=True,
+            database_url=os.environ.get("FOUR_OK_DATABASE_URL", "") if args.verify_live_db else "",
         )
         print("live_connector_materialize_status=ok")
         if args.verify_live_db:
             _verify_live_db_changed(before_counts)
     if args.verify_retrieval:
-        _verify_retrieval(args.artifact_dir / "gcb-state.sqlite")
+        _verify_retrieval(args.artifact_dir / "fourok-state.sqlite")
     if args.verify_webhook:
-        _verify_webhook(args.artifact_dir / "gcb-state.sqlite")
+        _verify_webhook(args.artifact_dir / "fourok-state.sqlite")
 
 
 def _load_definitions() -> Any:
     definitions_path = Path("deploy/dagster/definitions.py")
-    spec = importlib.util.spec_from_file_location("gcb_dagster_definitions_check", definitions_path)
+    spec = importlib.util.spec_from_file_location("fourok_dagster_definitions_check", definitions_path)
     if spec is None or spec.loader is None:
         raise SystemExit(f"Could not load {definitions_path}")
     module = importlib.util.module_from_spec(spec)
@@ -136,12 +136,12 @@ def _materialize_assets(
     *,
     seed_webhook: bool,
     asset_names: set[str],
-    infisical_enabled: bool,
+    load_dotenv: bool,
     database_url: str = "",
 ) -> None:
     shutil.rmtree(artifact_dir, ignore_errors=True)
     raw_landing = artifact_dir / "raw"
-    state_path = artifact_dir / "gcb-state.sqlite"
+    state_path = artifact_dir / "fourok-state.sqlite"
     if seed_webhook:
         _seed_webhook_event(state_path)
     selected_assets = [
@@ -154,14 +154,11 @@ def _materialize_assets(
         resources={
             "raw_landing": module.RawLandingResource(path=str(raw_landing)),
             "meltano_project": module.MeltanoProjectResource(project_root="."),
-            "infisical_secrets": module.InfisicalSecretsResource(
-                enabled=infisical_enabled,
-                project_id=_env_first("GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID"),
-                environment=_env_first("GCB_INFISICAL_ENV", "INFISICAL_ENV", default="runtime"),
-                path=_env_first("GCB_INFISICAL_PATH", "INFISICAL_PATH", default="/"),
-                domain=_env_first("GCB_INFISICAL_DOMAIN", "INFISICAL_DOMAIN", "INFISICAL_API_URL"),
+            "connector_env": module.ConnectorEnvResource(
+                dotenv_path=os.environ.get("FOUR_OK_DOTENV_PATH", ".env"),
+                load_dotenv=load_dotenv,
             ),
-            "gcb_runtime": module.GcbRuntimeResource(
+            "fourok_runtime": module.4okRuntimeResource(
                 state_path=str(state_path),
                 database_url=database_url,
             ),
@@ -194,14 +191,14 @@ def _live_connector_asset_names(connector: str) -> set[str]:
     if connector == "all":
         return LIVE_CONNECTOR_ASSETS
     asset_prefix = f"meltano_{connector}_live_raw_landing"
-    import_prefix = f"gcb_{connector}_live_source_records_from_raw_landing"
+    import_prefix = f"fourok_{connector}_live_source_records_from_raw_landing"
     return {asset_prefix, import_prefix}
 
 
 def _runtime_db_counts() -> dict[str, int]:
-    database_url = os.environ.get("GCB_DATABASE_URL", "")
+    database_url = os.environ.get("FOUR_OK_DATABASE_URL", "")
     if not database_url:
-        raise SystemExit("--verify-live-db requires GCB_DATABASE_URL")
+        raise SystemExit("--verify-live-db requires FOUR_OK_DATABASE_URL")
     engine = create_engine(database_url)
     try:
         with engine.connect() as connection:

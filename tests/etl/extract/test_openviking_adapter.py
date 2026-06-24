@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 
-from gcb.etl.extract.openviking_adapter import (
+from fourok.etl.extract.openviking_adapter import (
     load_openviking_messages_jsonl_source_records,
     openviking_message_source_record_from_raw,
 )
@@ -49,9 +49,9 @@ def test_openviking_messages_jsonl_variants_become_stable_source_records() -> No
         "source_path": ".local/openviking/messages.jsonl",
         "speaker": "Maya",
         "thread_id": "sess-alpha",
-        "workspace": "local-gcb",
+        "workspace": "local-fourok",
     }
-    assert records[0].raw["metadata"] == {"workspace": "local-gcb"}
+    assert records[0].raw["metadata"] == {"workspace": "local-fourok"}
     assert records[0].raw_ref == (
         ".local/openviking/messages.jsonl#openviking:conversation:conv-product:"
         "session:sess-alpha:message:m-001"

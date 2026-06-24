@@ -1,8 +1,8 @@
-from gcb.etl.extract.source_records import SourceIdentity, SourceRecord
-from gcb.governance import GovernedContext
-from gcb.governance.state import create_governed_context_state
-from gcb.runtime.rebuild import rebuild_context_objects
-from gcb.runtime.source_imports import import_source_records, source_record_import_report
+from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
+from fourok.governance import GovernedContext
+from fourok.governance.state import create_governed_context_state
+from fourok.runtime.rebuild import rebuild_context_objects
+from fourok.runtime.source_imports import import_source_records, source_record_import_report
 
 
 class RecordingImporter:

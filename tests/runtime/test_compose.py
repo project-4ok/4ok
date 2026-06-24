@@ -9,31 +9,25 @@ def test_compose_declares_app_context_cli_runtime() -> None:
     app_service = _compose_service_block(compose, "app")
 
     assert "  app:" in compose
-    assert "4ok-app:${GCB_IMAGE_TAG:?set GCB_IMAGE_TAG}" in compose
+    assert "4ok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in compose
     assert "docker/app.Dockerfile" in compose
-    assert "GCB_DATABASE_URL: ${GCB_DATABASE_URL:?set GCB_DATABASE_URL}" in app_service
+    assert "FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}" in app_service
     assert (
         "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
         in _compose_service_block(compose, "postgres")
     )
     assert "HONCHO_URL" not in app_service
     assert "HONCHO_SYNC_SOURCES" not in app_service
-    assert "INFISICAL_CLIENT_ID" in app_service
-    assert "INFISICAL_CLIENT_SECRET" in app_service
-    assert "INFISICAL_API_URL" in app_service
-    assert "GCB_GMAIL_INFISICAL_PROJECT_ID" in app_service
-    assert "GCB_GMAIL_INFISICAL_ENV" in app_service
-    assert "GCB_GMAIL_INFISICAL_PATH" in app_service
     assert "honcho:" not in app_service
     assert '"honcho-sync"' not in app_service
     assert '"runtime-monitor"' in app_service
     assert '"health"' in app_service
-    assert "GCB_OBSERVABILITY_ENABLED" in app_service
+    assert "FOUR_OK_OBSERVABILITY_ENABLED" in app_service
     assert "OTEL_EXPORTER_OTLP_ENDPOINT" in app_service
     assert "http://observability:4318" in app_service
-    assert "gcb-local:/app/.local" in app_service
-    assert "gcb-data:/var/lib/gcb" in app_service
-    assert "${GCB_CONFIG_PATH:-./.local/gcb.toml}:/etc/gcb/gcb.toml:ro" in app_service
+    assert "fourok-local:/app/.local" in app_service
+    assert "fourok-data:/var/lib/fourok" in app_service
+    assert "${FOUR_OK_CONFIG_PATH:-./.local/fourok.toml}:/etc/fourok/fourok.toml:ro" in app_service
 
 
 def test_compose_does_not_use_latest_image_tags() -> None:
@@ -45,18 +39,19 @@ def test_compose_does_not_use_latest_image_tags() -> None:
 def test_compose_active_services_have_restart_policies() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
 
-    for service_name in ["postgres", "cerbos", "observability", "app"]:
+    for service_name in ["postgres", "observability", "app"]:
         assert "restart: unless-stopped" in _compose_service_block(compose, service_name)
 
 
 def test_compose_active_services_have_health_checks() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
 
-    for service_name in ["postgres", "cerbos", "observability", "app"]:
+    for service_name in ["postgres", "observability", "app"]:
         assert "healthcheck:" in _compose_service_block(compose, service_name)
 
     app_service = _compose_service_block(compose, "app")
-    assert 'test: ["CMD", "/app/.venv/bin/gcb", "health"]' in app_service
+    assert '"/app/.venv/bin/fourok health --database-url \\\"$$FOUR_OK_DATABASE_URL\\\""' in app_service
+    assert '"--config"' not in _compose_healthcheck_block(app_service)
 
 
 def test_compose_app_command_is_long_running_when_restart_policy_is_enabled() -> None:
@@ -67,7 +62,7 @@ def test_compose_app_command_is_long_running_when_restart_policy_is_enabled() ->
     assert "command:" in app_service
     assert '"runtime-monitor"' in app_service
     assert not re.search(
-        r"command:\s*\[\s*\"health\",\s*\"--config\",\s*\"/etc/gcb/gcb\.toml\",\s*\]",
+        r"command:\s*\[\s*\"health\",\s*\"--config\",\s*\"/etc/fourok/fourok\.toml\",\s*\]",
         app_service,
         flags=re.MULTILINE,
     )
@@ -78,21 +73,19 @@ def test_compose_active_services_use_named_persistent_volumes() -> None:
 
     assert "postgres-data:/var/lib/postgresql/data" in _compose_service_block(compose, "postgres")
     assert "observability-data:/data" in _compose_service_block(compose, "observability")
-    assert "gcb-local:/app/.local" in _compose_service_block(compose, "app")
-    assert "gcb-data:/var/lib/gcb" in _compose_service_block(compose, "app")
+    assert "fourok-local:/app/.local" in _compose_service_block(compose, "app")
+    assert "fourok-data:/var/lib/fourok" in _compose_service_block(compose, "app")
     assert "\nvolumes:\n" in compose
     assert "  postgres-data:\n" in compose
     assert "  observability-data:\n" in compose
-    assert "  gcb-local:\n" in compose
-    assert "  gcb-data:\n" in compose
+    assert "  fourok-local:\n" in compose
+    assert "  fourok-data:\n" in compose
 
 
 def test_compose_active_services_bind_host_ports_to_loopback_only() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
 
     assert '"127.0.0.1:5432:5432"' in _compose_service_block(compose, "postgres")
-    assert '"127.0.0.1:3592:3592"' in _compose_service_block(compose, "cerbos")
-    assert '"127.0.0.1:3593:3593"' in _compose_service_block(compose, "cerbos")
     observability_service = _compose_service_block(compose, "observability")
     assert '"127.0.0.1:3000:3000"' in observability_service
     assert '"127.0.0.1:3100:3100"' in observability_service
@@ -111,8 +104,8 @@ def test_app_image_runs_installed_cli_without_runtime_uv_sync() -> None:
     assert "COPY pyproject.toml uv.lock README.md docker-compose.yml ./" in dockerfile
     assert "uv sync --frozen --no-group dev --no-install-project" in dockerfile
     assert "COPY src ./src" in dockerfile
-    assert 'ENTRYPOINT ["/app/.venv/bin/gcb"]' in dockerfile
-    assert 'ENTRYPOINT ["uv", "run", "gcb"]' not in dockerfile
+    assert 'ENTRYPOINT ["/app/.venv/bin/fourok"]' in dockerfile
+    assert 'ENTRYPOINT ["uv", "run", "fourok"]' not in dockerfile
 
 
 def test_dockerignore_keeps_local_artifacts_out_of_build_context() -> None:
@@ -126,7 +119,6 @@ def test_dockerignore_keeps_local_artifacts_out_of_build_context() -> None:
 
 def test_compose_excludes_deferred_experiment_runtimes() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
-
     assert "  honcho:" not in compose
     assert "  honcho-db:" not in compose
     assert "  honcho-redis:" not in compose
@@ -155,7 +147,7 @@ def test_compose_declares_local_observability_profile() -> None:
     assert '"127.0.0.1:4318:4318"' in observability_service
     assert "observability-data:/data" in observability_service
     assert "./deploy/observability/grafana-dashboards.yaml" in observability_service
-    assert "./deploy/observability/gcb-local-runtime-logs.json" in observability_service
+    assert "./deploy/observability/fourok-local-runtime-logs.json" in observability_service
     assert (
         "./deploy/observability/prometheus.yaml:/otel-lgtm/prometheus.yaml:ro"
         in observability_service
@@ -179,12 +171,12 @@ def test_compose_declares_promtail_docker_log_aggregation() -> None:
     assert "observability:" in promtail_service
 
 
-def test_observability_files_define_gcb_log_dashboard_and_docker_labels() -> None:
+def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> None:
     promtail = Path("deploy/observability/promtail-config.yml").read_text(encoding="utf-8")
     dashboard_provider = Path("deploy/observability/grafana-dashboards.yaml").read_text(
         encoding="utf-8"
     )
-    dashboard = Path("deploy/observability/gcb-local-runtime-logs.json").read_text(encoding="utf-8")
+    dashboard = Path("deploy/observability/fourok-local-runtime-logs.json").read_text(encoding="utf-8")
 
     assert "docker_sd_configs:" in promtail
     assert "__meta_docker_container_label_com_docker_compose_service" in promtail
@@ -199,9 +191,9 @@ def test_observability_files_define_gcb_log_dashboard_and_docker_labels() -> Non
         if "expr" in target
     ]
 
-    assert "GCB Local Runtime Logs" in dashboard_provider
-    assert "gcb-local-runtime-logs.json" in dashboard_provider
-    assert dashboard_data["title"] == "GCB Local Runtime Logs"
+    assert "4ok dashboard" in dashboard_provider
+    assert "fourok-local-runtime-logs.json" in dashboard_provider
+    assert dashboard_data["title"] == "4ok dashboard"
     assert '{compose_project=~"$compose_project"}' in expressions
     assert '{compose_service=~"$compose_service"}' in expressions
     assert '{compose_service=~"$compose_service"} |= "STEP_FAILURE"' in expressions
@@ -222,23 +214,23 @@ def test_observability_files_define_gcb_log_dashboard_and_docker_labels() -> Non
         if "expr" in target
     ]
 
-    assert any("gcb_dagster_last_success_timestamp_seconds" in expr for expr in prometheus_exprs)
-    assert any("gcb_connector_latest_run_status" in expr for expr in prometheus_exprs)
+    assert any("fourok_dagster_last_success_timestamp_seconds" in expr for expr in prometheus_exprs)
+    assert any("fourok_connector_latest_run_status" in expr for expr in prometheus_exprs)
     assert any(
-        "gcb_connector_latest_finished_timestamp_seconds" in expr for expr in prometheus_exprs
+        "fourok_connector_latest_finished_timestamp_seconds" in expr for expr in prometheus_exprs
     )
     assert any(
-        'gcb_connector_latest_finished_timestamp_seconds{connector!~".*(fixture|gmail[-_]singer).*"}'
+        'fourok_connector_latest_finished_timestamp_seconds{connector!~".*(fixture|gmail[-_]singer).*"}'
         in expr
         for expr in prometheus_exprs
     )
-    assert any("gcb_dagster_latest_run_stage_status" in expr for expr in prometheus_exprs)
+    assert any("fourok_dagster_latest_run_stage_status" in expr for expr in prometheus_exprs)
     assert any(
-        "gcb_dagster_latest_run_stage_status" in expr and "clamp_max" in expr
+        "fourok_dagster_latest_run_stage_status" in expr and "clamp_max" in expr
         for expr in prometheus_exprs
     )
     assert any(
-        'gcb_dagster_latest_run_stage_status{exported_job="$dagster_job",status!="SUCCESS"}' in expr
+        'fourok_dagster_latest_run_stage_status{exported_job="$dagster_job",status!="SUCCESS"}' in expr
         for expr in prometheus_exprs
     )
     non_success_panel = next(
@@ -248,16 +240,16 @@ def test_observability_files_define_gcb_log_dashboard_and_docker_labels() -> Non
     )
     assert non_success_panel["type"] == "table"
     assert non_success_panel["targets"][0].get("instant") is True
-    assert any("gcb_source_latest_record_timestamp_seconds" in expr for expr in prometheus_exprs)
-    assert any("gcb_source_records_total" in expr for expr in prometheus_exprs)
-    assert any("gcb_raw_landed_records_total" in expr for expr in prometheus_exprs)
-    assert any("gcb_canonical_objects_total" in expr for expr in prometheus_exprs)
-    assert any("gcb_entity_links_total" in expr for expr in prometheus_exprs)
-    assert any("gcb_retrieval_records_total" in expr for expr in prometheus_exprs)
-    assert any("gcb_retrieval_requests_total" in expr for expr in prometheus_exprs)
-    assert any("gcb_retrieval_pre_rerank_candidates_sum" in expr for expr in prometheus_exprs)
-    assert any("gcb_retrieval_zero_result_requests_total" in expr for expr in prometheus_exprs)
-    assert any("gcb_retrieval_duration_ms_sum" in expr for expr in prometheus_exprs)
+    assert any("fourok_source_latest_record_timestamp_seconds" in expr for expr in prometheus_exprs)
+    assert any("fourok_source_records_total" in expr for expr in prometheus_exprs)
+    assert any("fourok_raw_landed_records_total" in expr for expr in prometheus_exprs)
+    assert any("fourok_canonical_objects_total" in expr for expr in prometheus_exprs)
+    assert any("fourok_entity_links_total" in expr for expr in prometheus_exprs)
+    assert any("fourok_retrieval_records_total" in expr for expr in prometheus_exprs)
+    assert any("fourok_retrieval_requests_total" in expr for expr in prometheus_exprs)
+    assert any("fourok_retrieval_pre_rerank_candidates_sum" in expr for expr in prometheus_exprs)
+    assert any("fourok_retrieval_zero_result_requests_total" in expr for expr in prometheus_exprs)
+    assert any("fourok_retrieval_duration_ms_sum" in expr for expr in prometheus_exprs)
     assert any("otelcol_receiver_accepted_spans_total" in expr for expr in prometheus_exprs)
     panel_titles = {panel["title"] for panel in prometheus_panels}
     assert "[Logs] Last 5 4ok Docker logs" in {panel["title"] for panel in dashboard_data["panels"]}
@@ -341,7 +333,7 @@ def test_observability_files_define_gcb_log_dashboard_and_docker_labels() -> Non
         if panel["title"] == "[Metrics] Canonical object type ratio"
     )
     assert canonical_ratio_panel["type"] == "piechart"
-    assert canonical_ratio_panel["targets"][0]["expr"] == "gcb_canonical_objects_total"
+    assert canonical_ratio_panel["targets"][0]["expr"] == "fourok_canonical_objects_total"
     assert "[Metrics] Processed entity links by relationship" in panel_titles
     assert "[Metrics] Raw landed records by connector/stream" in panel_titles
     for title in [
@@ -357,9 +349,9 @@ def test_observability_files_define_gcb_log_dashboard_and_docker_labels() -> Non
         "[Embedding] Latest indexing duration seconds",
     ]:
         assert title in panel_titles
-    assert any("gcb_embedding_coverage_ratio" in expr for expr in prometheus_exprs)
-    assert any("gcb_embedding_records_total" in expr for expr in prometheus_exprs)
-    assert any("gcb_embedding_index_duration_seconds" in expr for expr in prometheus_exprs)
+    assert any("fourok_embedding_coverage_ratio" in expr for expr in prometheus_exprs)
+    assert any("fourok_embedding_records_total" in expr for expr in prometheus_exprs)
+    assert any("fourok_embedding_index_duration_seconds" in expr for expr in prometheus_exprs)
     retrieval_candidates_panel = next(
         panel
         for panel in prometheus_panels
@@ -387,10 +379,10 @@ def test_observability_files_define_gcb_log_dashboard_and_docker_labels() -> Non
         < positions["[Logs] Latest 5 runtime errors by service"]
     )
     trace_panel = next(
-        panel for panel in tempo_panels if panel["title"] == "[Tracing] Recent GCB traces (Tempo)"
+        panel for panel in tempo_panels if panel["title"] == "[Tracing] Recent 4OK traces (Tempo)"
     )
     assert trace_panel["type"] == "table"
-    assert trace_panel["targets"][0]["query"] == '{ name =~ "gcb.*|meltano.*" }'
+    assert trace_panel["targets"][0]["query"] == '{ name =~ "fourok.*|meltano.*" }'
     assert trace_panel["targets"][0]["limit"] == 20
     assert any(
         panel["title"] == "[Logs] Latest 5 runtime errors by service"
@@ -412,22 +404,22 @@ def test_observability_files_define_gcb_log_dashboard_and_docker_labels() -> Non
     assert tempo_panels
 
 
-def test_compose_declares_gcb_metrics_exporter_for_prometheus() -> None:
+def test_compose_declares_fourok_metrics_exporter_for_prometheus() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
-    service = _compose_service_block(compose, "gcb-metrics-exporter")
+    service = _compose_service_block(compose, "fourok-metrics-exporter")
     prometheus = Path("deploy/observability/prometheus.yaml").read_text(encoding="utf-8")
 
     assert 'profiles: ["observability"]' in service
-    assert "image: 4ok-app:${GCB_IMAGE_TAG:?set GCB_IMAGE_TAG}" in service
+    assert "image: 4ok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in service
     assert 'entrypoint: ["/app/.venv/bin/python"]' in service
     assert '"-m"' in service
-    assert '"gcb.runtime.metrics_exporter"' in service
+    assert '"fourok.runtime.metrics_exporter"' in service
     assert '"9108"' in service
-    assert "GCB_DAGSTER_GRAPHQL_URL: http://dagster-webserver:3001/graphql" in service
-    assert "GCB_DATABASE_URL: ${GCB_DATABASE_URL:?set GCB_DATABASE_URL}" in service
-    assert "gcb-local:/app/.local" in service
-    assert "gcb-metrics-exporter:9108" in prometheus
-    assert "gcb-dagster-runtime" in prometheus
+    assert "FOUR_OK_DAGSTER_GRAPHQL_URL: http://dagster-webserver:3001/graphql" in service
+    assert "FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}" in service
+    assert "fourok-local:/app/.local" in service
+    assert "fourok-metrics-exporter:9108" in prometheus
+    assert "fourok-dagster-runtime" in prometheus
 
 
 def test_compose_declares_dagster_pipeline_profile() -> None:
@@ -448,27 +440,22 @@ def test_compose_declares_dagster_pipeline_profile() -> None:
         "docker.io/dagster/dagster-k8s:1.13.8@"
         "sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301"
     )
-    assert f"${{GCB_DAGSTER_RUNTIME_IMAGE:-{public_dagster_runtime_image}}}" in compose
-    assert "4ok-dagster-code:${GCB_IMAGE_TAG:?set GCB_IMAGE_TAG}" in compose
+    assert f"${{FOUR_OK_DAGSTER_RUNTIME_IMAGE:-{public_dagster_runtime_image}}}" in compose
+    assert "4ok-dagster-code:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in compose
     assert "docker/dagster.Dockerfile" in compose
     assert "target: dagster-code" in _compose_service_block(compose, "dagster-code")
     assert "target: dagster-runtime" not in _compose_service_block(compose, "dagster-webserver")
     assert "target: dagster-runtime" not in _compose_service_block(compose, "dagster-daemon")
-    assert "./deploy/dagster/dagster.yaml:/tmp/gcb-dagster-home/dagster.yaml:ro" in compose
-    assert "./deploy/dagster/workspace.yaml:/tmp/gcb-dagster-home/workspace.yaml:ro" in compose
+    assert "./deploy/dagster/dagster.yaml:/tmp/fourok-dagster-home/dagster.yaml:ro" in compose
+    assert "./deploy/dagster/workspace.yaml:/tmp/fourok-dagster-home/workspace.yaml:ro" in compose
     assert '"127.0.0.1:3001:3001"' in _compose_service_block(compose, "dagster-webserver")
-    dagster_code = _compose_service_block(compose, "dagster-code")
-    assert "GCB_INFISICAL_PROJECT_ID: ${GCB_INFISICAL_PROJECT_ID:-}" in dagster_code
-    assert "GCB_INFISICAL_ENV: ${GCB_INFISICAL_ENV:-runtime}" in dagster_code
-    assert "INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID:-}" in dagster_code
-    assert "INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET:-}" in dagster_code
     for service_name, service_name_env in [
-        ("dagster-code", "gcb-dagster-code"),
-        ("dagster-webserver", "gcb-dagster-webserver"),
-        ("dagster-daemon", "gcb-dagster-daemon"),
+        ("dagster-code", "fourok-dagster-code"),
+        ("dagster-webserver", "fourok-dagster-webserver"),
+        ("dagster-daemon", "fourok-dagster-daemon"),
     ]:
         service = _compose_service_block(compose, service_name)
-        assert "GCB_OBSERVABILITY_ENABLED: ${GCB_OBSERVABILITY_ENABLED:-true}" in service
+        assert "FOUR_OK_OBSERVABILITY_ENABLED: ${FOUR_OK_OBSERVABILITY_ENABLED:-true}" in service
         assert (
             "OTEL_EXPORTER_OTLP_ENDPOINT: "
             "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}" in service
@@ -484,7 +471,7 @@ def test_dagster_definitions_configure_observability_from_env() -> None:
     observability_imports = {
         alias.name
         for node in ast.walk(tree)
-        if isinstance(node, ast.ImportFrom) and node.module == "gcb.observability"
+        if isinstance(node, ast.ImportFrom) and node.module == "fourok.observability"
         for alias in node.names
     }
 
@@ -498,6 +485,17 @@ def _compose_service_block(compose: str, service_name: str) -> str:
     end = len(lines)
     for index in range(start + 1, len(lines)):
         if re.match(r"^  [A-Za-z0-9_-]+:$", lines[index]):
+            end = index
+            break
+    return "\n".join(lines[start:end])
+
+
+def _compose_healthcheck_block(service_block: str) -> str:
+    lines = service_block.splitlines()
+    start = next(index for index, line in enumerate(lines) if line.strip() == "healthcheck:")
+    end = len(lines)
+    for index in range(start + 1, len(lines)):
+        if re.match(r"^    [A-Za-z0-9_-]+:", lines[index]):
             end = index
             break
     return "\n".join(lines[start:end])

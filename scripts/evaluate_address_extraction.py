@@ -4,8 +4,8 @@ import json
 from importlib.util import find_spec
 from pathlib import Path
 
-from gcb.etl.transform.pii import PresidioPiiDetector
-from gcb.evaluation import evaluate_pii_detector, load_pii_eval_cases
+from fourok.etl.transform.pii import PresidioPiiDetector
+from fourok.evaluation import evaluate_pii_detector, load_pii_eval_cases
 
 ROOT = Path(__file__).resolve().parents[1]
 ADDRESS_EVAL = ROOT / "fixtures" / "pii_eval" / "address_cases.json"

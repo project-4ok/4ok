@@ -2,14 +2,14 @@ from pathlib import Path
 
 import pytest
 
-from gcb.etl.extract.connectors import land_singer_records, load_slack_source_records
-from gcb.etl.extract.slack_adapter import (
+from fourok.etl.extract.connectors import land_singer_records, load_slack_source_records
+from fourok.etl.extract.slack_adapter import (
     load_slack_landed_source_records,
     slack_channel_source_record_from_raw,
     slack_message_source_record_from_raw,
     slack_user_source_record_from_raw,
 )
-from gcb.governance import GovernedContext
+from fourok.governance import GovernedContext
 
 
 def test_slack_live_tap_streams_feed_source_record_adapter() -> None:

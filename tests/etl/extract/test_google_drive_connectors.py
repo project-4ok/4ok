@@ -1,14 +1,14 @@
 from pathlib import Path
 
-from gcb.etl.extract.connectors import (
+from fourok.etl.extract.connectors import (
     google_drive_file_source_record_from_raw,
     land_singer_records,
     load_google_drive_source_records,
     load_landed_source_records,
 )
-from gcb.etl.extract.google_drive_tap import GoogleDriveTapConfig, run_google_drive_tap
-from gcb.governance.context import GovernedContext
-from gcb.governance.policy import PrincipalContext
+from fourok.etl.extract.google_drive_tap import GoogleDriveTapConfig, run_google_drive_tap
+from fourok.governance.context import GovernedContext
+from fourok.governance.policy import PrincipalContext
 
 FIXTURES = Path(__file__).parents[3] / "fixtures" / "connectors"
 SINGER_GOOGLE_DRIVE_DOCS = FIXTURES / "singer_google_drive_docs.jsonl"
@@ -261,7 +261,7 @@ def test_google_drive_tap_default_limit_stays_bounded_because_files_are_download
 def test_committed_meltano_config_wires_google_drive_fixture_job() -> None:
     config = (Path(__file__).parents[3] / "meltano.yml").read_text(encoding="utf-8")
 
-    assert "tap-gcb-google-drive-fixture" in config
+    assert "tap-fourok-google-drive-fixture" in config
     assert "fixtures/connectors/singer_google_drive_docs.jsonl" in config
     assert "singer-google-drive-fixture-to-raw" in config
-    assert "tap-gcb-google-drive-fixture target-gcb-raw-jsonl" in config
+    assert "tap-fourok-google-drive-fixture target-fourok-raw-jsonl" in config

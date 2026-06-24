@@ -20,7 +20,7 @@ env:
 
 jobs:
   publish:
-    name: publish GCB runtime artifacts
+    name: publish 4OK runtime artifacts
     runs-on: ubuntu-latest
     outputs:
       app_image: ${{ steps.manifest.outputs.app_image }}
@@ -71,8 +71,8 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/4ok-app:sha-${{ github.sha }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
-          cache-from: type=gha,scope=gcb-app
-          cache-to: type=gha,mode=max,scope=gcb-app
+          cache-from: type=gha,scope=fourok-app
+          cache-to: type=gha,mode=max,scope=fourok-app
 
       - name: Build and push Dagster code image
         id: dagster-code
@@ -86,8 +86,8 @@ jobs:
             ghcr.io/${{ github.repository_owner }}/4ok-dagster-code:sha-${{ github.sha }}
           labels: |
             org.opencontainers.image.revision=${{ github.sha }}
-          cache-from: type=gha,scope=gcb-dagster-code
-          cache-to: type=gha,mode=max,scope=gcb-dagster-code
+          cache-from: type=gha,scope=fourok-dagster-code
+          cache-to: type=gha,mode=max,scope=fourok-dagster-code
 
       - name: Write runtime manifest
         id: manifest
@@ -120,7 +120,7 @@ jobs:
       - name: Upload runtime manifest artifact
         uses: actions/upload-artifact@v4
         with:
-          name: gcb-runtime-manifest-${{ github.sha }}
+          name: fourok-runtime-manifest-${{ github.sha }}
           path: |
             runtime-manifest.json
             dist/4ok-*.whl

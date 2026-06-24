@@ -3,14 +3,14 @@ from datetime import UTC, datetime, timedelta
 
 from sqlalchemy import insert, select
 
-from gcb.governance.lifecycle import (
+from fourok.governance.lifecycle import (
     inactive_source_refs,
     purge_expired_raw_sources,
     remove_source_from_retrieval,
     source_lifecycle_rows,
 )
-from gcb.governance.policy import PrincipalContext
-from gcb.governance.state import create_governed_context_state
+from fourok.governance.policy import PrincipalContext
+from fourok.governance.state import create_governed_context_state
 
 
 class FakeRawStore:

@@ -5,9 +5,9 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from gcb.etl.extract.email_parser import load_email_dir
-from gcb.governance import GovernedContext
-from gcb.retrieval.evaluation import compare_retrieval_methods, load_retrieval_eval_cases
+from fourok.etl.extract.email_parser import load_email_dir
+from fourok.governance import GovernedContext
+from fourok.retrieval.evaluation import compare_retrieval_methods, load_retrieval_eval_cases
 
 
 def main() -> None:

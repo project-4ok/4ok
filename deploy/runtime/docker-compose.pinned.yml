@@ -3,31 +3,15 @@ services:
     image: pgvector/pgvector:pg16
     restart: unless-stopped
     environment:
-      POSTGRES_DB: gcb
-      POSTGRES_USER: gcb
+      POSTGRES_DB: fourok
+      POSTGRES_USER: fourok
       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}
     ports:
       - "127.0.0.1:5432:5432"
     volumes:
       - postgres-data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U gcb -d gcb"]
-      interval: 5s
-      timeout: 5s
-      retries: 12
-
-  cerbos:
-    image: ghcr.io/cerbos/cerbos:0.53.0
-    restart: unless-stopped
-    command: ["server", "--config=/config/config.yaml"]
-    ports:
-      - "127.0.0.1:3592:3592"
-      - "127.0.0.1:3593:3593"
-    volumes:
-      - ../../cerbos/config.yaml:/config/config.yaml:ro
-      - ../../cerbos/policies:/policies:ro
-    healthcheck:
-      test: ["CMD", "/cerbos", "healthcheck", "--config=/config/config.yaml", "--kind=http", "--insecure"]
+      test: ["CMD-SHELL", "pg_isready -U fourok -d fourok"]
       interval: 5s
       timeout: 5s
       retries: 12
@@ -46,8 +30,8 @@ services:
       - "127.0.0.1:4318:4318"
     volumes:
       - observability-data:/data
-      - ../../deploy/observability/grafana-dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/gcb-dashboards.yaml:ro
-      - ../../deploy/observability/gcb-local-runtime-logs.json:/otel-lgtm/gcb-local-runtime-logs.json:ro
+      - ../../deploy/observability/grafana-dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/fourok-dashboards.yaml:ro
+      - ../../deploy/observability/fourok-local-runtime-logs.json:/otel-lgtm/fourok-local-runtime-logs.json:ro
       - ../../deploy/observability/prometheus.yaml:/otel-lgtm/prometheus.yaml:ro
     healthcheck:
       test: ["CMD-SHELL", "curl -fsS http://localhost:3000/api/health >/dev/null || exit 1"]
@@ -69,20 +53,20 @@ services:
       observability:
         condition: service_healthy
 
-  gcb-metrics-exporter:
+  fourok-metrics-exporter:
     profiles: ["observability"]
-    image: ${GCB_APP_IMAGE:?set GCB_APP_IMAGE to a digest image ref}
+    image: ${FOUR_OK_APP_IMAGE:?set FOUR_OK_APP_IMAGE to a digest image ref}
     restart: unless-stopped
     entrypoint: ["/app/.venv/bin/python"]
-    command: ["-m", "gcb.runtime.metrics_exporter", "--host", "0.0.0.0", "--port", "9108"]
+    command: ["-m", "fourok.runtime.metrics_exporter", "--host", "0.0.0.0", "--port", "9108"]
     environment:
-      GCB_DAGSTER_GRAPHQL_URL: http://dagster-webserver:3001/graphql
-      GCB_DATABASE_URL: ${GCB_DATABASE_URL:?set GCB_DATABASE_URL}
-      GCB_STATE_PATH: /app/.local/dagster/gcb-state.sqlite
+      FOUR_OK_DAGSTER_GRAPHQL_URL: http://dagster-webserver:3001/graphql
+      FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}
+      FOUR_OK_STATE_PATH: /app/.local/dagster/fourok-state.sqlite
     expose:
       - "9108"
     volumes:
-      - gcb-local:/app/.local
+      - fourok-local:/app/.local
     depends_on:
       observability:
         condition: service_healthy
@@ -105,32 +89,32 @@ services:
 
   dagster-code:
     profiles: ["pipeline"]
-    image: ${GCB_DAGSTER_CODE_IMAGE:?set GCB_DAGSTER_CODE_IMAGE to a digest image ref}
+    image: ${FOUR_OK_DAGSTER_CODE_IMAGE:?set FOUR_OK_DAGSTER_CODE_IMAGE to a digest image ref}
     restart: unless-stopped
     environment:
-      DAGSTER_CURRENT_IMAGE: ${GCB_DAGSTER_CODE_IMAGE:?set GCB_DAGSTER_CODE_IMAGE to a digest image ref}
+      DAGSTER_CURRENT_IMAGE: ${FOUR_OK_DAGSTER_CODE_IMAGE:?set FOUR_OK_DAGSTER_CODE_IMAGE to a digest image ref}
       DAGSTER_POSTGRES_USER: dagster
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      GCB_DATABASE_URL: ${GCB_DATABASE_URL:?set GCB_DATABASE_URL}
-      GCB_PROJECT_ROOT: /app
-      GCB_RAW_LANDING_DIR: /app/.local/raw/singer
-      GCB_STATE_PATH: /app/.local/dagster/gcb-state.sqlite
-      GCB_EMBEDDING_PROVIDER: ${GCB_EMBEDDING_PROVIDER:-}
-      GCB_OPENAI_EMBEDDING_MODEL: ${GCB_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
-      GCB_EMBEDDING_DIMENSIONS: ${GCB_EMBEDDING_DIMENSIONS:-256}
+      FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}
+      FOUR_OK_PROJECT_ROOT: /app
+      FOUR_OK_RAW_LANDING_DIR: /app/.local/raw/singer
+      FOUR_OK_STATE_PATH: /app/.local/dagster/fourok-state.sqlite
+      FOUR_OK_EMBEDDING_PROVIDER: ${FOUR_OK_EMBEDDING_PROVIDER:-}
+      FOUR_OK_OPENAI_EMBEDDING_MODEL: ${FOUR_OK_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      FOUR_OK_EMBEDDING_DIMENSIONS: ${FOUR_OK_EMBEDDING_DIMENSIONS:-256}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      GCB_OBSERVABILITY_ENABLED: ${GCB_OBSERVABILITY_ENABLED:-true}
+      FOUR_OK_OBSERVABILITY_ENABLED: ${FOUR_OK_OBSERVABILITY_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
-      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-gcb-dagster-code}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-code}
     depends_on:
       postgres:
         condition: service_healthy
       dagster-postgres:
         condition: service_healthy
     volumes:
-      - gcb-local:/app/.local
+      - fourok-local:/app/.local
     healthcheck:
       test: ["CMD", "dagster", "api", "grpc-health-check", "-p", "4000"]
       interval: 5s
@@ -140,14 +124,14 @@ services:
 
   dagster-webserver:
     profiles: ["pipeline"]
-    image: ${GCB_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
+    image: ${FOUR_OK_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
     restart: unless-stopped
     command:
       - sh
       - -lc
       - >
         mkdir -p "$$DAGSTER_HOME" &&
-        cp /tmp/gcb-dagster-home/dagster.yaml /tmp/gcb-dagster-home/workspace.yaml "$$DAGSTER_HOME"/ &&
+        cp /tmp/fourok-dagster-home/dagster.yaml /tmp/fourok-dagster-home/workspace.yaml "$$DAGSTER_HOME"/ &&
         exec dagster-webserver -h 0.0.0.0 -p 3001 -w workspace.yaml
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
@@ -155,15 +139,15 @@ services:
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      GCB_OBSERVABILITY_ENABLED: ${GCB_OBSERVABILITY_ENABLED:-true}
+      FOUR_OK_OBSERVABILITY_ENABLED: ${FOUR_OK_OBSERVABILITY_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
-      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-gcb-dagster-webserver}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-webserver}
     ports:
       - "127.0.0.1:3001:3001"
     volumes:
       - dagster-local:/var/lib/dagster
-      - ../dagster/dagster.yaml:/tmp/gcb-dagster-home/dagster.yaml:ro
-      - ../dagster/workspace.yaml:/tmp/gcb-dagster-home/workspace.yaml:ro
+      - ../dagster/dagster.yaml:/tmp/fourok-dagster-home/dagster.yaml:ro
+      - ../dagster/workspace.yaml:/tmp/fourok-dagster-home/workspace.yaml:ro
     depends_on:
       dagster-postgres:
         condition: service_healthy
@@ -182,14 +166,14 @@ services:
 
   dagster-daemon:
     profiles: ["pipeline"]
-    image: ${GCB_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
+    image: ${FOUR_OK_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
     restart: unless-stopped
     command:
       - sh
       - -lc
       - >
         mkdir -p "$$DAGSTER_HOME" &&
-        cp /tmp/gcb-dagster-home/dagster.yaml /tmp/gcb-dagster-home/workspace.yaml "$$DAGSTER_HOME"/ &&
+        cp /tmp/fourok-dagster-home/dagster.yaml /tmp/fourok-dagster-home/workspace.yaml "$$DAGSTER_HOME"/ &&
         exec dagster-daemon run
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
@@ -197,13 +181,13 @@ services:
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      GCB_OBSERVABILITY_ENABLED: ${GCB_OBSERVABILITY_ENABLED:-true}
+      FOUR_OK_OBSERVABILITY_ENABLED: ${FOUR_OK_OBSERVABILITY_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
-      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-gcb-dagster-daemon}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-daemon}
     volumes:
       - dagster-local:/var/lib/dagster
-      - ../dagster/dagster.yaml:/tmp/gcb-dagster-home/dagster.yaml:ro
-      - ../dagster/workspace.yaml:/tmp/gcb-dagster-home/workspace.yaml:ro
+      - ../dagster/dagster.yaml:/tmp/fourok-dagster-home/dagster.yaml:ro
+      - ../dagster/workspace.yaml:/tmp/fourok-dagster-home/workspace.yaml:ro
     depends_on:
       dagster-postgres:
         condition: service_healthy
@@ -217,41 +201,36 @@ services:
       start_period: 15s
 
   app:
-    image: ${GCB_APP_IMAGE:?set GCB_APP_IMAGE to a digest image ref}
+    image: ${FOUR_OK_APP_IMAGE:?set FOUR_OK_APP_IMAGE to a digest image ref}
     restart: unless-stopped
     environment:
-      GCB_DATABASE_URL: ${GCB_DATABASE_URL:?set GCB_DATABASE_URL}
-      GCB_OBSERVABILITY_ENABLED: ${GCB_OBSERVABILITY_ENABLED:-false}
-      GCB_EMBEDDING_PROVIDER: ${GCB_EMBEDDING_PROVIDER:-}
-      GCB_OPENAI_EMBEDDING_MODEL: ${GCB_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
-      GCB_EMBEDDING_DIMENSIONS: ${GCB_EMBEDDING_DIMENSIONS:-256}
+      FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}
+      FOUR_OK_OBSERVABILITY_ENABLED: ${FOUR_OK_OBSERVABILITY_ENABLED:-false}
+      FOUR_OK_EMBEDDING_PROVIDER: ${FOUR_OK_EMBEDDING_PROVIDER:-}
+      FOUR_OK_OPENAI_EMBEDDING_MODEL: ${FOUR_OK_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      FOUR_OK_EMBEDDING_DIMENSIONS: ${FOUR_OK_EMBEDDING_DIMENSIONS:-256}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      INFISICAL_API_URL: ${INFISICAL_API_URL:-}
-      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID:-}
-      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET:-}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
-      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-gcb-app}
+      OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-app}
     depends_on:
       postgres:
         condition: service_healthy
-      cerbos:
-        condition: service_healthy
     volumes:
-      - gcb-local:/app/.local
-      - gcb-data:/var/lib/gcb
-      - ${GCB_CONFIG_PATH:-../../.local/gcb.toml}:/etc/gcb/gcb.toml:ro
+      - fourok-local:/app/.local
+      - fourok-data:/var/lib/fourok
+      - ${FOUR_OK_CONFIG_PATH:-../../.local/fourok.toml}:/etc/fourok/fourok.toml:ro
     healthcheck:
-      test: ["CMD", "/app/.venv/bin/gcb", "health"]
+      test: ["CMD", "/app/.venv/bin/fourok", "health"]
       interval: 10s
       timeout: 10s
       retries: 12
       start_period: 10s
-    command: ["runtime-monitor", "--config", "/etc/gcb/gcb.toml"]
+    command: ["runtime-monitor", "--config", "/etc/fourok/fourok.toml"]
 
 volumes:
   postgres-data:
   observability-data:
   dagster-postgres-data:
   dagster-local:
-  gcb-local:
-  gcb-data:
+  fourok-local:
+  fourok-data:

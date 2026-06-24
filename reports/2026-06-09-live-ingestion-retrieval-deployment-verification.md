@@ -1,4 +1,4 @@
-# GCB live ingestion, retrieval, and deployment verification evidence
+# 4OK live ingestion, retrieval, and deployment verification evidence
 
 Report started: 2026-06-09T19:19:26+02:00
 Overall status: NOT COMPLETE — evidence collection in progress.
@@ -10,12 +10,12 @@ Status: IN PROGRESS
 ```text
 timestamp=2026-06-09T19:19:26+02:00
 
---- GCB git status ---
+--- 4OK git status ---
 ## main...origin/main [ahead 17]
 ?? .hermes/
 ?? reports/
 
---- GCB latest commits ---
+--- 4OK latest commits ---
 54afb5b (HEAD -> main) fix: restore sources when permission snapshots recover
 1f4dc7b fix: make permissionless drive imports operator searchable
 8485f96 (codex/retrieval-live-verification) fix: preserve google drive domain permissions
@@ -37,7 +37,7 @@ b7016cf Add operator live ingestion command
 362d53e Preserve prod Slack DM routing on promotion
 f48d5b2 Restore 4ok Jules model fallback
 d0b7c57 Keep prod Slack DMs out of assistant threads
-ce40e13 Retry Infisical CLI download in dev deploy workflow
+ce40e13 Retry external secret manager CLI download in dev deploy workflow
 77e5f3a Mount Codex auth bootstrap helper in gateway runtime
 094af3c Allow prod gateway runtime secret read actions
 c542a2a Stage Codex bootstrap helper in runtime bundle
@@ -315,17 +315,35 @@ slack:user:U0ASC2HAV7A	Jesper Morgenstern	["slack:team:T0APCSCJZC2"]	Jesper Morg
 slack:channel_member:C0APCSD1118:U0APCSGCM98	U0APCSGCM98 in C0APCSD1118	["slack:channel:C0APCSD1118"]	Slack user U0APCSGCM98 is a member of channel C0APCSD1118
 slack:channel_member:C0APCSD1118:U0APRPJ2UGZ	U0APRPJ2UGZ in C0APCSD1118	["slack:channel:C0APCSD1118"]	Slack user U0APRPJ2UGZ is a member of channel C0APCSD1118
 -- google_drive samples
-google_drive:file:1OrzMfZDwv-R_7LKUZLgfETq5FzbDCt0EShsujPMJAyw	Quick Chat (Jiayu Zhou) - 2026/05/04 16:30 CEST - Notes by Gemini	["operator"]	﻿📝 Notes May 4, 2026 Quick Chat (Jiayu Zhou) Invited jiayu.zhou@imago-images.de Simon van Laak Attachments Quick Chat (Jiayu Zhou) Meeting records Transcri
+google_drive:file:1OrzMfZDwv-R_7LKUZLgfETq5FzbDCt0EShsujPMJAyw	Quick Chat (Jiayu Zhou) - 2026/05/04 16:30 CEST - Notes by Gemini	["operator"]	﻿📝 Notes
+ May 4, 2026
+ Quick Chat (Jiayu Zhou)
+ Invited jiayu.zhou@imago-images.de Simon van Laak
+ Attachments Quick Chat (Jiayu Zhou)
+ Meeting records Transcri
 google_drive:file:1daVuh0zTiRW5KsfUpjkba177OKleM76v	buena Enterprise Architecture for Property Management Document Intelligence.md	["operator"]	# Enterprise Architecture for Property Management Document Intelligence  ## Executive recommendation  The strongest architecture for this problem is **not** an
-google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM	4ok - Sales Resource	["operator"]	﻿4ok - Sales Resource for First Customer Meetings What this document is for This document helps internal salespeople explain the Governed C
-google_drive:file:12ZG0MgjYgx3qPiCSJ3ffo0bGYywmHQhiyLEWs-d0TPE	2026-05-23 Buena scalable multi-source memory and retrieval platform	["operator"]	﻿Buena scalable multi-source memory and retrieval platform Why this follow-up exists The first memo defined the privacy-safe foundation: early PII extraction,
-google_drive:file:1npxJYLu8q_lzONlgyKG5GAzCbKQdglDGmpxrqU4iR9M	00 Drive Guide	["operator"]	﻿v 00 Start Here 00 Drive Guide 01 Team Context 01 Teams Ops 00 Shared Contact Register 01 Team Handbooks and SOPs 02 Decision Log 03 Meeting Notes 04
+google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM	4ok - Sales Resource	["operator"]	﻿4ok - Sales Resource for First Customer Meetings
+ What this document is for
+ This document helps internal salespeople explain the Governed C
+google_drive:file:12ZG0MgjYgx3qPiCSJ3ffo0bGYywmHQhiyLEWs-d0TPE	2026-05-23 Buena scalable multi-source memory and retrieval platform	["operator"]	﻿Buena scalable multi-source memory and retrieval platform
+ Why this follow-up exists
+ The first memo defined the privacy-safe foundation: early PII extraction,
+google_drive:file:1npxJYLu8q_lzONlgyKG5GAzCbKQdglDGmpxrqU4iR9M	00 Drive Guide	["operator"]	﻿v
+ 00 Start Here
+ 00 Drive Guide
+ 01 Team Context
+ 01 Teams Ops
+ 00 Shared Contact Register
+ 01 Team Handbooks and SOPs
+ 02 Decision Log
+ 03 Meeting Notes
+ 04
 ```
 
 ### Retrieval/search commands and outputs
 ```text
 timestamp=2026-06-09T19:21:18+02:00
-$ uv run gcb search-state 'Morgan Bros' --limit 5
+$ uv run fourok search-state 'Morgan Bros' --limit 5
 {
   "query": "Morgan Bros",
   "load": {
@@ -402,7 +420,7 @@ $ uv run gcb search-state 'Morgan Bros' --limit 5
   "audit_ref": "audit:search:81"
 }
 
-$ uv run gcb search-state 'Sariva' --limit 5
+$ uv run fourok search-state 'Sariva' --limit 5
 {
   "query": "Sariva",
   "load": {
@@ -479,7 +497,7 @@ $ uv run gcb search-state 'Sariva' --limit 5
   "audit_ref": "audit:search:83"
 }
 
-$ uv run gcb search-state 'Codex' --limit 5
+$ uv run fourok search-state 'Codex' --limit 5
 {
   "query": "Codex",
   "load": {
@@ -556,7 +574,7 @@ $ uv run gcb search-state 'Codex' --limit 5
   "audit_ref": "audit:search:85"
 }
 
-$ uv run gcb search-state 'employee' --limit 5
+$ uv run fourok search-state 'employee' --limit 5
 {
   "query": "employee",
   "load": {
@@ -815,7 +833,7 @@ $ uv run gcb search-state 'employee' --limit 5
   "audit_ref": "audit:search:87"
 }
 
-$ uv run gcb search-state 'temp-crm' --limit 5
+$ uv run fourok search-state 'temp-crm' --limit 5
 {
   "query": "temp-crm",
   "load": {
@@ -843,7 +861,7 @@ $ uv run gcb search-state 'temp-crm' --limit 5
   "audit_ref": "audit:search:89"
 }
 
-$ uv run gcb search-state 'temp-crm' --role slack:channel:C0AU5K1B940 --limit 5
+$ uv run fourok search-state 'temp-crm' --role slack:channel:C0AU5K1B940 --limit 5
 {
   "query": "temp-crm",
   "load": {
@@ -1044,7 +1062,7 @@ $ uv run gcb search-state 'temp-crm' --role slack:channel:C0AU5K1B940 --limit 5
   "audit_ref": "audit:search:90"
 }
 
-$ uv run gcb search-state 'general' --role slack:channel:C0APCSD1118 --limit 5
+$ uv run fourok search-state 'general' --role slack:channel:C0APCSD1118 --limit 5
 {
   "query": "general",
   "load": {
@@ -1405,7 +1423,7 @@ $ uv run gcb search-state 'general' --role slack:channel:C0APCSD1118 --limit 5
   "audit_ref": "audit:search:92"
 }
 
-$ uv run gcb search-state 'Buena Architecture Overview' --limit 5
+$ uv run fourok search-state 'Buena Architecture Overview' --limit 5
 {
   "query": "Buena Architecture Overview",
   "load": {
@@ -1582,15 +1600,15 @@ $ uv run gcb search-state 'Buena Architecture Overview' --limit 5
 
 ### Retrieval proof summary matrix
 ```text
-twenty-1	PASS=True	expect=find:twenty:company:00061e07-9680-497a-8906-8e4644d9c078	summary=1 evidence item	refs=['twenty:company:00061e07-9680-497a-8906-8e4644d9c078']	cmd=uv run gcb search-state 'Morgan Bros' --limit 5
-twenty-2	PASS=True	expect=find:twenty:company:0005e1f3-58c7-4407-a20d-431dc675506b	summary=1 evidence item	refs=['twenty:company:0005e1f3-58c7-4407-a20d-431dc675506b']	cmd=uv run gcb search-state Sariva --limit 5
-linear-1	PASS=True	expect=find:linear:user:b1a18acc-66e8-4e70-aa86-f35301c4b463	summary=1 evidence item	refs=['linear:user:b1a18acc-66e8-4e70-aa86-f35301c4b463']	cmd=uv run gcb search-state Codex --limit 5
-linear-2	PASS=True	expect=find:linear:	summary=5 evidence items	refs=['google_drive:file:1ywgCeaxU4HgJNCKAnFYXjeabvXOYDX7Y9nNdWkKGcJs', 'linear:user:linear-user-olivia', 'linear:user:linear-user-robin-keller', 'linear:user:linear-user-robin-scharf', 'slack:user:UOLIVIA']	cmd=uv run gcb search-state employee --limit 5
-slack-denied	PASS=True	expect=deny:slack:channel:C0AU5K1B940	summary=0 evidence items	refs=[]	cmd=uv run gcb search-state temp-crm --limit 5
-slack-allowed-1	PASS=True	expect=find:slack:channel:C0AU5K1B940	summary=1 evidence item	refs=['slack:channel:C0AU5K1B940']	cmd=uv run gcb search-state temp-crm --limit 5 --role slack:channel:C0AU5K1B940
-slack-allowed-2	PASS=True	expect=find:slack:channel:C0APCSD1118	summary=5 evidence items	refs=['slack:channel:C0APCSD1118', 'google_drive:file:1FyvjFIIlXZiKLGn3ce8fypFzn-gDnf8Av-IQdXYfBYE', 'google_drive:file:1npxJYLu8q_lzONlgyKG5GAzCbKQdglDGmpxrqU4iR9M', 'twenty:person:1c4a4495-1afa-41dd-b90f-f887d12c2124', 'twenty:person:2634a346-9f8d-40ed-a6dd-d6f52c8223f5']	cmd=uv run gcb search-state general --limit 5 --role slack:channel:C0APCSD1118
-google-1	PASS=True	expect=find:google_drive:file:	summary=3 evidence items	refs=['google_drive:file:1I0vBv-kBrPt0Gv6CD3cdpw_cZ6L5KEhHvina3OC9HGA', 'google_drive:file:19WDGlrud5NYo2P9MXhFAD0RoZk9ZVlG3HOL4wlQ0kZI', 'google_drive:file:1bqos9wvvKLRbGTyMnQoLeANfxI-tYdtLEVjSqwOctjM']	cmd=uv run gcb search-state 'Buena Architecture Overview' --limit 5
-google-2	PASS=True	expect=find:google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM	summary=3 evidence items	refs=['google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM', 'google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM', 'google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM']	cmd=uv run gcb search-state '4ok Sales Resource' --limit 5
+twenty-1	PASS=True	expect=find:twenty:company:00061e07-9680-497a-8906-8e4644d9c078	summary=1 evidence item	refs=['twenty:company:00061e07-9680-497a-8906-8e4644d9c078']	cmd=uv run fourok search-state 'Morgan Bros' --limit 5
+twenty-2	PASS=True	expect=find:twenty:company:0005e1f3-58c7-4407-a20d-431dc675506b	summary=1 evidence item	refs=['twenty:company:0005e1f3-58c7-4407-a20d-431dc675506b']	cmd=uv run fourok search-state Sariva --limit 5
+linear-1	PASS=True	expect=find:linear:user:b1a18acc-66e8-4e70-aa86-f35301c4b463	summary=1 evidence item	refs=['linear:user:b1a18acc-66e8-4e70-aa86-f35301c4b463']	cmd=uv run fourok search-state Codex --limit 5
+linear-2	PASS=True	expect=find:linear:	summary=5 evidence items	refs=['google_drive:file:1ywgCeaxU4HgJNCKAnFYXjeabvXOYDX7Y9nNdWkKGcJs', 'linear:user:linear-user-olivia', 'linear:user:linear-user-robin-keller', 'linear:user:linear-user-robin-scharf', 'slack:user:UOLIVIA']	cmd=uv run fourok search-state employee --limit 5
+slack-denied	PASS=True	expect=deny:slack:channel:C0AU5K1B940	summary=0 evidence items	refs=[]	cmd=uv run fourok search-state temp-crm --limit 5
+slack-allowed-1	PASS=True	expect=find:slack:channel:C0AU5K1B940	summary=1 evidence item	refs=['slack:channel:C0AU5K1B940']	cmd=uv run fourok search-state temp-crm --limit 5 --role slack:channel:C0AU5K1B940
+slack-allowed-2	PASS=True	expect=find:slack:channel:C0APCSD1118	summary=5 evidence items	refs=['slack:channel:C0APCSD1118', 'google_drive:file:1FyvjFIIlXZiKLGn3ce8fypFzn-gDnf8Av-IQdXYfBYE', 'google_drive:file:1npxJYLu8q_lzONlgyKG5GAzCbKQdglDGmpxrqU4iR9M', 'twenty:person:1c4a4495-1afa-41dd-b90f-f887d12c2124', 'twenty:person:2634a346-9f8d-40ed-a6dd-d6f52c8223f5']	cmd=uv run fourok search-state general --limit 5 --role slack:channel:C0APCSD1118
+google-1	PASS=True	expect=find:google_drive:file:	summary=3 evidence items	refs=['google_drive:file:1I0vBv-kBrPt0Gv6CD3cdpw_cZ6L5KEhHvina3OC9HGA', 'google_drive:file:19WDGlrud5NYo2P9MXhFAD0RoZk9ZVlG3HOL4wlQ0kZI', 'google_drive:file:1bqos9wvvKLRbGTyMnQoLeANfxI-tYdtLEVjSqwOctjM']	cmd=uv run fourok search-state 'Buena Architecture Overview' --limit 5
+google-2	PASS=True	expect=find:google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM	summary=3 evidence items	refs=['google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM', 'google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM', 'google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM']	cmd=uv run fourok search-state '4ok Sales Resource' --limit 5
 ```
 
 ## Gate 3 — Verification tooling proof
@@ -1653,7 +1671,7 @@ recent infra commits:
 362d53e Preserve prod Slack DM routing on promotion
 f48d5b2 Restore 4ok Jules model fallback
 d0b7c57 Keep prod Slack DMs out of assistant threads
-ce40e13 Retry Infisical CLI download in dev deploy workflow
+ce40e13 Retry external secret manager CLI download in dev deploy workflow
 77e5f3a Mount Codex auth bootstrap helper in gateway runtime
 094af3c Allow prod gateway runtime secret read actions
 c542a2a Stage Codex bootstrap helper in runtime bundle
@@ -1717,13 +1735,13 @@ prod:
 ## Gate status summary as of finalization attempt
 ```text
 timestamp=2026-06-09T19:27:15+02:00
-Gate 1 baseline/runtime health: PASS — GCB runtime DB reachable, relevant containers healthy, GCB/infra git state recorded.
+Gate 1 baseline/runtime health: PASS — 4OK runtime DB reachable, relevant containers healthy, 4OK/infra git state recorded.
 Gate 2 live ingestion: PASS — run-live-ingestion --source all succeeded; connector states fresh; current rows/retrieval/lifecycle/permission/raw counts recorded.
 Gate 3 verification tooling: PASS — verifier accepts idempotent current rows, rejects decreases; targeted regression tests passed; google_drive --verify-live-db succeeded.
 Gate 4 retrieval proof: PASS — two Twenty, two Linear, Slack denied+allowed role behavior, and two Google Drive searches passed in summary matrix.
-Gate 5 deployment/infra proof: NOT COMPLETE — infra repo is clean and recent existing workflows are green, but no new infra deployment change was made/verified for this GCB goal; runtime lineage script could not complete via gh api workflow lookup. Existing green CI predates this GCB verifier commit and does not prove a new deployment.
-Gate 6 final report: NOT COMPLETE — report committed in GCB commit below, but deployment gate remains unverified.
-GCB evidence/verifier commit: 9a5e091 fix: accept idempotent live DB verification
+Gate 5 deployment/infra proof: NOT COMPLETE — infra repo is clean and recent existing workflows are green, but no new infra deployment change was made/verified for this 4OK goal; runtime lineage script could not complete via gh api workflow lookup. Existing green CI predates this 4OK verifier commit and does not prove a new deployment.
+Gate 6 final report: NOT COMPLETE — report committed in 4OK commit below, but deployment gate remains unverified.
+4OK evidence/verifier commit: 9a5e091 fix: accept idempotent live DB verification
 ```
 
 ## Scope update — deployment intentionally out of scope

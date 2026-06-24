@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${GCB_REPO_URL:-https://github.com/project-4ok/4ok.git}"
-INSTALL_DIR="${GCB_INSTALL_DIR:-$HOME/4ok}"
-START_STACK="${GCB_INSTALL_START_STACK:-1}"
+REPO_URL="${FOUR_OK_REPO_URL:-https://github.com/project-4ok/4ok.git}"
+INSTALL_DIR="${FOUR_OK_INSTALL_DIR:-$HOME/4ok}"
+START_STACK="${FOUR_OK_INSTALL_START_STACK:-1}"
 
 log() {
   printf '\n==> %s\n' "$*"
@@ -44,7 +44,7 @@ require_runtime() {
 }
 
 checkout_repo() {
-  if [ -z "${GCB_INSTALL_DIR:-}" ] && [ -f "pyproject.toml" ] && [ -d "src/gcb" ]; then
+  if [ -z "${FOUR_OK_INSTALL_DIR:-}" ] && [ -f "pyproject.toml" ] && [ -d "src/fourok" ]; then
     log "Using current 4ok checkout: $(pwd)"
     return 0
   fi
@@ -63,13 +63,13 @@ checkout_repo() {
 
 write_local_config() {
   mkdir -p .local/raw .local/backups
-  if [ -f .local/gcb.toml ]; then
-    log "Keeping existing local config: .local/gcb.toml"
+  if [ -f .local/fourok.toml ]; then
+    log "Keeping existing local config: .local/fourok.toml"
     return 0
   fi
 
-  log "Writing local runtime config: .local/gcb.toml"
-  cat >.local/gcb.toml <<'EOF'
+  log "Writing local runtime config: .local/fourok.toml"
+  cat >.local/fourok.toml <<'EOF'
 [raw_store]
 backend = "filesystem"
 path = "/app/.local/raw"
@@ -80,7 +80,7 @@ path = "/app/.local/backups"
 [telemetry]
 enabled = true
 endpoint = "http://observability:4318"
-service_name = "gcb-app"
+service_name = "fourok-app"
 
 [connectors]
 enabled = []
@@ -90,8 +90,8 @@ EOF
 start_local_stack() {
   export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-local-check}"
   export DAGSTER_POSTGRES_PASSWORD="${DAGSTER_POSTGRES_PASSWORD:-local-check}"
-  export GCB_IMAGE_TAG="${GCB_IMAGE_TAG:-$(git rev-parse --short HEAD)}"
-  export GCB_DATABASE_URL="${GCB_DATABASE_URL:-postgresql+psycopg://gcb:${POSTGRES_PASSWORD}@postgres:5432/gcb}"
+  export FOUR_OK_IMAGE_TAG="${FOUR_OK_IMAGE_TAG:-$(git rev-parse --short HEAD)}"
+  export FOUR_OK_DATABASE_URL="${FOUR_OK_DATABASE_URL:-postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok}"
 
   docker compose \
     --profile observability \
@@ -113,7 +113,7 @@ start_local_stack() {
 seed_fixture_data() {
   log "Seeding fixture retrieval data"
   for attempt in $(seq 1 12); do
-    if docker compose exec -T app /app/.venv/bin/gcb search "refund cancellation payment" >/dev/null; then
+    if docker compose exec -T app /app/.venv/bin/fourok search "refund cancellation payment" >/dev/null; then
       return 0
     fi
     log "Fixture seed not ready yet; retrying ($attempt/12)"
@@ -135,10 +135,10 @@ main() {
   write_local_config
 
   log "Checking Docker Compose configuration"
-  uv run gcb-dev compose-config >/dev/null
+  uv run fourok-dev compose-config >/dev/null
 
   if [ "$START_STACK" = "0" ]; then
-    log "Skipping container startup because GCB_INSTALL_START_STACK=0"
+    log "Skipping container startup because FOUR_OK_INSTALL_START_STACK=0"
   else
     log "Starting local runtime, observability, and pipeline containers"
     start_local_stack
@@ -147,8 +147,8 @@ main() {
 
   log "4ok is ready"
   printf 'Project: %s\n' "$(pwd)"
-  printf 'Status:  uv run gcb-dev pipeline-ps\n'
-  printf 'Try:     uv run gcb search "refund cancellation payment"\n'
+  printf 'Status:  uv run fourok-dev pipeline-ps\n'
+  printf 'Try:     uv run fourok search "refund cancellation payment"\n'
   printf '\nSecrets and connector credentials are not configured by this installer.\n'
 }
 

@@ -7,17 +7,17 @@ Append audit-relevant open questions here. Keep this file short.
 - Completed: reviewed touched ingestion/retrieval/observability/runtime/devtool surfaces
   and found no Stage 1 blockers; all findings are now recorded here with clear deferrals.
 - Blocking now? No. `python`-line overage check uses 800-line threshold and no files
-  exceed this threshold in `src/` or `tests/` (`src/gcb/devtools/dev.py` is 761 lines
-  and `src/gcb/etl/extract/connectors.py` is 686, both below threshold) while still
+  exceed this threshold in `src/` or `tests/` (`src/fourok/devtools/dev.py` is 761 lines
+  and `src/fourok/etl/extract/connectors.py` is 686, both below threshold) while still
   showing high coupling candidates for a future slice.
 - Blocking for Stage 1 (deferred): no safe, high-leverage code cleanup was identified
   this pass; replacing the currently intentional broad exception paths would require
   a dedicated behavior contract update before we can prove no-op equivalence.
 - Deferred cleanup: extract shared connector tap pagination/transport helpers across
-  `src/gcb/etl/extract/*_tap.py` to reduce duplication in future slices; expected
+  `src/fourok/etl/extract/*_tap.py` to reduce duplication in future slices; expected
   benefit is reduced surface for adapter bugs and easier fixture/cold-path testing.
 - Deferred cleanup: centralize repeated container compose command wiring seen in
-  `src/gcb/runtime/operator_live.py` and `src/gcb/devtools/dev.py`; expected benefit
+  `src/fourok/runtime/operator_live.py` and `src/fourok/devtools/dev.py`; expected benefit
   is fewer drift bugs in operator bootstrap/Dev tool command paths and shorter operator
   onboarding.
 - Implemented? No behavior changes; all maintenance actions are documentation-only in
@@ -36,8 +36,8 @@ Append audit-relevant open questions here. Keep this file short.
   strategy, and whether any broker is needed.
 - Identity: choose Keycloak or authentik; define how human and agent identity,
   groups, and trusted claims enter `PrincipalContext`.
-- Policy: confirm Cerbos is enough for v1 reveal/source-access policy before
-  introducing OpenFGA.
+- Policy: define the minimal in-process v1 source-access policy before
+  introducing an external policy engine such as OpenFGA.
 - Raw source storage: choose production object storage, encryption, deletion,
   and retention behavior.
 - Internal v0 retention/deletion policy: raw-source, audit-event, terminal
@@ -66,9 +66,8 @@ Append audit-relevant open questions here. Keep this file short.
   policy, and ingestion mistakes. It should preserve evidence, correction
   reason, reviewer identity, and audit history. Do not build this during the
   current internal-v0 implementation goal.
-- Infisical SDK: confirm license/dependency footprint before productionizing
+- env/.env secret loading: confirm license/dependency footprint before productionizing
   in-process secret access.
-- Infisical self-hosting: confirm `INFISICAL_API_URL` / host conventions and
   accepted universal-auth env names stay aligned across Hermes and production
   bootstrap.
 - Honcho runtime: current Compose builds Honcho from the ignored local
@@ -96,18 +95,18 @@ Append audit-relevant open questions here. Keep this file short.
   collector-side redaction for PII, raw source text, connector payloads, and
   secrets-adjacent attributes.
 - App image/runbook alignment: the slim `app` image currently installs the
-  `gcb` CLI and fixture data, but older internal-prod Gmail steps reference
+  `fourok` CLI and fixture data, but older internal-prod Gmail steps reference
   repository scripts. Decide whether production images should include those
   scripts or the runbook should use dedicated worker images.
-- Operator live ingestion: `gcb-dev operator-live --dry-run` is proven locally,
-  but this worktree has no `.env` or Infisical source settings and no running
+- Operator live ingestion: `fourok-dev operator-live --dry-run` is proven locally,
+  but this worktree has no `.env` or external secret manager source settings and no running
   local Dagster services. Run the actual live command against a credentialed
   local environment before treating live SaaS ingestion as operationally
   verified.
-- GCB MCP retrieval: handler and SDK registration tests cover the local
-  contract, but Hermes has not yet connected to `uv run gcb-mcp` against the
-  runtime database. Run the Hermes stdio integration and compare `search_gcb`
-  with `gcb search-state` before treating the server as operationally verified.
+- 4OK MCP retrieval: handler and SDK registration tests cover the local
+  contract, but Hermes has not yet connected to `uv run fourok-mcp` against the
+  runtime database. Run the Hermes stdio integration and compare `search_fourok`
+  with `fourok search-state` before treating the server as operationally verified.
 - Grafana-first runtime state: the dashboard now includes log-derived runtime
   service activity and recent error panels, but it still does not query Docker
   health status directly. Exact container health remains a Docker/Dagster
@@ -117,7 +116,7 @@ Append audit-relevant open questions here. Keep this file short.
   running local Grafana served an older provisioned dashboard after provisioning
   reload, indicating it was mounted from a different checkout or stale runtime
   state. Rebuild/restart the observability profile from this branch before
-  treating the canonical `gcb-local-runtime-logs` UID as live-updated.
+  treating the canonical `fourok-local-runtime-logs` UID as live-updated.
 - Live retrieval case-set proof gap: runtime run of the approved case set returns
   one pass (`openviking-launch-checklist`) and four failures (Slack, Drive,
   Linear, Twenty) due stale source-ref/text assumptions, so this remains a

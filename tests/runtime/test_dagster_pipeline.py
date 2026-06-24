@@ -6,23 +6,22 @@ from typing import Any
 
 import pytest
 
-from gcb.etl.extract.openviking_sessions import write_openviking_session_messages_jsonl
-from gcb.etl.extract.sync_jobs import connector_job_runs, start_connector_job
-from gcb.governance.state import create_governed_context_state
-from gcb.orchestration.dagster_resources import _env_first
-from gcb.runtime.source_imports import SourceRecordImportReport
+from fourok.etl.extract.openviking_sessions import write_openviking_session_messages_jsonl
+from fourok.etl.extract.sync_jobs import connector_job_runs, start_connector_job
+from fourok.governance.state import create_governed_context_state
+from fourok.runtime.source_imports import SourceRecordImportReport
 
 _dagster = pytest.importorskip("dagster")
 
 _DEFINITIONS = Path("deploy/dagster/definitions.py")
-_SPEC = importlib.util.spec_from_file_location("gcb_dagster_definitions", _DEFINITIONS)
+_SPEC = importlib.util.spec_from_file_location("fourok_dagster_definitions", _DEFINITIONS)
 assert _SPEC is not None
 assert _SPEC.loader is not None
 _module = importlib.util.module_from_spec(_SPEC)
 _SPEC.loader.exec_module(_module)
 
 _CHECK_SCRIPT = Path("scripts/check_dagster_pipeline.py")
-_CHECK_SPEC = importlib.util.spec_from_file_location("gcb_dagster_pipeline_check", _CHECK_SCRIPT)
+_CHECK_SPEC = importlib.util.spec_from_file_location("fourok_dagster_pipeline_check", _CHECK_SCRIPT)
 assert _CHECK_SPEC is not None
 assert _CHECK_SPEC.loader is not None
 _check_module = importlib.util.module_from_spec(_CHECK_SPEC)
@@ -48,19 +47,19 @@ def test_dagster_definitions_expose_only_operator_product_lineage_assets() -> No
 
     assert asset_names == {
         "meltano_slack_live_raw_landing",
-        "gcb_slack_live_source_records_from_raw_landing",
+        "fourok_slack_live_source_records_from_raw_landing",
         "meltano_twenty_live_raw_landing",
-        "gcb_twenty_live_source_records_from_raw_landing",
+        "fourok_twenty_live_source_records_from_raw_landing",
         "meltano_linear_live_raw_landing",
-        "gcb_linear_live_source_records_from_raw_landing",
+        "fourok_linear_live_source_records_from_raw_landing",
         "meltano_google_drive_live_raw_landing",
-        "gcb_google_drive_live_source_records_from_raw_landing",
-        "gcb_openviking_live_source_records_from_sessions",
-        "gcb_webhook_backlog",
-        "gcb_canonical_objects_and_entity_links",
-        "gcb_retrieval_records",
-        "gcb_operator_dashboard",
-        "gcb_audit_metadata",
+        "fourok_google_drive_live_source_records_from_raw_landing",
+        "fourok_openviking_live_source_records_from_sessions",
+        "fourok_webhook_backlog",
+        "fourok_canonical_objects_and_entity_links",
+        "fourok_retrieval_records",
+        "fourok_operator_dashboard",
+        "fourok_audit_metadata",
     }
 
     obsolete_or_fixture_assets = {
@@ -69,28 +68,27 @@ def test_dagster_definitions_expose_only_operator_product_lineage_assets() -> No
         "meltano_twenty_raw_landing",
         "meltano_linear_raw_landing",
         "meltano_google_drive_raw_landing",
-        "gcb_source_records_from_raw_landing",
-        "gcb_slack_source_records_from_raw_landing",
-        "gcb_twenty_source_records_from_raw_landing",
-        "gcb_linear_source_records_from_raw_landing",
-        "gcb_google_drive_source_records_from_raw_landing",
-        "gcb_golden_retrieval_eval",
+        "fourok_source_records_from_raw_landing",
+        "fourok_slack_source_records_from_raw_landing",
+        "fourok_twenty_source_records_from_raw_landing",
+        "fourok_linear_source_records_from_raw_landing",
+        "fourok_google_drive_source_records_from_raw_landing",
+        "fourok_golden_retrieval_eval",
     }
     assert asset_names.isdisjoint(obsolete_or_fixture_assets)
 
 
 def test_dagster_entrypoint_keeps_resource_definitions_separate() -> None:
     definitions_source = _DEFINITIONS.read_text(encoding="utf-8")
-    resources_source = Path("src/gcb/orchestration/dagster_resources.py").read_text(
+    resources_source = Path("src/fourok/orchestration/dagster_resources.py").read_text(
         encoding="utf-8"
     )
 
     assert "class RawLandingResource" not in definitions_source
     assert "class MeltanoProjectResource" not in definitions_source
-    assert "class GcbRuntimeResource" not in definitions_source
-    assert "class InfisicalSecretsResource" not in definitions_source
+    assert "class 4okRuntimeResource" not in definitions_source
     assert "def build_default_resources" in resources_source
-    assert "fetch_infisical_secrets" in resources_source
+    assert "ConnectorEnvResource" in resources_source
 
 
 def test_dagster_trace_span_names_match_operator_lineage_assets() -> None:
@@ -101,11 +99,11 @@ def test_dagster_trace_span_names_match_operator_lineage_assets() -> None:
     )
     assert (
         _source_records_asset_span_name("google_drive-live")
-        == "gcb_google_drive_live_source_records_from_raw_landing"
+        == "fourok_google_drive_live_source_records_from_raw_landing"
     )
     assert (
         _source_records_asset_span_name("slack-live")
-        == "gcb_slack_live_source_records_from_raw_landing"
+        == "fourok_slack_live_source_records_from_raw_landing"
     )
 
 
@@ -114,32 +112,34 @@ def test_dagster_definitions_expose_recurring_live_ingestion_hooks() -> None:
     schedule_names = {schedule.name for schedule in defs.schedules or []}
     sensor_names = {sensor.name for sensor in defs.sensors or []}
 
-    assert "gcb_hourly_live_backfill" in job_names
-    assert "gcb_process_webhook_backlog" in job_names
-    assert schedule_names == {"gcb_hourly_live_backfill_schedule"}
-    assert sensor_names == {"gcb_webhook_backlog_sensor"}
+    assert "fourok_hourly_live_backfill" in job_names
+    assert "fourok_process_webhook_backlog" in job_names
+    assert schedule_names == {"fourok_hourly_live_backfill_schedule"}
+    assert sensor_names == {"fourok_webhook_backlog_sensor"}
+    [backfill_schedule] = defs.schedules or []
+    assert backfill_schedule.default_status.name == "RUNNING"
 
 
 def test_dagster_hourly_live_backfill_rebuilds_retrieval_and_operator_counts() -> None:
-    job = defs.resolve_job_def("gcb_hourly_live_backfill")
+    job = defs.resolve_job_def("fourok_hourly_live_backfill")
     node_names = {node.name for node in job.all_node_defs}
 
-    assert "gcb_webhook_backlog" in node_names
-    assert "gcb_openviking_live_source_records_from_sessions" in node_names
-    assert "gcb_canonical_objects_and_entity_links" in node_names
-    assert "gcb_retrieval_records" in node_names
-    assert "gcb_operator_dashboard" in node_names
-    assert "gcb_audit_metadata" in node_names
-    assert "gcb_golden_retrieval_eval" not in node_names
+    assert "fourok_webhook_backlog" in node_names
+    assert "fourok_openviking_live_source_records_from_sessions" in node_names
+    assert "fourok_canonical_objects_and_entity_links" in node_names
+    assert "fourok_retrieval_records" in node_names
+    assert "fourok_operator_dashboard" in node_names
+    assert "fourok_audit_metadata" in node_names
+    assert "fourok_golden_retrieval_eval" not in node_names
     assert job.executor_def.name == "in_process"
     upstream_node_names = {
         output.node_name
         for outputs in job.dependency_structure.input_to_upstream_outputs_for_node(
-            "gcb_retrieval_records"
+            "fourok_retrieval_records"
         ).values()
         for output in outputs
     }
-    assert upstream_node_names == {"gcb_webhook_backlog"}
+    assert upstream_node_names == {"fourok_webhook_backlog"}
 
 
 def test_dagster_normalizes_openviking_sessions_for_live_import(tmp_path: Path) -> None:
@@ -178,38 +178,38 @@ def test_dagster_normalizes_openviking_sessions_for_live_import(tmp_path: Path) 
 
 
 def test_dagster_hourly_backfill_partial_failure_tolerant() -> None:
-    job = defs.resolve_job_def("gcb_hourly_live_backfill")
+    job = defs.resolve_job_def("fourok_hourly_live_backfill")
     webhook_upstream_node_names = {
         output.node_name
         for outputs in job.dependency_structure.input_to_upstream_outputs_for_node(
-            "gcb_webhook_backlog"
+            "fourok_webhook_backlog"
         ).values()
         for output in outputs
     }
     canonical_upstream_node_names = {
         output.node_name
         for outputs in job.dependency_structure.input_to_upstream_outputs_for_node(
-            "gcb_canonical_objects_and_entity_links"
+            "fourok_canonical_objects_and_entity_links"
         ).values()
         for output in outputs
     }
     retrieval_upstream_node_names = {
         output.node_name
         for outputs in job.dependency_structure.input_to_upstream_outputs_for_node(
-            "gcb_retrieval_records"
+            "fourok_retrieval_records"
         ).values()
         for output in outputs
     }
     assert webhook_upstream_node_names == set()
-    assert canonical_upstream_node_names == {"gcb_webhook_backlog"}
-    assert retrieval_upstream_node_names == {"gcb_webhook_backlog"}
+    assert canonical_upstream_node_names == {"fourok_webhook_backlog"}
+    assert retrieval_upstream_node_names == {"fourok_webhook_backlog"}
 
 
 def test_dagster_live_source_import_records_operator_freshness_and_counts(
     tmp_path: Path,
 ) -> None:
     state = create_governed_context_state(
-        state_path=tmp_path / "gcb.sqlite",
+        state_path=tmp_path / "fourok.sqlite",
         database_url=None,
         raw_store_path=None,
     )
@@ -248,7 +248,7 @@ def test_dagster_live_source_import_does_not_duplicate_outer_running_job(
     tmp_path: Path,
 ) -> None:
     state = create_governed_context_state(
-        state_path=tmp_path / "gcb.sqlite",
+        state_path=tmp_path / "fourok.sqlite",
         database_url=None,
         raw_store_path=None,
     )
@@ -337,13 +337,13 @@ def test_dagster_meltano_environment_injects_secrets_without_overriding_landing_
         landing_dir=Path(".local/raw/singer/slack"),
         secret_env={
             "SLACK_BOT_TOKEN": "secret-token",
-            "TARGET_GCB_RAW_JSONL_LANDING_DIR": "wrong",
+            "TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR": "wrong",
         },
     )
 
     assert env["EXISTING_ENV"] == "kept"
     assert env["SLACK_BOT_TOKEN"] == "secret-token"
-    assert env["TARGET_GCB_RAW_JSONL_LANDING_DIR"] == ".local/raw/singer/slack"
+    assert env["TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR"] == ".local/raw/singer/slack"
 
 
 def test_dagster_meltano_environment_adds_singer_secret_aliases() -> None:
@@ -415,19 +415,6 @@ def test_dagster_meltano_environment_does_not_override_explicit_tap_secret() -> 
     assert env["TAP_SLACK_API_KEY"] == "tap-token"
 
 
-def test_dagster_infisical_resource_is_disabled_by_default() -> None:
-    resource = _module.InfisicalSecretsResource()
-
-    assert resource.secret_env() == {}
-
-
-def test_dagster_env_first_supports_existing_infisical_domain_name(monkeypatch) -> None:
-    monkeypatch.delenv("GCB_INFISICAL_DOMAIN", raising=False)
-    monkeypatch.setenv("INFISICAL_DOMAIN", "https://infisical.example")
-
-    assert _env_first("GCB_INFISICAL_DOMAIN", "INFISICAL_DOMAIN") == "https://infisical.example"
-
-
 def test_dagster_check_live_db_accepts_idempotent_current_rows(monkeypatch, capsys) -> None:
     snapshots = iter(
         [
@@ -461,23 +448,20 @@ def test_dagster_check_live_db_rejects_decreased_rows(monkeypatch) -> None:
 def test_dagster_live_connector_asset_names_can_select_linear_only() -> None:
     assert _live_connector_asset_names("linear") == {
         "meltano_linear_live_raw_landing",
-        "gcb_linear_live_source_records_from_raw_landing",
+        "fourok_linear_live_source_records_from_raw_landing",
     }
 
 
 def test_dagster_check_loads_project_dotenv_defaults(tmp_path, monkeypatch) -> None:
-    monkeypatch.delenv("GCB_INFISICAL_PROJECT_ID", raising=False)
-    monkeypatch.setenv("INFISICAL_ENV", "shell-env")
     dotenv = tmp_path / ".env"
     dotenv.write_text(
-        "GCB_INFISICAL_PROJECT_ID=project-123\nINFISICAL_ENV=dotenv-env\n",
+        "LINEAR_API_KEY=project-123\nSLACK_BOT_TOKEN=dotenv-value\n",
         encoding="utf-8",
     )
 
     _load_dotenv_defaults(dotenv)
 
-    assert _check_module.os.environ["GCB_INFISICAL_PROJECT_ID"] == "project-123"
-    assert _check_module.os.environ["INFISICAL_ENV"] == "shell-env"
+    assert _check_module.os.environ["LINEAR_API_KEY"] == "project-123"
 
 
 def test_dagster_count_by_returns_stable_counts() -> None:

@@ -1,4 +1,4 @@
-from gcb.runtime.services import runtime_service_boundaries
+from fourok.runtime.services import runtime_service_boundaries
 
 
 def test_runtime_service_boundaries_cover_current_operational_surface() -> None:
@@ -31,7 +31,7 @@ def test_runtime_service_boundaries_cover_current_operational_surface() -> None:
     assert "idempotent event backlog" in webhook_backlog.responsibilities
     assert "production broker" in webhook_backlog.not_yet
 
-    assert by_name["context-api"].health_check == "gcb health"
+    assert by_name["context-api"].health_check == "fourok health"
     assert "search_context" in by_name["context-api"].responsibilities
     assert "request_reveal" not in by_name["context-api"].responsibilities
     assert "controlled reveal" not in by_name["context-api"].not_yet

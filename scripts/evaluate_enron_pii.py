@@ -5,8 +5,8 @@ import json
 from dataclasses import asdict
 from pathlib import Path
 
-from gcb.etl.transform.pii import PresidioPiiDetector, spacy_model_available
-from gcb.evaluation import evaluate_pii_detector, load_labeled_email_pii_cases
+from fourok.etl.transform.pii import PresidioPiiDetector, spacy_model_available
+from fourok.evaluation import evaluate_pii_detector, load_labeled_email_pii_cases
 
 
 def main() -> None:

@@ -2,14 +2,14 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from gcb.cli import main
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.etl.extract.sync_jobs import (
+from fourok.cli import main
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.etl.extract.sync_jobs import (
     complete_connector_job,
     start_connector_job,
 )
-from gcb.governance import GovernedContext
-from gcb.governance.state import create_governed_context_state
+from fourok.governance import GovernedContext
+from fourok.governance.state import create_governed_context_state
 
 FIXTURES = Path(__file__).parent.parent / "fixtures" / "emails"
 CONNECTOR_FIXTURES = Path(__file__).parent.parent / "fixtures" / "connectors"
@@ -56,7 +56,7 @@ def test_cli_health_reports_database_and_record_readiness(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "health",
             "--state",
             str(state),
@@ -81,7 +81,7 @@ def test_cli_observability_smoke_exports_safe_local_trace(capsys, monkeypatch) -
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "observability-smoke",
             "--endpoint",
             "console",
@@ -93,7 +93,7 @@ def test_cli_observability_smoke_exports_safe_local_trace(capsys, monkeypatch) -
     output = json.loads(capsys.readouterr().out)
     assert output == {
         "status": "ok",
-        "service_name": "gcb-local-smoke",
+        "service_name": "fourok-local-smoke",
         "exporter": "console",
         "sensitive_payload_exported": False,
     }
@@ -105,14 +105,14 @@ def test_cli_uses_enabled_telemetry_config_for_runtime_command(
     tmp_path: Path,
 ) -> None:
     state = tmp_path / "state.sqlite"
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     config.write_text(
         "\n".join(
             [
                 "[telemetry]",
                 "enabled = true",
                 'endpoint = "console"',
-                'service_name = "gcb-configured"',
+                'service_name = "fourok-configured"',
             ]
         ),
         encoding="utf-8",
@@ -125,28 +125,28 @@ def test_cli_uses_enabled_telemetry_config_for_runtime_command(
         return object()
 
     monkeypatch.setattr(
-        "gcb.cli_parts.runtime_helpers.configure_observability",
+        "fourok.cli_parts.runtime_helpers.configure_observability",
         fake_configure_observability,
     )
     monkeypatch.setattr(
-        "gcb.cli_parts.runtime_helpers.configure_observability_from_env",
+        "fourok.cli_parts.runtime_helpers.configure_observability_from_env",
         lambda: (_ for _ in ()).throw(AssertionError("env telemetry should not be used")),
     )
     monkeypatch.setattr(
         "sys.argv",
-        ["gcb", "dashboard", "--state", str(state), "--config", str(config)],
+        ["fourok", "dashboard", "--state", str(state), "--config", str(config)],
     )
 
     main()
 
     assert "source_records" in json.loads(capsys.readouterr().out)
-    assert configured == {"service_name": "gcb-configured", "endpoint": "console"}
+    assert configured == {"service_name": "fourok-configured", "endpoint": "console"}
 
 
 def test_cli_acceptance_proof_prints_sanitized_runtime_report(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
-    config = tmp_path / "gcb.toml"
+    config = tmp_path / "fourok.toml"
     config.write_text(
         "\n".join(
             [
@@ -167,7 +167,7 @@ def test_cli_acceptance_proof_prints_sanitized_runtime_report(
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.emit_observability_smoke",
+        "fourok.cli_parts.commands_runtime.emit_observability_smoke",
         lambda service_name, endpoint: {
             "status": "ok",
             "service_name": service_name,
@@ -176,7 +176,7 @@ def test_cli_acceptance_proof_prints_sanitized_runtime_report(
         },
     )
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.check_compose_access_boundary",
+        "fourok.cli_parts.commands_runtime.check_compose_access_boundary",
         lambda compose_file: {
             "status": "ok",
             "compose_file": str(compose_file),
@@ -188,7 +188,7 @@ def test_cli_acceptance_proof_prints_sanitized_runtime_report(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "acceptance-proof",
             "--state",
             str(tmp_path / "state.sqlite"),
@@ -199,9 +199,9 @@ def test_cli_acceptance_proof_prints_sanitized_runtime_report(
             "--query",
             "Robin Scharf sales employee",
             "--backup-database-url",
-            "postgresql://gcb:secret@example.internal:5432/gcb",
+            "postgresql://fourok:secret@example.internal:5432/fourok",
             "--backup-output",
-            str(tmp_path / "backups" / "gcb.dump"),
+            str(tmp_path / "backups" / "fourok.dump"),
             "--observability-endpoint",
             "console",
         ],
@@ -226,20 +226,20 @@ def test_cli_acceptance_proof_exits_nonzero_when_proof_fails(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_runtime.internal_v0_acceptance_proof",
+        "fourok.cli_parts.commands_runtime.internal_v0_acceptance_proof",
         lambda **_kwargs: {"status": "failed", "checks": {"search": "failed"}},
     )
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "acceptance-proof",
             "--state",
             str(tmp_path / "state.sqlite"),
             "--fixture",
             str(CONTEXT_FIXTURES / "source_snapshot_eval.json"),
             "--backup-database-url",
-            "postgresql://gcb:secret@example.internal:5432/gcb",
+            "postgresql://fourok:secret@example.internal:5432/fourok",
         ],
     )
 
@@ -261,7 +261,7 @@ def test_cli_backs_up_and_restores_local_sqlite_state(capsys, monkeypatch, tmp_p
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "search",
             "refund iban canceled account",
             "--emails",
@@ -278,7 +278,7 @@ def test_cli_backs_up_and_restores_local_sqlite_state(capsys, monkeypatch, tmp_p
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "backup-state",
             "--state",
             str(state),
@@ -292,7 +292,7 @@ def test_cli_backs_up_and_restores_local_sqlite_state(capsys, monkeypatch, tmp_p
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "restore-state",
             "--state",
             str(restored_state),
@@ -303,7 +303,7 @@ def test_cli_backs_up_and_restores_local_sqlite_state(capsys, monkeypatch, tmp_p
     main()
     restore_output = json.loads(capsys.readouterr().out)
 
-    monkeypatch.setattr("sys.argv", ["gcb", "audit", "--state", str(restored_state)])
+    monkeypatch.setattr("sys.argv", ["fourok", "audit", "--state", str(restored_state)])
     main()
     audit_output = json.loads(capsys.readouterr().out)
 
@@ -332,17 +332,17 @@ def test_cli_postgres_backup_and_restore_use_explicit_commands(
             "confirm_destructive_restore": confirm_destructive_restore,
         }
 
-    monkeypatch.setattr("gcb.cli_parts.commands_backup.backup_postgres", fake_backup_postgres)
-    monkeypatch.setattr("gcb.cli_parts.commands_backup.restore_postgres", fake_restore_postgres)
-    backup = tmp_path / "gcb.dump"
+    monkeypatch.setattr("fourok.cli_parts.commands_backup.backup_postgres", fake_backup_postgres)
+    monkeypatch.setattr("fourok.cli_parts.commands_backup.restore_postgres", fake_restore_postgres)
+    backup = tmp_path / "fourok.dump"
 
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "postgres-backup",
             "--database-url",
-            "postgresql://gcb:secret@localhost:5432/gcb",
+            "postgresql://fourok:secret@localhost:5432/fourok",
             "--output",
             str(backup),
         ],
@@ -353,10 +353,10 @@ def test_cli_postgres_backup_and_restore_use_explicit_commands(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "postgres-restore",
             "--database-url",
-            "postgresql://gcb:secret@localhost:5432/gcb_restored",
+            "postgresql://fourok:secret@localhost:5432/fourok_restored",
             "--input",
             str(backup),
             "--confirm-destructive-restore",
@@ -366,11 +366,11 @@ def test_cli_postgres_backup_and_restore_use_explicit_commands(
     restore_output = json.loads(capsys.readouterr().out)
 
     assert captured["backup"] == {
-        "database_url": "postgresql://gcb:secret@localhost:5432/gcb",
+        "database_url": "postgresql://fourok:secret@localhost:5432/fourok",
         "output": backup,
     }
     assert captured["restore"] == {
-        "database_url": "postgresql://gcb:secret@localhost:5432/gcb_restored",
+        "database_url": "postgresql://fourok:secret@localhost:5432/fourok_restored",
         "input_path": backup,
         "confirm_destructive_restore": True,
     }
@@ -392,25 +392,25 @@ def test_cli_postgres_restore_drill_runs_non_destructive_drill(
         return {
             "status": "completed",
             "backup": str(backup_output),
-            "restore_database": "postgresql://gcb@localhost:5432/gcb_restore_drill",
+            "restore_database": "postgresql://fourok@localhost:5432/fourok_restore_drill",
             "health": {"status": "ok"},
         }
 
     monkeypatch.setattr(
-        "gcb.cli_parts.commands_backup.postgres_restore_drill",
+        "fourok.cli_parts.commands_backup.postgres_restore_drill",
         fake_restore_drill_postgres,
     )
-    backup = tmp_path / "gcb.dump"
+    backup = tmp_path / "fourok.dump"
 
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "postgres-restore-drill",
             "--database-url",
-            "postgresql://gcb:secret@localhost:5432/gcb",
+            "postgresql://fourok:secret@localhost:5432/fourok",
             "--restore-database-url",
-            "postgresql://gcb:restore@localhost:5432/gcb_restore_drill",
+            "postgresql://fourok:restore@localhost:5432/fourok_restore_drill",
             "--backup-output",
             str(backup),
         ],
@@ -419,14 +419,14 @@ def test_cli_postgres_restore_drill_runs_non_destructive_drill(
     output = json.loads(capsys.readouterr().out)
 
     assert captured["drill"] == {
-        "database_url": "postgresql://gcb:secret@localhost:5432/gcb",
-        "restore_database_url": "postgresql://gcb:restore@localhost:5432/gcb_restore_drill",
+        "database_url": "postgresql://fourok:secret@localhost:5432/fourok",
+        "restore_database_url": "postgresql://fourok:restore@localhost:5432/fourok_restore_drill",
         "backup_output": backup,
     }
     assert output == {
         "status": "completed",
         "backup": str(backup),
-        "restore_database": "postgresql://gcb@localhost:5432/gcb_restore_drill",
+        "restore_database": "postgresql://fourok@localhost:5432/fourok_restore_drill",
         "health": {"status": "ok"},
     }
 
@@ -436,7 +436,7 @@ def test_cli_ask_prints_workflow_response(capsys, monkeypatch, tmp_path: Path) -
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "ask",
             "refund iban canceled account",
             "--emails",
@@ -490,7 +490,7 @@ def test_cli_prints_connector_checkpoint(capsys, monkeypatch, tmp_path: Path) ->
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "connector-checkpoint",
             "gmail-pilot",
             "--state",
@@ -532,7 +532,7 @@ def test_cli_prints_connector_job_runs(capsys, monkeypatch, tmp_path: Path) -> N
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "connector-jobs",
             "--state",
             str(state_path),
@@ -573,7 +573,7 @@ def test_cli_run_imports_imports_context_fixture_and_records_scheduler_job(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-imports",
             "--connector",
             "context-fixture",
@@ -626,7 +626,7 @@ def test_cli_run_imports_skips_when_connector_job_is_already_running(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-imports",
             "--connector",
             "context-fixture",
@@ -652,7 +652,7 @@ def test_cli_run_imports_rejects_connector_disabled_by_config(
     tmp_path: Path,
 ) -> None:
     state_path = tmp_path / "state.sqlite"
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text(
         '[connectors]\nenabled = ["gmail-singer"]\n',
         encoding="utf-8",
@@ -661,7 +661,7 @@ def test_cli_run_imports_rejects_connector_disabled_by_config(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-imports",
             "--connector",
             "context-fixture",
@@ -688,7 +688,7 @@ def test_cli_run_imports_applies_configured_source_limit(
     tmp_path: Path,
 ) -> None:
     state_path = tmp_path / "state.sqlite"
-    config_path = tmp_path / "gcb.toml"
+    config_path = tmp_path / "fourok.toml"
     config_path.write_text(
         "[connectors]\nsource_limit = 2\n",
         encoding="utf-8",
@@ -697,7 +697,7 @@ def test_cli_run_imports_applies_configured_source_limit(
     monkeypatch.setattr(
         "sys.argv",
         [
-            "gcb",
+            "fourok",
             "run-imports",
             "--connector",
             "context-fixture",

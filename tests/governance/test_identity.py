@@ -1,6 +1,6 @@
 import pytest
 
-from gcb.governance.identity import principal_from_trusted_claims
+from fourok.governance.identity import principal_from_trusted_claims
 
 
 def test_principal_from_trusted_claims_maps_subject_agent_and_groups() -> None:

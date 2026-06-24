@@ -4,11 +4,11 @@ from uuid import uuid4
 
 import pytest
 
-from gcb.etl.extract.email_parser import EmailMessage, load_email_dir
-from gcb.etl.extract.source_records import SourceIdentity, SourceRecord
-from gcb.governance import GovernedContext
-from gcb.governance.policy import PrincipalContext
-from gcb.retrieval.evaluation import compare_retrieval_methods, load_retrieval_eval_cases
+from fourok.etl.extract.email_parser import EmailMessage, load_email_dir
+from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
+from fourok.governance import GovernedContext
+from fourok.governance.policy import PrincipalContext
+from fourok.retrieval.evaluation import compare_retrieval_methods, load_retrieval_eval_cases
 
 FIXTURES = Path(__file__).parents[2] / "fixtures"
 EMAILS = FIXTURES / "emails"
@@ -16,11 +16,11 @@ RETRIEVAL_EVAL = FIXTURES / "retrieval_eval" / "customer_context_queries.json"
 
 
 @pytest.mark.skipif(
-    not os.environ.get("GCB_TEST_DATABASE_URL"),
-    reason="set GCB_TEST_DATABASE_URL to run PostgreSQL integration tests",
+    not os.environ.get("FOUR_OK_TEST_DATABASE_URL"),
+    reason="set FOUR_OK_TEST_DATABASE_URL to run PostgreSQL integration tests",
 )
 def test_postgres_full_text_search_matches_expected_email() -> None:
-    context = GovernedContext(database_url=os.environ["GCB_TEST_DATABASE_URL"])
+    context = GovernedContext(database_url=os.environ["FOUR_OK_TEST_DATABASE_URL"])
     context.ingest(load_email_dir(EMAILS))
 
     response = context.search_context("refund cancellation payment", limit=3)
@@ -31,11 +31,11 @@ def test_postgres_full_text_search_matches_expected_email() -> None:
 
 
 @pytest.mark.skipif(
-    not os.environ.get("GCB_TEST_DATABASE_URL"),
-    reason="set GCB_TEST_DATABASE_URL to run PostgreSQL integration tests",
+    not os.environ.get("FOUR_OK_TEST_DATABASE_URL"),
+    reason="set FOUR_OK_TEST_DATABASE_URL to run PostgreSQL integration tests",
 )
 def test_postgres_pgvector_retrieval_quality_loop_runs() -> None:
-    context = GovernedContext(database_url=os.environ["GCB_TEST_DATABASE_URL"])
+    context = GovernedContext(database_url=os.environ["FOUR_OK_TEST_DATABASE_URL"])
     context.ingest(load_email_dir(EMAILS))
     vector_index = context.build_vector_index()
     cases = load_retrieval_eval_cases(RETRIEVAL_EVAL)
@@ -47,11 +47,11 @@ def test_postgres_pgvector_retrieval_quality_loop_runs() -> None:
 
 
 @pytest.mark.skipif(
-    not os.environ.get("GCB_TEST_DATABASE_URL"),
-    reason="set GCB_TEST_DATABASE_URL to run PostgreSQL integration tests",
+    not os.environ.get("FOUR_OK_TEST_DATABASE_URL"),
+    reason="set FOUR_OK_TEST_DATABASE_URL to run PostgreSQL integration tests",
 )
 def test_postgres_source_lifecycle_tombstone_survives_reingestion() -> None:
-    context = GovernedContext(database_url=os.environ["GCB_TEST_DATABASE_URL"])
+    context = GovernedContext(database_url=os.environ["FOUR_OK_TEST_DATABASE_URL"])
     source_ref = f"local_email:lifecycle-{uuid4()}"
     message = EmailMessage(
         source_ref=source_ref,
@@ -86,11 +86,11 @@ def test_postgres_source_lifecycle_tombstone_survives_reingestion() -> None:
 
 
 @pytest.mark.skipif(
-    not os.environ.get("GCB_TEST_DATABASE_URL"),
-    reason="set GCB_TEST_DATABASE_URL to run PostgreSQL integration tests",
+    not os.environ.get("FOUR_OK_TEST_DATABASE_URL"),
+    reason="set FOUR_OK_TEST_DATABASE_URL to run PostgreSQL integration tests",
 )
 def test_postgres_source_record_metadata_round_trip() -> None:
-    context = GovernedContext(database_url=os.environ["GCB_TEST_DATABASE_URL"])
+    context = GovernedContext(database_url=os.environ["FOUR_OK_TEST_DATABASE_URL"])
     source_id = f"source-record-{uuid4()}"
     source_ref = f"singer:email_messages:{source_id}"
 
@@ -150,11 +150,11 @@ def test_postgres_source_record_metadata_round_trip() -> None:
 
 
 @pytest.mark.skipif(
-    not os.environ.get("GCB_TEST_DATABASE_URL"),
-    reason="set GCB_TEST_DATABASE_URL to run PostgreSQL integration tests",
+    not os.environ.get("FOUR_OK_TEST_DATABASE_URL"),
+    reason="set FOUR_OK_TEST_DATABASE_URL to run PostgreSQL integration tests",
 )
 def test_postgres_incremental_source_record_update_replaces_only_touched_record() -> None:
-    context = GovernedContext(database_url=os.environ["GCB_TEST_DATABASE_URL"])
+    context = GovernedContext(database_url=os.environ["FOUR_OK_TEST_DATABASE_URL"])
     stable_id = f"stable-{uuid4()}"
     update_id = f"update-{uuid4()}"
     stable_ref = f"singer:email_messages:{stable_id}"
@@ -208,11 +208,11 @@ def test_postgres_incremental_source_record_update_replaces_only_touched_record(
 
 
 @pytest.mark.skipif(
-    not os.environ.get("GCB_TEST_DATABASE_URL"),
-    reason="set GCB_TEST_DATABASE_URL to run PostgreSQL integration tests",
+    not os.environ.get("FOUR_OK_TEST_DATABASE_URL"),
+    reason="set FOUR_OK_TEST_DATABASE_URL to run PostgreSQL integration tests",
 )
 def test_postgres_source_permission_refs_filter_search() -> None:
-    context = GovernedContext(database_url=os.environ["GCB_TEST_DATABASE_URL"])
+    context = GovernedContext(database_url=os.environ["FOUR_OK_TEST_DATABASE_URL"])
     suffix = str(uuid4())
     finance_ref = f"singer:email_messages:finance-{suffix}"
     support_ref = f"singer:email_messages:support-{suffix}"

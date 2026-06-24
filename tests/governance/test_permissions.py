@@ -1,10 +1,10 @@
-from gcb.governance.permissions import (
+from fourok.governance.permissions import (
     decode_json_string_list,
     decode_permission_refs,
     principal_permission_refs,
     transitive_group_refs,
 )
-from gcb.governance.policy import PrincipalContext
+from fourok.governance.policy import PrincipalContext
 
 
 def test_decode_permission_refs_accepts_only_json_string_lists() -> None:

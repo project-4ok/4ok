@@ -4,12 +4,12 @@ from pathlib import Path
 
 from sqlalchemy import delete, select
 
-import gcb.governance
-from gcb.etl.extract.email_parser import load_email_dir
-from gcb.etl.extract.gmail_singer import gmail_message_to_source_record
-from gcb.etl.extract.source_records import SourceIdentity, SourceRecord
-from gcb.governance import GovernedContext
-from gcb.governance.policy import PrincipalContext
+import fourok.governance
+from fourok.etl.extract.email_parser import load_email_dir
+from fourok.etl.extract.gmail_singer import gmail_message_to_source_record
+from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
+from fourok.governance import GovernedContext
+from fourok.governance.policy import PrincipalContext
 
 FIXTURES = Path(__file__).parents[2] / "fixtures" / "emails"
 RAW_IBAN = "DE89370400440532013000"
@@ -145,16 +145,16 @@ def test_governed_context_active_api_does_not_expose_token_sources() -> None:
 
 
 def test_governance_package_exports_only_active_runtime_surface() -> None:
-    assert "GovernedContext" in gcb.governance.__all__
-    assert "SourceChange" in gcb.governance.__all__
-    assert "StaticRevealPolicy" not in gcb.governance.__all__
-    assert "CerbosRevealPolicy" not in gcb.governance.__all__
-    assert "RevealPolicy" not in gcb.governance.__all__
-    assert "RevealPolicyDecision" not in gcb.governance.__all__
+    assert "GovernedContext" in fourok.governance.__all__
+    assert "SourceChange" in fourok.governance.__all__
+    assert "StaticRevealPolicy" not in fourok.governance.__all__
+    assert "CerbosRevealPolicy" not in fourok.governance.__all__
+    assert "RevealPolicy" not in fourok.governance.__all__
+    assert "RevealPolicyDecision" not in fourok.governance.__all__
 
 
 def test_active_policy_module_only_exposes_principal_context() -> None:
-    import gcb.governance.policy as active_policy
+    import fourok.governance.policy as active_policy
 
     assert hasattr(active_policy, "PrincipalContext")
     assert not hasattr(active_policy, "StaticRevealPolicy")

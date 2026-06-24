@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from sqlalchemy import create_engine
 
-from gcb.etl.load import retrieval_records
-from gcb.etl.load.retrieval_records import RetrievalRecord
-from gcb.retrieval.vector_search import ChunkVectorIndex
+from fourok.etl.load import retrieval_records
+from fourok.etl.load.retrieval_records import RetrievalRecord
+from fourok.retrieval.vector_search import ChunkVectorIndex
 
 
 def test_replace_vector_index_initializes_when_chunk_table_is_absent(monkeypatch) -> None:

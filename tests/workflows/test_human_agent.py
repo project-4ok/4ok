@@ -1,9 +1,9 @@
 from pathlib import Path
 
-from gcb.etl.extract.email_parser import load_email_dir
-from gcb.governance import GovernedContext
-from gcb.governance.policy import PrincipalContext
-from gcb.workflows import AgentToolFacade, HumanAgentWorkflow
+from fourok.etl.extract.email_parser import load_email_dir
+from fourok.governance import GovernedContext
+from fourok.governance.policy import PrincipalContext
+from fourok.workflows import AgentToolFacade, HumanAgentWorkflow
 
 FIXTURES = Path(__file__).parents[2] / "fixtures" / "emails"
 RAW_IBAN = "DE89370400440532013000"

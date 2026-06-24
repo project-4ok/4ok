@@ -6,10 +6,10 @@ environments:
 
 plugins:
   extractors:
-  - name: tap-gcb-fixture
-    namespace: tap_gcb_fixture
+  - name: tap-fourok-fixture
+    namespace: tap_fourok_fixture
     pip_url: -e .
-    executable: tap-gcb-fixture
+    executable: tap-fourok-fixture
     capabilities:
     - state
     settings:
@@ -17,10 +17,10 @@ plugins:
       kind: file
     config:
       fixture_path: fixtures/connectors/singer_email_messages.jsonl
-  - name: tap-gcb-slack-fixture
-    namespace: tap_gcb_slack_fixture
+  - name: tap-fourok-slack-fixture
+    namespace: tap_fourok_slack_fixture
     pip_url: -e .
-    executable: tap-gcb-fixture
+    executable: tap-fourok-fixture
     capabilities:
     - state
     settings:
@@ -28,10 +28,10 @@ plugins:
       kind: file
     config:
       fixture_path: fixtures/connectors/singer_slack_messages.jsonl
-  - name: tap-gcb-twenty-fixture
-    namespace: tap_gcb_twenty_fixture
+  - name: tap-fourok-twenty-fixture
+    namespace: tap_fourok_twenty_fixture
     pip_url: -e .
-    executable: tap-gcb-fixture
+    executable: tap-fourok-fixture
     capabilities:
     - state
     settings:
@@ -39,10 +39,10 @@ plugins:
       kind: file
     config:
       fixture_path: fixtures/connectors/singer_twenty_crm.jsonl
-  - name: tap-gcb-twenty
-    namespace: tap_gcb_twenty
+  - name: tap-fourok-twenty
+    namespace: tap_fourok_twenty
     pip_url: -e .
-    executable: tap-gcb-twenty
+    executable: tap-fourok-twenty
     capabilities:
     - state
     settings:
@@ -53,10 +53,10 @@ plugins:
       env: TWENTY_BASE_URL
     - name: limit
       env: TWENTY_LIMIT
-  - name: tap-gcb-linear-fixture
-    namespace: tap_gcb_linear_fixture
+  - name: tap-fourok-linear-fixture
+    namespace: tap_fourok_linear_fixture
     pip_url: -e .
-    executable: tap-gcb-fixture
+    executable: tap-fourok-fixture
     capabilities:
     - state
     settings:
@@ -64,10 +64,10 @@ plugins:
       kind: file
     config:
       fixture_path: fixtures/connectors/singer_linear_work_items.jsonl
-  - name: tap-gcb-linear
-    namespace: tap_gcb_linear
+  - name: tap-fourok-linear
+    namespace: tap_fourok_linear
     pip_url: -e .
-    executable: tap-gcb-linear
+    executable: tap-fourok-linear
     capabilities:
     - state
     settings:
@@ -78,10 +78,10 @@ plugins:
       env: LINEAR_GRAPHQL_URL
     - name: limit
       env: LINEAR_LIMIT
-  - name: tap-gcb-google-drive-fixture
-    namespace: tap_gcb_google_drive_fixture
+  - name: tap-fourok-google-drive-fixture
+    namespace: tap_fourok_google_drive_fixture
     pip_url: -e .
-    executable: tap-gcb-fixture
+    executable: tap-fourok-fixture
     capabilities:
     - state
     settings:
@@ -89,10 +89,10 @@ plugins:
       kind: file
     config:
       fixture_path: fixtures/connectors/singer_google_drive_docs.jsonl
-  - name: tap-gcb-google-drive
-    namespace: tap_gcb_google_drive
+  - name: tap-fourok-google-drive
+    namespace: tap_fourok_google_drive
     pip_url: -e .
-    executable: tap-gcb-google-drive
+    executable: tap-fourok-google-drive
     capabilities:
     - state
     settings:
@@ -111,10 +111,10 @@ plugins:
     variant: meltanolabs
     pip_url: git+https://github.com/MeltanoLabs/tap-slack.git@v0.4.1
   loaders:
-  - name: target-gcb-raw-jsonl
-    namespace: target_gcb_raw_jsonl
+  - name: target-fourok-raw-jsonl
+    namespace: target_fourok_raw_jsonl
     pip_url: -e .
-    executable: target-gcb-raw-jsonl
+    executable: target-fourok-raw-jsonl
     settings:
     - name: landing_dir
     config:
@@ -123,28 +123,28 @@ plugins:
 jobs:
 - name: singer-fixture-to-raw
   tasks:
-  - tap-gcb-fixture target-gcb-raw-jsonl
+  - tap-fourok-fixture target-fourok-raw-jsonl
 - name: singer-slack-fixture-to-raw
   tasks:
-  - tap-gcb-slack-fixture target-gcb-raw-jsonl
+  - tap-fourok-slack-fixture target-fourok-raw-jsonl
 - name: slack-live-to-raw
   tasks:
-  - tap-slack target-gcb-raw-jsonl
+  - tap-slack target-fourok-raw-jsonl
 - name: singer-twenty-fixture-to-raw
   tasks:
-  - tap-gcb-twenty-fixture target-gcb-raw-jsonl
+  - tap-fourok-twenty-fixture target-fourok-raw-jsonl
 - name: twenty-live-to-raw
   tasks:
-  - tap-gcb-twenty target-gcb-raw-jsonl
+  - tap-fourok-twenty target-fourok-raw-jsonl
 - name: singer-linear-fixture-to-raw
   tasks:
-  - tap-gcb-linear-fixture target-gcb-raw-jsonl
+  - tap-fourok-linear-fixture target-fourok-raw-jsonl
 - name: linear-live-to-raw
   tasks:
-  - tap-gcb-linear target-gcb-raw-jsonl
+  - tap-fourok-linear target-fourok-raw-jsonl
 - name: singer-google-drive-fixture-to-raw
   tasks:
-  - tap-gcb-google-drive-fixture target-gcb-raw-jsonl
+  - tap-fourok-google-drive-fixture target-fourok-raw-jsonl
 - name: google-drive-live-to-raw
   tasks:
-  - tap-gcb-google-drive target-gcb-raw-jsonl
+  - tap-fourok-google-drive target-fourok-raw-jsonl

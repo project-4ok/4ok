@@ -5,7 +5,7 @@ from types import SimpleNamespace
 
 import pytest
 
-from gcb.etl.extract.document_extraction import (
+from fourok.etl.extract.document_extraction import (
     DocumentConversionError,
     attachment_from_document,
     extract_document,
@@ -95,7 +95,7 @@ def test_extract_document_fails_clearly_when_docling_is_not_available(monkeypatc
         )
 
     monkeypatch.setattr(
-        "gcb.etl.extract.document_extraction._docling_converter",
+        "fourok.etl.extract.document_extraction._docling_converter",
         missing_docling_converter,
     )
 

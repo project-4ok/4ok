@@ -1,8 +1,8 @@
 from pathlib import Path
 
-from gcb.etl.extract.source_records import SourceRecord
-from gcb.governance import GovernedContext, SourceChange
-from gcb.runtime.operator_live import (
+from fourok.etl.extract.source_records import SourceRecord
+from fourok.governance import GovernedContext, SourceChange
+from fourok.runtime.operator_live import (
     build_operator_live_dry_run,
     build_operator_live_report,
     host_database_url,
@@ -13,16 +13,16 @@ from gcb.runtime.operator_live import (
 def test_operator_live_dry_run_reports_plan_without_secrets(tmp_path: Path) -> None:
     env_file = tmp_path / ".env"
     env_file.write_text(
-        "GCB_DATABASE_URL=postgresql+psycopg://gcb:secret@localhost:5432/gcb\n"
-        "INFISICAL_CLIENT_SECRET=secret-value\n",
+        "FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:secret@localhost:5432/fourok\n"
+        "SLACK_BOT_TOKEN=secret-value\n",
         encoding="utf-8",
     )
 
     report = build_operator_live_dry_run(
         project_root=tmp_path,
         raw_landing=Path(".local/raw/singer"),
-        state_path=Path(".local/dagster/gcb-state.sqlite"),
-        database_url="postgresql+psycopg://gcb:secret@localhost:5432/gcb",
+        state_path=Path(".local/dagster/fourok-state.sqlite"),
+        database_url="postgresql+psycopg://fourok:secret@localhost:5432/fourok",
         start_dagster=True,
     )
 
@@ -48,17 +48,17 @@ def test_operator_live_dry_run_reports_plan_without_secrets(tmp_path: Path) -> N
             "status": "not_started",
         },
         "raw_landing_path": str(tmp_path / ".local/raw/singer"),
-        "gcb_database_url": "postgresql+psycopg://gcb:[REDACTED]@localhost:5432/gcb",
-        "state_path": str(tmp_path / ".local/dagster/gcb-state.sqlite"),
+        "fourok_database_url": "postgresql+psycopg://fourok:[REDACTED]@localhost:5432/fourok",
+        "state_path": str(tmp_path / ".local/dagster/fourok-state.sqlite"),
         "live_assets": [
             "meltano_slack_live_raw_landing",
-            "gcb_slack_live_source_records_from_raw_landing",
+            "fourok_slack_live_source_records_from_raw_landing",
             "meltano_twenty_live_raw_landing",
-            "gcb_twenty_live_source_records_from_raw_landing",
+            "fourok_twenty_live_source_records_from_raw_landing",
             "meltano_linear_live_raw_landing",
-            "gcb_linear_live_source_records_from_raw_landing",
+            "fourok_linear_live_source_records_from_raw_landing",
             "meltano_google_drive_live_raw_landing",
-            "gcb_google_drive_live_source_records_from_raw_landing",
+            "fourok_google_drive_live_source_records_from_raw_landing",
         ],
         "source_record_counts_by_source_system": {},
         "retrieval_count": 0,
@@ -71,12 +71,12 @@ def test_operator_live_dry_run_reports_host_database_url_for_compose_postgres(
     report = build_operator_live_dry_run(
         project_root=tmp_path,
         raw_landing=Path(".local/raw/singer"),
-        state_path=Path(".local/dagster/gcb-state.sqlite"),
-        database_url=host_database_url("postgresql+psycopg://gcb:secret@postgres:5432/gcb"),
+        state_path=Path(".local/dagster/fourok-state.sqlite"),
+        database_url=host_database_url("postgresql+psycopg://fourok:secret@postgres:5432/fourok"),
         start_dagster=True,
     )
 
-    assert report["gcb_database_url"] == "postgresql+psycopg://gcb:[REDACTED]@127.0.0.1:5432/gcb"
+    assert report["fourok_database_url"] == "postgresql+psycopg://fourok:[REDACTED]@127.0.0.1:5432/fourok"
 
 
 def test_operator_live_report_counts_source_records_and_retrieval(tmp_path: Path) -> None:
@@ -117,17 +117,17 @@ def test_operator_live_report_counts_source_records_and_retrieval(tmp_path: Path
         state_path=state_path,
         database_url="",
         dagster_status="materialized",
-        dagster_assets=["gcb_operator_dashboard"],
+        dagster_assets=["fourok_operator_dashboard"],
     )
 
     assert report == {
         "mode": "live",
         "dagster": {
             "status": "materialized",
-            "assets": ["gcb_operator_dashboard"],
+            "assets": ["fourok_operator_dashboard"],
         },
         "raw_landing_path": str(tmp_path / ".local/raw/singer"),
-        "gcb_database_url": "",
+        "fourok_database_url": "",
         "state_path": str(state_path),
         "source_record_counts_by_source_system": {
             "linear": 1,
@@ -184,7 +184,7 @@ def test_operator_live_report_counts_only_active_source_records(tmp_path: Path) 
         state_path=state_path,
         database_url="",
         dagster_status="materialized",
-        dagster_assets=["gcb_operator_dashboard"],
+        dagster_assets=["fourok_operator_dashboard"],
     )
 
     assert report["source_record_counts_by_source_system"] == {"linear": 1, "twenty": 1}
@@ -192,19 +192,19 @@ def test_operator_live_report_counts_only_active_source_records(tmp_path: Path) 
 
 def test_host_database_url_maps_compose_hostname_to_loopback_for_host_materialization() -> None:
     assert (
-        host_database_url("postgresql+psycopg://gcb:secret@postgres:5432/gcb")
-        == "postgresql+psycopg://gcb:secret@127.0.0.1:5432/gcb"
+        host_database_url("postgresql+psycopg://fourok:secret@postgres:5432/fourok")
+        == "postgresql+psycopg://fourok:secret@127.0.0.1:5432/fourok"
     )
     assert (
-        host_database_url("postgresql+psycopg://gcb:secret@db.internal:5432/gcb")
-        == "postgresql+psycopg://gcb:secret@db.internal:5432/gcb"
+        host_database_url("postgresql+psycopg://fourok:secret@db.internal:5432/fourok")
+        == "postgresql+psycopg://fourok:secret@db.internal:5432/fourok"
     )
 
 
 def test_redacted_database_url_hides_password_and_query_secret() -> None:
     assert (
         redacted_database_url(
-            "postgresql+psycopg://gcb:secret@localhost:5432/gcb?sslpassword=hidden"
+            "postgresql+psycopg://fourok:secret@localhost:5432/fourok?sslpassword=hidden"
         )
-        == "postgresql+psycopg://gcb:[REDACTED]@localhost:5432/gcb?sslpassword=[REDACTED]"
+        == "postgresql+psycopg://fourok:[REDACTED]@localhost:5432/fourok?sslpassword=[REDACTED]"
     )
