@@ -128,6 +128,12 @@ def test_installer_installs_plain_cli_shims() -> None:
     assert "Next:    uv run fourok onboard" not in installer
 
 
+def test_installer_defaults_repo_url_to_4ok_repository() -> None:
+    installer = Path("install.sh").read_text(encoding="utf-8")
+
+    assert 'REPO_URL="${FOUROK_REPO_URL:-https://github.com/project-4ok/4ok.git}"' in installer
+
+
 def test_installer_does_not_seed_demo_context_by_default() -> None:
     installer = Path("install.sh").read_text(encoding="utf-8")
     startup_tail = installer.split("start_local_stack", maxsplit=1)[1]

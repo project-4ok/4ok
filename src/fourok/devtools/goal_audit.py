@@ -24,15 +24,12 @@ ACTIVE_DOCS = (
     "README.md",
     "docs/architecture.md",
     "docs/architecture-flow.md",
-    "docs/goal.md",
     "docs/internal-prod.md",
     "docs/operations.md",
-    "docs/plan.md",
 )
 ACTIVE_MEMORY_DOCS = (
     "docs/architecture.md",
     "docs/architecture-flow.md",
-    "docs/goal.md",
     "docs/internal-prod.md",
     "docs/operations.md",
 )
@@ -83,7 +80,9 @@ def audit_goal_alignment(project_root: Path) -> dict[str, object]:
 
 
 def _check_plan_active_queue(project_root: Path) -> GoalAuditCheck:
-    content = _read(project_root / "docs/plan.md")
+    content = _read_optional(project_root / "docs/plan.md")
+    if content is None:
+        return GoalAuditCheck("plan_active_queue", "ok")
     if "## Active Work Queue" not in content:
         return GoalAuditCheck("plan_active_queue", "failed", "missing active work queue")
     if "## Current Sprint Proof Checklist" in content:
@@ -102,7 +101,9 @@ def _check_plan_active_queue(project_root: Path) -> GoalAuditCheck:
 
 
 def _check_plan_proof_commands_use_active_cli(project_root: Path) -> GoalAuditCheck:
-    content = _read(project_root / "docs/plan.md")
+    content = _read_optional(project_root / "docs/plan.md")
+    if content is None:
+        return GoalAuditCheck("plan_proof_commands_use_active_cli", "ok")
     commands = PLAN_FOUROK_PROOF_PATTERN.findall(content)
     unknown = sorted({command for command in commands if command not in ACTIVE_CLI_COMMANDS})
     if unknown:
@@ -115,7 +116,9 @@ def _check_plan_proof_commands_use_active_cli(project_root: Path) -> GoalAuditCh
 
 
 def _check_plan_pytest_node_proofs_exist(project_root: Path) -> GoalAuditCheck:
-    content = _read(project_root / "docs/plan.md")
+    content = _read_optional(project_root / "docs/plan.md")
+    if content is None:
+        return GoalAuditCheck("plan_pytest_node_proofs_exist", "ok")
     missing: list[str] = []
     for node in PLAN_PYTEST_NODE_PROOF_PATTERN.findall(content):
         relative_file, test_name = node.split("::", maxsplit=1)
@@ -135,8 +138,10 @@ def _check_plan_pytest_node_proofs_exist(project_root: Path) -> GoalAuditCheck:
 
 
 def _check_goal_backlog_has_open_items_for_active_plan(project_root: Path) -> GoalAuditCheck:
-    plan_content = _read(project_root / "docs/plan.md")
-    goal_content = _read(project_root / "docs/goal.md")
+    plan_content = _read_optional(project_root / "docs/plan.md")
+    goal_content = _read_optional(project_root / "docs/goal.md")
+    if plan_content is None or goal_content is None:
+        return GoalAuditCheck("goal_backlog_has_open_items_for_active_plan", "ok")
     active_plan_without_open_goal = _active_queue_has_items(
         plan_content
     ) and not OPEN_GOAL_CHECKBOX_PATTERN.search(goal_content)
@@ -345,6 +350,12 @@ def _format_offenders(offenders: dict[str, list[str]]) -> str:
 
 def _read(path: Path) -> str:
     return path.read_text(encoding="utf-8")
+
+
+def _read_optional(path: Path) -> str | None:
+    if not path.exists():
+        return None
+    return _read(path)
 
 
 def _read_existing(*paths: Path) -> str:

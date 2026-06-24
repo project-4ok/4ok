@@ -25,6 +25,18 @@ def test_goal_alignment_audit_passes_current_repo() -> None:
     }
 
 
+def test_goal_alignment_audit_skips_when_goal_and_plan_missing(tmp_path: Path) -> None:
+    _write_minimal_repo(tmp_path)
+    (tmp_path / "docs/goal.md").unlink()
+    (tmp_path / "docs/plan.md").unlink()
+
+    report = audit_goal_alignment(tmp_path)
+    failed = [check["name"] for check in report["checks"] if check["status"] != "ok"]
+
+    assert report["status"] == "ok"
+    assert not failed
+
+
 def test_goal_alignment_audit_catches_missing_plan_active_queue(tmp_path: Path) -> None:
     _write_minimal_repo(tmp_path)
     (tmp_path / "docs/plan.md").write_text("# Plan\n", encoding="utf-8")

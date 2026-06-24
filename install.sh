@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${FOUROK_REPO_URL:-https://github.com/project-fourok/fourok.git}"
+REPO_URL="${FOUROK_REPO_URL:-https://github.com/project-4ok/4ok.git}"
 INSTALL_DIR="${FOUROK_INSTALL_DIR:-$HOME/fourok}"
 START_STACK="${FOUROK_INSTALL_START_STACK:-1}"
 

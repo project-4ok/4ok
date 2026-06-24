@@ -199,7 +199,7 @@ Current visible commands should be mapped, not deleted blindly.
 5. Update `install.sh` and README to point users to:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/project-fourok/fourok/main/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/project-4ok/4ok/main/install.sh | bash
 fourok onboard
 fourok status
 fourok retrieve "What changed this week?"
