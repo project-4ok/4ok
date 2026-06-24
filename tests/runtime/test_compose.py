@@ -111,7 +111,7 @@ def test_installer_chooses_free_local_ports_for_onboarding() -> None:
     assert "choose_host_port FOUROK_MCP_PORT 8010" in installer
     assert "Port $preferred_port is busy" in installer
     assert "FOUROK_RESERVED_HOST_PORTS" in installer
-    assert "while port_reserved \"$port\" || ! port_available \"$port\"" in installer
+    assert 'while port_reserved "$port" || ! port_available "$port"' in installer
 
 
 def test_installer_installs_plain_cli_shims() -> None:
@@ -273,7 +273,7 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     assert "[Deployment] Prometheus metrics present" in dashboard_titles
     assert "[Deployment] Recent fourok log streams" in dashboard_titles
     assert "[Deployment] Retrieval telemetry present" in dashboard_titles
-    assert "[Deployment] Embedding telemetry present" in dashboard_titles
+    assert "[Deployment] Embedding coverage complete" in dashboard_titles
     assert '{compose_project=~"$compose_project"}' in expressions
     assert '{compose_service=~"$compose_service"}' in expressions
     assert '{compose_service=~"$compose_service"} |= "STEP_FAILURE"' in expressions
@@ -345,6 +345,13 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     assert any("fourok_retrieval_duration_ms_sum" in expr for expr in prometheus_exprs)
     assert any("otelcol_receiver_accepted_spans_total" in expr for expr in prometheus_exprs)
     panel_titles = {panel["title"] for panel in prometheus_panels}
+    embedding_deployment_panel = next(
+        panel
+        for panel in prometheus_panels
+        if panel["title"] == "[Deployment] Embedding coverage complete"
+    )
+    assert embedding_deployment_panel["targets"][0]["expr"] == "fourok_embedding_coverage_ratio"
+    assert "fourok_embedding_records_total" not in embedding_deployment_panel["targets"][0]["expr"]
     assert "[Logs] Last 5 fourok Docker logs" in {
         panel["title"] for panel in dashboard_data["panels"]
     }

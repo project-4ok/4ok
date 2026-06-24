@@ -16,6 +16,7 @@ from fourok.etl.load.context_objects import (
 )
 from fourok.etl.load.retrieval_records import (
     prepare_retrieval_records,
+    replace_vector_index_for_retrieval_records,
     store_retrieval_records,
 )
 from fourok.etl.load.source_metadata import source_identity_rows
@@ -91,11 +92,19 @@ def rebuild_retrieval_units(
             state.retrieval_records,
             records=retrieval_units,
         )
+        source_refs = [record.source_ref for record in records]
+        replace_vector_index_for_retrieval_records(
+            state.engine,
+            source_refs=source_refs,
+            records=retrieval_units,
+        )
+        embeddings_indexed = sum(1 for record in retrieval_units if record.status == "current")
         report = {
             "status": "completed",
             "source_records": len(records),
             "retrieval_units_deleted": deleted_count,
             "retrieval_units_created": len(retrieval_units),
+            "embeddings_indexed": embeddings_indexed,
         }
         set_safe_span_attributes(
             span,
@@ -104,6 +113,7 @@ def rebuild_retrieval_units(
                 "fourok.source_record.count": len(records),
                 "fourok.retrieval.unit_count": len(retrieval_units),
                 "fourok.retrieval.deleted_count": deleted_count,
+                "fourok.embedding.indexed_count": embeddings_indexed,
             },
         )
         return report

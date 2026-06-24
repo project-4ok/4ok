@@ -382,6 +382,7 @@ def fourok_retrieval_records(fourok_runtime: FourokRuntimeResource) -> Materiali
                 "retrieval_unit_count": len(retrieval_units),
                 "retrieval_units_rebuilt": rebuild_report["retrieval_units_created"],
                 "retrieval_units_deleted": rebuild_report["retrieval_units_deleted"],
+                "embeddings_indexed": rebuild_report["embeddings_indexed"],
                 "source_records": rebuild_report["source_records"],
                 "retrieval_unit_statuses": MetadataValue.json(_count_by(retrieval_units, "status")),
                 "source_ref_count": len(
