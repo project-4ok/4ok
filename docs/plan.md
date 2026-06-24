@@ -1,7 +1,8 @@
 # Plan
 
 Active roadmap only. Source code and executable tests are truth for implemented
-behavior. Completed history belongs in `CHANGELOG.md` or `reports/`.
+behavior. Completed implementation history belongs in git commit history or
+evidence reports.
 
 ## Docs Policy
 

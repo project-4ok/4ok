@@ -168,7 +168,6 @@ mixed with behavior changes.
 - [Compliance](docs/compliance.md)
 - [K3s deployment readiness](docs/k3s-deployment-readiness.md)
 - [Review log](docs/review.md)
-- [Changelog](CHANGELOG.md)
 
 ## Status
 
