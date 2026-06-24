@@ -8,6 +8,7 @@
 - `tobi/qmd` commit `e428df7`: hybrid BM25/vector/HyDE search, RRF fusion, doc IDs, line-aware `get`, hierarchical context, MCP instructions.
 - Graphiti/Zep: temporal context graphs with entities, facts, episodes/provenance, hybrid semantic/keyword/graph traversal.
 - Mem0: entity linking, multi-signal retrieval, temporal reasoning, token-efficient memory retrieval.
+- Codex agent feedback on `search_fourok`: structured evidence shape, audit refs, empty-result honesty, and scope/freshness transparency needs.
 
 ---
 
@@ -20,7 +21,10 @@ Live local retrieval is working, but output quality is too preview-like:
 - issue descriptions and comments exist in storage but are not assembled into useful context packs;
 - Linear comments and issues are separate source records, but retrieval should not hard-code Linear thread logic;
 - canonical objects currently mirror source records too closely, so source-agnostic expansion needs both immediate fallback behavior and later graph enrichment;
-- temporal queries such as “What changed this week?” rank old lexical matches because time intent is not handled.
+- temporal queries such as “What changed this week?” rank old lexical matches because time intent is not handled;
+- empty/no-evidence responses do not yet say enough about searched scope, freshness, defaults, or rejected fuzzy candidates;
+- person-name searches lack obvious “did you mean” / alias / alternate casing hints;
+- quick assistant usage needs a compact answerability signal, not only the full evidence structure.
 
 ---
 
@@ -48,6 +52,8 @@ query
 
 ### Stage 1 — Token-budgeted evidence output
 
+**Status:** Implemented in `4fad5ca`.
+
 **Objective:** Replace the final fixed 5-item cap with a 2k-token budget.
 
 **Files:**
@@ -67,6 +73,8 @@ query
 
 ### Stage 2 — Better evidence rendering
 
+**Status:** Partly implemented: larger snippets, duplicate title-prefix reduction, compact metadata, and relative date labels are in place.
+
 **Objective:** Make each selected card contain useful answerable context.
 
 **Acceptance:**
@@ -76,6 +84,8 @@ query
 - Metadata-only lines stay minimal: source refs, relevance, date, evidence.
 
 ### Stage 3 — Source-agnostic canonical expansion
+
+**Status:** First pass implemented in `95c54ef`: high-ranked hits expand through `thread_ref` fallback and direct canonical/entity links before token-budget packing.
 
 **Objective:** Expand high-ranked hits through canonical objects and direct links, not source-specific Linear rules.
 
@@ -100,7 +110,41 @@ query
 - Rank/filter using `updated_at` and `occurred_at` alongside relevance.
 - Only restore examples like `fourok retrieve "What changed this week?"` once this is reliable.
 
-### Stage 5 — Evaluation case set
+### Stage 5 — Scope, freshness, and answerability transparency
+
+**Objective:** Make `retrieve` / `search_fourok` more trustworthy for both hits and misses, especially empty results.
+
+**Codex feedback to preserve:**
+- Current structured shape is useful: summary, evidence items, primary objects, related groups, entities, limitations, and `audit_ref` make evidence-backed answers traceable.
+- Empty results are honest and easy to interpret, but need more diagnostic signal.
+- Parameter defaults are not visible in the result, which weakens trust when roles, agent/human identity, state/config, or database URL defaults matter.
+- Person-name lookups need fuzzy/alias/casing hints.
+- Quick assistants need a compact answerability field such as `found`, `confidence`, and `searched_scope`.
+
+**Response additions:**
+- `answerability`: compact object with `found`, `confidence`, `evidence_count`, `candidate_count`, `scope`, and `reason`.
+- `searched_scope`: source systems, record roles/types, principal/agent/human defaults applied, database state kind, retriever set, candidate limit, token budget.
+- `freshness`: latest source record timestamp, latest retrieval/index timestamp where available, and whether vector index was usable.
+- `empty_result_diagnostics`: searched sources, rejected/fuzzy candidate count, top rejected labels when privacy-safe, and next best query/action.
+- `did_you_mean`: bounded alias/fuzzy suggestions for person/name-like queries.
+
+**Acceptance:**
+- Empty response for a name such as `Olivia` includes `found: false`, `confidence: none`, searched scope, freshness, retrievers used, and whether fuzzy candidates were considered.
+- Non-empty response includes `found: true`, confidence level derived from evidence strength, evidence count, candidate count, and audit ref.
+- Defaults that affect trust are visible in JSON and concise in block output.
+- No secrets or raw database URLs are printed; scope/freshness values are redacted/summarized.
+
+### Stage 6 — Fuzzy person/name lookup hints
+
+**Objective:** Make person-name misses useful without overclaiming.
+
+**Acceptance:**
+- Detect person-name-like short queries.
+- Use available source identities, canonical person objects, titles, and entity links for fuzzy/alias candidates.
+- Return suggestions only as suggestions, not evidence.
+- Keep suggestions bounded and privacy-safe.
+
+### Stage 7 — Evaluation case set
 
 **Objective:** Prevent regressions with observable retrieval-quality tests.
 
@@ -110,6 +154,7 @@ query
 - `domain access website`
 - `refund simon`
 - `current fourok priorities`
+- `Olivia`
 
 **Acceptance:**
 - useful evidence text present;
@@ -117,9 +162,10 @@ query
 - canonical/direct-link context included where available;
 - output within token budget;
 - no `permission_refs:` in rendered context;
-- no metadata-only cards when underlying source text exists.
+- no metadata-only cards when underlying source text exists;
+- empty/person-name misses include answerability, scope, freshness, and did-you-mean diagnostics.
 
-### Stage 6 — Honcho memory fusion spike
+### Stage 8 — Honcho memory fusion spike
 
 **Objective:** Add agent long-term memory as a small, optional section fused into
 the retrieval response after governed evidence retrieval, without making Honcho
@@ -160,7 +206,8 @@ Adopt now:
 - stable citeable refs for every evidence item;
 - token-budgeted output;
 - RRF-style multi-signal fusion;
-- explicit query intent/type handling over time.
+- explicit query intent/type handling over time;
+- explicit answerability/scope/freshness metadata so agents can trust empty results.
 
 Borrow later:
 - HyDE query expansion;
