@@ -124,7 +124,7 @@ def test_cli_search_state_explicit_sqlite_state_ignores_ambient_database_url(
         "FOUROK_DATABASE_URL",
         "postgresql+psycopg://fourok:stale@127.0.0.1:5432/fourok",
     )
-    monkeypatch.setattr("fourok.cli_parts.commands_search.GovernedContext", FakeContext)
+    monkeypatch.setattr("fourok.retrieval.cli.GovernedContext", FakeContext)
     monkeypatch.setattr(
         "sys.argv",
         ["fourok", "search-state", "refund", "--state", str(state)],
@@ -180,7 +180,11 @@ def test_cli_help_hides_research_experiment_commands(capsys, monkeypatch) -> Non
         raise AssertionError("argparse help should exit")
 
     output = capsys.readouterr().out
-    assert "eval-retrieval" in output
+    assert "retrieve" in output
+    assert "status" in output
+    assert "onboard" in output
+    assert "admin" in output
+    assert "eval-retrieval" not in output
     assert "\n  source " not in output
     assert "honcho-sync" not in output
     assert "honcho-receipt" not in output

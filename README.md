@@ -112,6 +112,7 @@ src/fourok/etl/transform/     PII, token, and entity-linking transforms
 src/fourok/storage/           config, raw store, health, backups, schema contracts, ORM models
 src/fourok/retrieval/         API boundary, search/ranking, evidence packs, retrieval evaluation
 src/fourok/retrieval/api.py   API-first retrieval boundary used by CLI, MCP, and clients
+src/fourok/retrieval/cli.py   domain-owned retrieve/search CLI adapter
 src/fourok/retrieval/clients/ thin wrappers for CLI, MCP, and future adapters
 src/fourok/governance/        permissions, lifecycle, retention, reveal policy, audit behavior
 src/fourok/runtime/           MCP, operator status, dashboards, observability, Dagster/runtime checks

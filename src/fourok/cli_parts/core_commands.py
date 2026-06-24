@@ -6,9 +6,9 @@ from fourok.cli_parts.commands_audit_retention import dispatch_audit_retention_c
 from fourok.cli_parts.commands_backup import dispatch_backup_commands
 from fourok.cli_parts.commands_imports import dispatch_import_commands
 from fourok.cli_parts.commands_runtime import dispatch_runtime_commands
-from fourok.cli_parts.commands_search import dispatch_search_commands
 from fourok.cli_parts.commands_webhooks import dispatch_webhook_commands
 from fourok.cli_parts.runtime_helpers import _configure_observability_for_command
+from fourok.retrieval.cli import dispatch_search_commands
 
 CORE_DISPATCHERS = (
     dispatch_search_commands,

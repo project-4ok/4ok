@@ -174,6 +174,7 @@ def _check_active_docs_exclude_reveal_surface(project_root: Path) -> GoalAuditCh
 def _check_cli_active_surface(project_root: Path) -> GoalAuditCheck:
     content = _read_existing(
         project_root / "src/fourok/cli.py",
+        project_root / "src/fourok/retrieval/cli.py",
         *sorted((project_root / "src/fourok/cli_parts").glob("parser*.py")),
     )
     commands = frozenset(ADD_PARSER_PATTERN.findall(content))

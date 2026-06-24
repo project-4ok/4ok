@@ -5,12 +5,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import ClassVar
 
-from fourok.retrieval.clients import cli as cli_client
-from fourok.retrieval.clients import mcp as mcp_client
-
 from fourok.governance import SearchContextResponse
 from fourok.governance.policy import PrincipalContext
 from fourok.retrieval.api import RetrievalAPI
+from fourok.retrieval.clients import cli as cli_client
+from fourok.retrieval.clients import mcp as mcp_client
 from fourok.retrieval.search import SearchResult
 from fourok.storage.config import RetrievalConfig
 
@@ -138,7 +137,7 @@ def test_cli_and_mcp_clients_are_thin_wrappers_over_retrieval_api(monkeypatch) -
 
 def test_cli_and_mcp_surfaces_do_not_instantiate_governed_context_directly() -> None:
     checked = [
-        ROOT / "src/fourok/cli_parts/commands_search.py",
+        ROOT / "src/fourok/retrieval/cli.py",
         ROOT / "src/fourok/runtime/mcp_retrieval.py",
         ROOT / "src/fourok/retrieval/clients/cli.py",
         ROOT / "src/fourok/retrieval/clients/mcp.py",
@@ -151,3 +150,14 @@ def test_cli_and_mcp_surfaces_do_not_instantiate_governed_context_directly() -> 
                 if node.func.id == "GovernedContext":
                     offenders.append(str(path.relative_to(ROOT)))
     assert offenders == []
+
+
+def test_retrieval_cli_adapter_is_domain_owned() -> None:
+    assert (ROOT / "src/fourok/retrieval/cli.py").exists()
+    assert not (ROOT / "src/fourok/cli_parts/parser_search.py").exists()
+    assert not (ROOT / "src/fourok/cli_parts/commands_search.py").exists()
+
+    root_parser = (ROOT / "src/fourok/cli_parts/parser.py").read_text(encoding="utf-8")
+    root_dispatch = (ROOT / "src/fourok/cli_parts/core_commands.py").read_text(encoding="utf-8")
+    assert "from fourok.retrieval.cli import add_search_commands" in root_parser
+    assert "from fourok.retrieval.cli import dispatch_search_commands" in root_dispatch

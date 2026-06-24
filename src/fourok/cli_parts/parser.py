@@ -8,9 +8,9 @@ from fourok.cli_parts.parser_honcho import add_honcho_commands
 from fourok.cli_parts.parser_imports import add_import_commands
 from fourok.cli_parts.parser_retention import add_retention_commands
 from fourok.cli_parts.parser_runtime import add_runtime_commands
-from fourok.cli_parts.parser_search import add_search_commands
 from fourok.cli_parts.parser_webhooks import add_webhook_commands
 from fourok.cli_parts.shared import _hide_subparser
+from fourok.retrieval.cli import add_search_commands
 
 PUBLIC_COMMANDS = {"retrieve", "status", "onboard", "admin"}
 

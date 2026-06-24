@@ -27,9 +27,7 @@ def test_retrieval_agent_skill_is_valid_and_cli_first() -> None:
 
 
 def test_retrieval_agent_skill_is_plain_repo_artifact_not_cli_surface() -> None:
-    parser_text = (ROOT / "src/fourok/cli_parts/parser_search.py").read_text(
-        encoding="utf-8"
-    )
+    parser_text = (ROOT / "src/fourok/retrieval/cli.py").read_text(encoding="utf-8")
     active_surface_text = (ROOT / "src/fourok/runtime/active_surface.py").read_text(
         encoding="utf-8"
     )
