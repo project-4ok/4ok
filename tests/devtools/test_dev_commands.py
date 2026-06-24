@@ -9,6 +9,7 @@ from fourok.devtools.dev import (
     install_hooks,
     logs_status_report,
 )
+from fourok.devtools.grafana import grafana_report
 
 
 def test_check_plan_runs_reusable_local_gate_with_optional_pytest_args() -> None:
@@ -240,6 +241,56 @@ def test_logs_status_report_summarizes_loki_labels_counts_and_queries() -> None:
     )
     assert report["counts"]["all_fourok"]["entries"] == 2
     assert len(calls) == 4
+
+
+def test_grafana_status_lives_under_fourok_devtools_and_reports_dashboard_state() -> None:
+    calls: list[str] = []
+
+    def fake_get(path: str, params=None):
+        calls.append(path)
+        if path == "/api/health":
+            return {"database": "ok", "version": "13.0.1"}
+        if path == "/api/search":
+            return [
+                {
+                    "uid": "fourok-local-runtime-logs",
+                    "title": "fourok dashboard",
+                    "url": "/d/fourok-local-runtime-logs/fourok-dashboard",
+                }
+            ]
+        if path == "/api/datasources":
+            return [
+                {"uid": "prometheus", "type": "prometheus", "name": "Prometheus"},
+                {"uid": "loki", "type": "loki", "name": "Loki"},
+                {"uid": "tempo", "type": "tempo", "name": "Tempo"},
+            ]
+        if path.endswith("/api/v1/query"):
+            metric = (params or {})["query"]
+            result = [] if metric == "fourok_retrieval_requests_total" else [{"metric": {}}]
+            return {"status": "success", "data": {"result": result}}
+        if path.endswith("/loki/api/v1/query_range"):
+            return {"status": "success", "data": {"result": [{"stream": {}}]}}
+        raise AssertionError(path)
+
+    report = grafana_report(grafana_url="http://grafana.local", http_get=fake_get)
+
+    assert report["status"] == "degraded"
+    assert report["access"]["method"] == "grafana_http_api"
+    assert report["dashboard"] == {
+        "uid": "fourok-local-runtime-logs",
+        "title": "fourok dashboard",
+        "url": "http://grafana.local/d/fourok-local-runtime-logs/fourok-dashboard",
+    }
+    assert report["datasources"] == {
+        "prometheus": "present",
+        "loki": "present",
+        "tempo": "present",
+    }
+    assert report["signals"]["fourok_source_records_total"]["status"] == "present"
+    assert report["signals"]["fourok_retrieval_requests_total"]["status"] == "missing"
+    assert report["signals"]["loki_recent_fourok_logs"]["status"] == "present"
+    assert "dashboard_has_gaps" in report["recommendations"]
+    assert "/api/health" in calls
 
 
 def test_dagster_status_entrypoint_reports_repository_health() -> None:

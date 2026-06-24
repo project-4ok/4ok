@@ -24,7 +24,6 @@ build-backend = "hatchling.build"
 
 [project.scripts]
 fourok = "fourok.cli:main"
-fourok-agent-grafana = "fourok.agent_experience.grafana:main"
 fourok-dev = "fourok.devtools.dev:main"
 fourok-mcp = "fourok.runtime.mcp_retrieval:main"
 tap-fourok-fixture = "fourok.etl.extract.fixture_tap:main"

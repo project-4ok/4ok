@@ -14,6 +14,7 @@ from pathlib import Path
 
 from fourok.devtools.dagster_status import dagster_status_report
 from fourok.devtools.diagnostics import DEFAULT_ERROR_WINDOW_SECONDS, agent_diagnostics
+from fourok.devtools.grafana import DEFAULT_GRAFANA_URL, format_grafana_report, grafana_report
 
 UV_CACHE_DIR = ".scratch/uv-cache"
 
@@ -195,6 +196,15 @@ def main(argv: Sequence[str] | None = None) -> None:
         help="Range-query window used for log counts.",
     )
 
+    grafana_status_parser = subparsers.add_parser(
+        "grafana-status",
+        help="Summarize Grafana dashboard, datasource, and deployment-signal coverage.",
+    )
+    grafana_status_parser.add_argument("--grafana-url", default=DEFAULT_GRAFANA_URL)
+    grafana_status_parser.add_argument(
+        "--json", action="store_true", help="Print machine-readable JSON."
+    )
+
     args = parser.parse_args(argv)
     if args.command == "lint":
         _run_ruff("check")
@@ -258,6 +268,13 @@ def main(argv: Sequence[str] | None = None) -> None:
             )
         )
         return
+    if args.command == "grafana-status":
+        report = grafana_report(grafana_url=args.grafana_url)
+        if args.json:
+            print(json.dumps(report, indent=2, sort_keys=True))
+        else:
+            print(format_grafana_report(report))
+        raise SystemExit(0 if report["status"] == "ok" else 1)
 
     extra_args = _operator_live_args(args) if args.command == "operator-live" else None
     if extra_args is None:

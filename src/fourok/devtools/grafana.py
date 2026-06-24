@@ -1,10 +1,9 @@
 from __future__ import annotations
 
-import argparse
 import json
 import urllib.parse
 import urllib.request
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from typing import Any
 
 DASHBOARD_UID = "fourok-local-runtime-logs"
@@ -57,20 +56,6 @@ def grafana_report(
     _record_loki_signal(report, get)
     _finalize_status(report)
     return report
-
-
-def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="fourok-agent-grafana")
-    parser.add_argument("--grafana-url", default=DEFAULT_GRAFANA_URL)
-    parser.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
-    args = parser.parse_args(argv)
-
-    report = grafana_report(grafana_url=args.grafana_url)
-    if args.json:
-        print(json.dumps(report, indent=2, sort_keys=True))
-    else:
-        print(_format_text(report))
-    return 0 if report["status"] == "ok" else 1
 
 
 def _http_get(base_url: str) -> HttpGet:
@@ -182,7 +167,7 @@ def _finalize_status(report: dict[str, Any]) -> None:
         report["status"] = "degraded"
 
 
-def _format_text(report: dict[str, Any]) -> str:
+def format_grafana_report(report: dict[str, Any]) -> str:
     dashboard = report["dashboard"]
     lines = [
         f"status: {report['status']}",
@@ -197,7 +182,3 @@ def _format_text(report: dict[str, Any]) -> str:
     if report["recommendations"]:
         lines.append("recommendations: " + ", ".join(report["recommendations"]))
     return "\n".join(lines)
-
-
-if __name__ == "__main__":
-    raise SystemExit(main())

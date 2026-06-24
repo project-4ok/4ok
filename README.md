@@ -117,8 +117,7 @@ src/fourok/governance/        permissions, lifecycle, retention, reveal policy, 
 src/fourok/runtime/           MCP, operator status, dashboards, observability, Dagster/runtime checks
 src/fourok/orchestration/     Dagster resource wiring
 src/fourok/honcho/            side experiment for OpenClaw/user-continuity memory
-src/fourok/agent_experience/  agent-facing Grafana helpers
-src/fourok/devtools/          local development gates, diagnostics, and goal audits
+src/fourok/devtools/          local development gates, diagnostics, Grafana status, and goal audits
 src/fourok/secrets/           environment/secret loading helpers
 fixtures/                    synthetic data for deterministic onboarding and tests
 deploy/                      Docker, Compose, systemd, and runtime deployment artifacts
