@@ -351,6 +351,7 @@ def _onboard_message(args: argparse.Namespace) -> str:
             "  These connectors are already implemented; activate the ones you use by adding",
             "  their secrets to .env:",
             *_connector_lines(secret_report),
+            *_configured_connector_initial_run_lines(secret_report, source_count=source_count),
             "  Add their secrets to .env, then refresh fourok:",
             "    1. fourok onboard initial-run   # reloads .env into dagster-code and imports data",
             "    2. fourok status              # confirm the connector imported context",
@@ -499,6 +500,31 @@ def _connector_lines(secret_report: dict[str, object]) -> list[str]:
         else:
             lines.append(f"  {connector}: configured")
     return lines or ["  none configured"]
+
+
+def _configured_connector_initial_run_lines(
+    secret_report: dict[str, object], *, source_count: int
+) -> list[str]:
+    if source_count > 0:
+        return []
+    connectors = secret_report.get("connectors", {})
+    if not isinstance(connectors, dict):
+        return []
+    configured = [
+        name
+        for name, data in sorted(connectors.items())
+        if isinstance(data, dict) and data.get("status") == "ok"
+    ]
+    if not configured:
+        return []
+    connector_text = ", ".join(str(name) for name in configured)
+    verb = "is" if len(configured) == 1 else "are"
+    return [
+        "",
+        f"  {connector_text} {verb} configured, but no connector data has been imported yet.",
+        "  Run the initial import now:",
+        "    fourok onboard initial-run",
+    ]
 
 
 def _embedding_secret_report() -> dict[str, object]:

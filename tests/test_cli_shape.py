@@ -263,6 +263,49 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
     assert "fourok status" in output
 
 
+def test_onboard_calls_out_initial_run_when_connector_configured_but_no_data(
+    capsys, monkeypatch
+) -> None:
+    monkeypatch.setattr("sys.argv", ["fourok", "onboard"])
+    monkeypatch.setattr(
+        "fourok.runtime.cli._safe_client_status_report",
+        lambda: {
+            "status": "needs_onboarding",
+            "checks": [
+                {"name": "database", "status": "ok"},
+                {"name": "source_records", "status": "failed", "count": 0},
+                {"name": "retrieval_records", "status": "failed", "count": 0},
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._connector_secret_report",
+        lambda: {
+            "status": "missing",
+            "connectors": {
+                "twenty": {"status": "ok", "missing": []},
+                "slack": {"status": "missing", "missing": ["SLACK_BOT_TOKEN"]},
+            },
+        },
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._dagster_code_secret_presence",
+        lambda: {"status": "ok", "missing": []},
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._embedding_secret_report",
+        lambda: {"status": "ok", "provider": "openai"},
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "twenty: configured" in output
+    assert "twenty is configured, but no connector data has been imported yet" in output
+    assert "Run the initial import now:" in output
+    assert "fourok onboard initial-run" in output
+
+
 def test_onboard_has_no_connector_subcommand(capsys) -> None:
     parser = build_parser()
 
