@@ -61,6 +61,32 @@ checkout_repo() {
   cd "$INSTALL_DIR"
 }
 
+write_local_config() {
+  mkdir -p .local/raw .local/backups
+  if [ -f .local/gcb.toml ]; then
+    log "Keeping existing local config: .local/gcb.toml"
+    return 0
+  fi
+
+  log "Writing local runtime config: .local/gcb.toml"
+  cat >.local/gcb.toml <<'EOF'
+[raw_store]
+backend = "file"
+path = "/app/.local/raw"
+
+[backup]
+path = "/app/.local/backups"
+
+[telemetry]
+enabled = true
+endpoint = "http://observability:4318"
+service_name = "gcb-app"
+
+[connectors]
+enabled = []
+EOF
+}
+
 main() {
   log "4ok local onboarding"
   require_runtime
@@ -69,6 +95,8 @@ main() {
 
   log "Installing Python dependencies"
   uv sync
+
+  write_local_config
 
   log "Checking Docker Compose configuration"
   uv run gcb-dev compose-config >/dev/null
