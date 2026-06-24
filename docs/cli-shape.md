@@ -85,6 +85,7 @@ Example:
 
 ```bash
 fourok onboard
+fourok onboard initial-run
 fourok onboard --check
 fourok onboard --demo
 ```
@@ -96,7 +97,8 @@ Responsibilities:
 - start or verify the local stack when appropriate
 - seed safe demo/fixture data when requested
 - run or suggest `fourok status`
-- run or suggest one demo `fourok retrieve` query
+- after `.env` connector values are set, recreate `dagster-code` and trigger the first live backfill via `fourok onboard initial-run`
+- run or suggest one retrieval query only after connector data is present
 - never ask for or write secrets by default
 
 Connector setup decision: connector onboarding should live inside `fourok onboard`. It may guide the user, but should not silently collect or store secrets.

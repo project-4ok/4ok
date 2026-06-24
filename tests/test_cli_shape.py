@@ -244,7 +244,7 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
     assert "google_drive: missing GOOGLE_WORKSPACE_DRIVE_IDS" in output
     assert "dagster-code is not receiving connector credentials" in output
     assert "docker compose up -d --build dagster-code" in output
-    assert "fourok admin run-live-ingestion --source all --verify-live-db" in output
+    assert "fourok onboard initial-run" in output
     assert "fourok status" in output
 
 
@@ -255,4 +255,52 @@ def test_onboard_has_no_connector_subcommand(capsys) -> None:
         parser.parse_args(["onboard", "connectors"])
 
     assert exc.value.code == 2
-    assert "unrecognized arguments: connectors" in capsys.readouterr().err
+    error = capsys.readouterr().err
+    assert "invalid choice: 'connectors'" in error
+    assert "initial-run" in error
+
+
+def test_onboard_initial_run_recreates_dagster_code_and_triggers_backfill(
+    capsys, monkeypatch
+) -> None:
+    commands = []
+
+    class Completed:
+        returncode = 0
+        stdout = "ok\n"
+        stderr = ""
+
+    def fake_run(command, **_kwargs):
+        commands.append(command)
+        return Completed()
+
+    monkeypatch.setattr("sys.argv", ["fourok", "onboard", "initial-run"])
+    monkeypatch.setattr("fourok.cli_parts.commands_runtime.subprocess.run", fake_run)
+
+    main()
+
+    assert commands == [
+        [
+            "docker",
+            "compose",
+            "up",
+            "-d",
+            "--build",
+            "--force-recreate",
+            "dagster-code",
+        ],
+        [
+            "uv",
+            "run",
+            "fourok",
+            "admin",
+            "run-live-ingestion",
+            "--source",
+            "all",
+            "--verify-live-db",
+        ],
+    ]
+    output = capsys.readouterr().out
+    assert "Recreating dagster-code" in output
+    assert "Running initial live backfill" in output
+    assert "fourok status" in output

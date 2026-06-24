@@ -56,6 +56,7 @@ def add_onboard_command(subparsers) -> None:
         help="Set up or verify a local fourok environment.",
         description="Set up or verify a local fourok environment without collecting secrets.",
     )
+    onboard_subparsers = onboard_parser.add_subparsers(dest="onboard_step")
     onboard_parser.set_defaults(onboard_step="check")
     onboard_parser.add_argument(
         "--check",
@@ -66,6 +67,10 @@ def add_onboard_command(subparsers) -> None:
         "--demo",
         action="store_true",
         help="Show the demo retrieval path after checks.",
+    )
+    onboard_subparsers.add_parser(
+        "initial-run",
+        help="Recreate dagster-code and trigger the first live connector backfill.",
     )
 
 

@@ -29,6 +29,9 @@ from fourok.storage.health import check_database_health, check_runtime_health
 
 def dispatch_runtime_commands(args: argparse.Namespace) -> bool:
     if args.command == "onboard":
+        if args.onboard_step == "initial-run":
+            print(_run_onboard_initial_run())
+            return True
         print(_onboard_message(args))
         return True
 
@@ -314,7 +317,6 @@ _REQUIRED_CONNECTOR_SECRETS = {
         "GOOGLE_WORKSPACE_DRIVE_IDS",
     ),
 }
-_MANUAL_BACKFILL_COMMAND = "fourok admin run-live-ingestion --source all --verify-live-db"
 
 
 def _onboard_message(args: argparse.Namespace) -> str:
@@ -356,7 +358,7 @@ def _onboard_message(args: argparse.Namespace) -> str:
             "",
             "Next:",
             "  fourok status",
-            f"  {_MANUAL_BACKFILL_COMMAND}",
+            "  fourok onboard initial-run",
             "  fourok admin connector-jobs",
         ]
     )
@@ -364,6 +366,58 @@ def _onboard_message(args: argparse.Namespace) -> str:
         lines.append('  fourok retrieve "What changed this week?"')
     if args.demo:
         lines.extend(["", "Demo:", '  fourok retrieve "refund cancellation payment"'])
+    return "\n".join(lines)
+
+
+def _run_onboard_initial_run() -> str:
+    steps = [
+        (
+            "Recreating dagster-code",
+            [
+                "docker",
+                "compose",
+                "up",
+                "-d",
+                "--build",
+                "--force-recreate",
+                "dagster-code",
+            ],
+        ),
+        (
+            "Running initial live backfill",
+            [
+                "uv",
+                "run",
+                "fourok",
+                "admin",
+                "run-live-ingestion",
+                "--source",
+                "all",
+                "--verify-live-db",
+            ],
+        ),
+    ]
+    lines = ["fourok initial onboarding run", ""]
+    for label, command in steps:
+        lines.append(f"{label}: {' '.join(command)}")
+        completed = subprocess.run(command, check=False, capture_output=True, text=True)
+        if completed.stdout.strip():
+            lines.append(completed.stdout.strip())
+        if completed.stderr.strip():
+            lines.append(completed.stderr.strip())
+        if completed.returncode != 0:
+            lines.append(f"Failed: {label}")
+            raise SystemExit("\n".join(lines))
+    lines.extend(
+        [
+            "",
+            "Initial run finished.",
+            "Next:",
+            "  fourok status",
+            "  fourok retrieve \"What changed this week?\"",
+            "  fourok admin connector-jobs",
+        ]
+    )
     return "\n".join(lines)
 
 
