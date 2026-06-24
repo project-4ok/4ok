@@ -35,7 +35,7 @@ def test_default_retrieval_block_is_agent_facing_and_citation_ready() -> None:
     assert "Answer from these evidence cards only when relevant" in block
     assert "[1] Slack message — Dev Jules auth E2E marker" in block
     assert "source_ref: slack:message:C0ASNARACMT:1781089083.931829" in block
-    assert "permission_refs: slack:channel:C0ASNARACMT" in block
+    assert "permission_refs:" not in block
     assert "why_relevant: specific source excerpt" in block
     assert "evidence: dev-jules-codex-auth-e2e-20260610-1059" in block
 

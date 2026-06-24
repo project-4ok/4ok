@@ -51,18 +51,20 @@ def test_retrieve_rejects_limit_option(monkeypatch) -> None:
         main()
 
 
-def test_retrieve_defaults_to_five_results(capsys, monkeypatch, tmp_path: Path) -> None:
+def test_retrieve_defaults_to_token_budget_not_item_limit(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
     state = tmp_path / "state.sqlite"
     context = GovernedContext(state)
     context.ingest_source_records(
         [
             SourceRecord(
-                source_ref=f"slack:message:default-limit:{index}",
+                source_ref=f"slack:message:token-budget:{index}",
                 source_system="slack-live",
-                source_id=f"default-limit-{index}",
+                source_id=f"token-budget-{index}",
                 record_type="message",
-                title=f"Default limit result {index}",
-                body=f"default limit sentinel answer evidence {index}",
+                title=f"Token budget result {index}",
+                body=f"token budget sentinel answer evidence {index}",
                 occurred_at="2026-06-10T12:00:00+00:00",
             )
             for index in range(6)
@@ -70,13 +72,54 @@ def test_retrieve_defaults_to_five_results(capsys, monkeypatch, tmp_path: Path) 
     )
     monkeypatch.setattr(
         "sys.argv",
-        ["fourok", "retrieve", "default limit sentinel answer", "--state", str(state)],
+        ["fourok", "retrieve", "token budget sentinel answer", "--state", str(state)],
     )
 
     main()
 
     output = capsys.readouterr().out
-    assert output.count("source_ref: slack:message:default-limit:") == 5
+    assert output.count("source_ref: slack:message:token-budget:") == 6
+
+
+def test_retrieve_respects_explicit_token_budget(capsys, monkeypatch, tmp_path: Path) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref=f"slack:message:budget-stop:{index}",
+                source_system="slack-live",
+                source_id=f"budget-stop-{index}",
+                record_type="message",
+                title=f"Budget stop result {index}",
+                body=(
+                    "budget stop sentinel evidence "
+                    + "substantial context paragraph " * 12
+                    + str(index)
+                ),
+                occurred_at="2026-06-10T12:00:00+00:00",
+            )
+            for index in range(4)
+        ]
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "budget stop sentinel evidence",
+            "--state",
+            str(state),
+            "--token-budget",
+            "160",
+        ],
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert output.count("source_ref: slack:message:budget-stop:") == 1
+    assert "Budget: " in output
 
 
 def test_retrieve_prints_llm_ready_augmentation_block(capsys, monkeypatch, tmp_path: Path) -> None:
@@ -101,7 +144,7 @@ def test_retrieve_prints_llm_ready_augmentation_block(capsys, monkeypatch, tmp_p
     assert "cancellation invoice follow-up" not in output
     assert "[1] Slack-Live message — #customer-success" in output
     assert "source_ref: slack:message:cancellation" in output
-    assert "permission_refs: none recorded" in output
+    assert "permission_refs:" not in output
     assert "evidence: Customer asked whether the cancellation invoice was final" in output
     assert "Retrieval notes:" in output
     assert "Results are source excerpts, not a final answer." in output
@@ -224,7 +267,7 @@ def test_retrieve_records_privacy_safe_request_observability(
     assert row is not None
     assert row["status"] == "succeeded"
     assert row["retriever_set"] == "keyword,vector"
-    assert row["requested_limit"] == 5
+    assert row["requested_limit"] == 2000
     assert row["candidate_limit"] == 10
     assert row["pre_rerank_candidates"] >= row["returned_results"] >= 1
     assert row["distinct_sources"] >= 1

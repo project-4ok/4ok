@@ -10,7 +10,7 @@ from fourok.etl.extract.email_parser import EmailMessage
 from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
 from fourok.governance.state import create_governed_context_state
-from fourok.retrieval.augmentation import RetrieverName
+from fourok.retrieval.augmentation import DEFAULT_RETRIEVAL_TOKEN_BUDGET, RetrieverName
 from fourok.runtime.dashboard import operator_status as runtime_operator_status
 from fourok.runtime.operator_live import redacted_database_url
 from fourok.storage.config import RuntimeConfig, load_runtime_config
@@ -88,6 +88,7 @@ class RetrievalAPI:
         self,
         query: str,
         *,
+        token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET,
         candidate_limit: int = 40,
         retrievers: Sequence[str] = ("keyword", "vector"),
     ) -> dict[str, object]:
@@ -97,7 +98,7 @@ class RetrievalAPI:
             raise ValueError(f"Unsupported retriever(s): {', '.join(invalid)}")
         response = self._context().retrieve_augmentation(
             query,
-            limit=5,
+            token_budget=token_budget,
             candidate_limit=candidate_limit,
             retrievers=cast(tuple[RetrieverName, ...], retriever_tuple),
         )
@@ -107,12 +108,13 @@ class RetrievalAPI:
         self,
         query: str,
         *,
+        token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET,
         candidate_limit: int = 40,
         retrievers: Sequence[str] = ("keyword", "vector"),
     ) -> str:
         response = self._context().retrieve_augmentation(
             query,
-            limit=5,
+            token_budget=token_budget,
             candidate_limit=candidate_limit,
             retrievers=cast(tuple[RetrieverName, ...], tuple(retrievers)),
         )

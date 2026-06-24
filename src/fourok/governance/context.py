@@ -41,6 +41,7 @@ from fourok.governance.policy import PrincipalContext
 from fourok.governance.state import create_governed_context_state
 from fourok.observability import record_counter, record_histogram
 from fourok.retrieval.augmentation import (
+    DEFAULT_RETRIEVAL_TOKEN_BUDGET,
     RetrievalAugmentationResponse,
     RetrieverName,
     retrieve_augmentation,
@@ -173,7 +174,7 @@ class GovernedContext:
         self,
         query: str,
         *,
-        limit: int = 5,
+        token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET,
         candidate_limit: int = 40,
         retrievers: tuple[RetrieverName, ...] = ("keyword", "vector"),
     ) -> RetrievalAugmentationResponse:
@@ -182,7 +183,7 @@ class GovernedContext:
             self._source_records,
             self._retrieval_records,
             query,
-            limit=limit,
+            token_budget=token_budget,
             candidate_limit=candidate_limit,
             retrievers=retrievers,
         )

@@ -6,6 +6,7 @@ from pathlib import Path
 from fourok.etl.extract.email_parser import EmailMessage
 from fourok.governance.policy import PrincipalContext
 from fourok.retrieval.api import RetrievalAPI
+from fourok.retrieval.augmentation import DEFAULT_RETRIEVAL_TOKEN_BUDGET
 
 
 def search_fixture(
@@ -48,6 +49,7 @@ def search_state(
 def retrieve_augmentation(
     query: str,
     *,
+    token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET,
     candidate_limit: int = 40,
     retrievers: Sequence[str] = ("keyword", "vector"),
     state: Path | str | None = None,
@@ -55,6 +57,7 @@ def retrieve_augmentation(
 ) -> dict[str, object]:
     return RetrievalAPI(state=state, database_url=database_url).retrieve_augmentation(
         query,
+        token_budget=token_budget,
         candidate_limit=candidate_limit,
         retrievers=retrievers,
     )
@@ -63,6 +66,7 @@ def retrieve_augmentation(
 def retrieve_block(
     query: str,
     *,
+    token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET,
     candidate_limit: int = 40,
     retrievers: Sequence[str] = ("keyword", "vector"),
     state: Path | str | None = None,
@@ -70,6 +74,7 @@ def retrieve_block(
 ) -> str:
     return RetrievalAPI(state=state, database_url=database_url).retrieve_augmentation_block(
         query,
+        token_budget=token_budget,
         candidate_limit=candidate_limit,
         retrievers=retrievers,
     )

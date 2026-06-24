@@ -15,6 +15,7 @@ from fourok.retrieval.search import snippet_for, source_record_search_rows
 from fourok.retrieval.vector_search import ChunkVectorIndex
 
 RetrieverName = Literal["keyword", "vector"]
+DEFAULT_RETRIEVAL_TOKEN_BUDGET = 2000
 
 
 @dataclass(frozen=True)
@@ -37,6 +38,9 @@ class RetrievalAugmentationResponse:
     status: str
     results: list[RetrievalCandidate]
     limitations: list[str]
+    token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET
+    estimated_tokens: int = 0
+    candidate_count: int = 0
 
     @property
     def context_block(self) -> str:
@@ -62,6 +66,9 @@ class RetrievalAugmentationResponse:
                 for result in self.results
             ],
             "limitations": self.limitations,
+            "token_budget": self.token_budget,
+            "estimated_tokens": self.estimated_tokens,
+            "candidate_count": self.candidate_count,
         }
 
 
@@ -71,7 +78,7 @@ def retrieve_augmentation(
     retrieval_records,
     query: str,
     *,
-    limit: int = 5,
+    token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET,
     candidate_limit: int = 40,
     retrievers: tuple[RetrieverName, ...] = ("keyword", "vector"),
 ) -> RetrievalAugmentationResponse:
@@ -81,17 +88,20 @@ def retrieve_augmentation(
     vector_count = 0
 
     try:
-        if limit < 1:
+        if token_budget < 1:
             response = RetrievalAugmentationResponse(
                 status="ok",
                 results=[],
-                limitations=["Limit was below 1, so no source excerpts were returned."],
+                limitations=[
+                    "Token budget was below 1, so no source excerpts were returned."
+                ],
+                token_budget=token_budget,
             )
             _record_retrieval_query_event(
                 engine,
                 status="succeeded",
                 retriever_set=retriever_set,
-                requested_limit=limit,
+                requested_limit=token_budget,
                 candidate_limit=candidate_limit,
                 pre_rerank_candidates=0,
                 keyword_candidates=0,
@@ -143,7 +153,8 @@ def retrieve_augmentation(
 
         pre_rerank_count = len(candidates_by_key)
         distinct_sources = len({source_ref for source_ref, _unit_index in candidates_by_key})
-        results = _rank_and_diversify(candidates_by_key, query=query, limit=limit)
+        ranked_results = _rank_and_diversify(candidates_by_key, query=query)
+        results = _select_results_for_token_budget(ranked_results, token_budget=token_budget)
         searched = " and ".join(name for name in retrievers)
         if results:
             limitations.append(f"Searched {searched} candidates.")
@@ -152,13 +163,18 @@ def retrieve_augmentation(
             limitations.append("No relevant source excerpts found for the selected retrievers.")
         limitations.append("Results are source excerpts, not a final answer.")
         response = RetrievalAugmentationResponse(
-            status="ok", results=results, limitations=limitations
+            status="ok",
+            results=results,
+            limitations=limitations,
+            token_budget=token_budget,
+            estimated_tokens=_estimated_result_tokens(results),
+            candidate_count=len(ranked_results),
         )
         _record_retrieval_query_event(
             engine,
             status="succeeded",
             retriever_set=retriever_set,
-            requested_limit=limit,
+            requested_limit=token_budget,
             candidate_limit=candidate_limit,
             pre_rerank_candidates=pre_rerank_count,
             keyword_candidates=keyword_count,
@@ -173,7 +189,7 @@ def retrieve_augmentation(
             engine,
             status="failed",
             retriever_set=retriever_set,
-            requested_limit=limit,
+            requested_limit=token_budget,
             candidate_limit=candidate_limit,
             pre_rerank_candidates=0,
             keyword_candidates=keyword_count,
@@ -191,7 +207,7 @@ def render_augmentation_block(response: RetrievalAugmentationResponse) -> str:
         "",
         (
             "How to use this: Answer from these evidence cards only when relevant. "
-            "Cite source_ref values for factual claims. Respect permission_refs. "
+            "Cite source_ref values for factual claims. "
             "If the evidence is weak or incomplete, say so."
         ),
         "",
@@ -213,22 +229,12 @@ def render_augmentation_block(response: RetrievalAugmentationResponse) -> str:
             ]
         )
     else:
+        lines.append(
+            f"Budget: {response.estimated_tokens}/{response.token_budget} estimated tokens"
+        )
+        lines.append("")
         for index, result in enumerate(response.results, start=1):
-            permission_refs = (
-                ", ".join(result.permission_refs) if result.permission_refs else "none recorded"
-            )
-            why_relevant = ", ".join(result.rerank_reasons) or "specific source excerpt"
-            lines.extend(
-                [
-                    f"[{index}] {_agent_result_label(result)} — {result.title or '(untitled)'}",
-                    f"source_ref: {result.source_ref}",
-                    f"permission_refs: {permission_refs}",
-                    f"why_relevant: {why_relevant}",
-                    f"date: {result.occurred_at or 'unknown'}",
-                    f"evidence: {result.snippet}",
-                    "",
-                ]
-            )
+            lines.extend(_result_card_lines(index, result))
     lines.append("Retrieval notes:")
     lines.extend(f"- {limitation}" for limitation in response.limitations)
     return "\n".join(lines).rstrip() + "\n"
@@ -275,7 +281,6 @@ def _rank_and_diversify(
     candidates_by_key: dict[tuple[str, int], dict[str, object]],
     *,
     query: str,
-    limit: int,
 ) -> list[RetrievalCandidate]:
     rows = RetrievalReranker(default_rerank_rules()).rerank(
         list(candidates_by_key.values()), query=query
@@ -305,9 +310,47 @@ def _rank_and_diversify(
                 unit_index=int(row["unit_index"]),
             )
         )
-        if len(results) >= limit:
-            break
     return results
+
+
+def _select_results_for_token_budget(
+    results: list[RetrievalCandidate], *, token_budget: int
+) -> list[RetrievalCandidate]:
+    selected: list[RetrievalCandidate] = []
+    used = 0
+    for result in results:
+        next_index = len(selected) + 1
+        card_tokens = _estimate_tokens("\n".join(_result_card_lines(next_index, result)))
+        if selected and used + card_tokens > token_budget:
+            break
+        selected.append(result)
+        used += card_tokens
+        if used >= token_budget:
+            break
+    return selected
+
+
+def _estimated_result_tokens(results: list[RetrievalCandidate]) -> int:
+    return sum(
+        _estimate_tokens("\n".join(_result_card_lines(index, result)))
+        for index, result in enumerate(results, start=1)
+    )
+
+
+def _result_card_lines(index: int, result: RetrievalCandidate) -> list[str]:
+    why_relevant = ", ".join(result.rerank_reasons) or "specific source excerpt"
+    return [
+        f"[{index}] {_agent_result_label(result)} — {result.title or '(untitled)'}",
+        f"source_ref: {result.source_ref}",
+        f"why_relevant: {why_relevant}",
+        f"date: {result.occurred_at or 'unknown'}",
+        f"evidence: {result.snippet}",
+        "",
+    ]
+
+
+def _estimate_tokens(text_value: str) -> int:
+    return max(1, (len(text_value) + 3) // 4)
 
 
 def _metadata_by_source_ref(
@@ -471,7 +514,7 @@ def _snippet_without_title_prefix(text_value: str, title: str) -> str:
 
 def _evidence_snippet(text_value: str, title: str, query: str) -> str:
     evidence_text = _snippet_without_title_prefix(text_value, title)
-    return _compact(snippet_for(evidence_text, query, window=280))
+    return _compact(snippet_for(evidence_text, query, window=900), limit=1200)
 
 
 def _agent_result_label(result: RetrievalCandidate) -> str:
