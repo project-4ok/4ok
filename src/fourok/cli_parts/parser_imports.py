@@ -26,7 +26,7 @@ def add_import_commands(subparsers) -> None:
     ingest_gmail_singer_parser.add_argument("singer_file", type=Path)
     ingest_gmail_singer_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     ingest_gmail_singer_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
     )
     ingest_gmail_singer_parser.add_argument("--config", type=Path)
 
@@ -36,7 +36,7 @@ def add_import_commands(subparsers) -> None:
     )
     ingest_pdf_parser.add_argument("pdf_file", type=Path)
     ingest_pdf_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    ingest_pdf_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    ingest_pdf_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
     ingest_pdf_parser.add_argument("--config", type=Path)
     ingest_pdf_parser.add_argument(
         "--landing-dir",
@@ -64,7 +64,7 @@ def add_import_commands(subparsers) -> None:
     )
     backfill_openviking_parser.add_argument(
         "--database-url",
-        help="SQLAlchemy database URL. Defaults to FOUR_OK_DATABASE_URL unless --state is explicit.",
+        help="SQLAlchemy database URL. Defaults to FOUROK_DATABASE_URL unless --state is explicit.",
     )
     backfill_openviking_parser.add_argument("--config", type=Path)
 
@@ -76,7 +76,7 @@ def add_import_commands(subparsers) -> None:
     import_context_fixture_parser.add_argument("--fixture", type=Path, required=True)
     import_context_fixture_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     import_context_fixture_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
     )
     import_context_fixture_parser.add_argument("--config", type=Path)
 
@@ -120,7 +120,7 @@ def add_import_commands(subparsers) -> None:
         help="Singer JSONL file for --connector gmail-singer.",
     )
     run_imports_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    run_imports_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    run_imports_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
     run_imports_parser.add_argument("--config", type=Path)
     run_imports_parser.add_argument(
         "--retry-failed",
@@ -157,7 +157,7 @@ def add_import_commands(subparsers) -> None:
     )
     run_live_ingestion_parser.add_argument(
         "--database-url",
-        help="SQLAlchemy database URL. Defaults to FOUR_OK_DATABASE_URL unless --state is explicit.",
+        help="SQLAlchemy database URL. Defaults to FOUROK_DATABASE_URL unless --state is explicit.",
     )
     run_live_ingestion_parser.add_argument("--config", type=Path)
     run_live_ingestion_parser.add_argument(
@@ -169,7 +169,7 @@ def add_import_commands(subparsers) -> None:
     run_live_ingestion_parser.add_argument(
         "--verify-live-db",
         action="store_true",
-        help="Require FOUR_OK_DATABASE_URL and verify live DB row deltas.",
+        help="Require FOUROK_DATABASE_URL and verify live DB row deltas.",
     )
     run_live_ingestion_parser.add_argument(
         "--now",
@@ -189,7 +189,7 @@ def add_import_commands(subparsers) -> None:
     )
     live_ingestion_status_parser.add_argument(
         "--database-url",
-        help="SQLAlchemy database URL. Defaults to FOUR_OK_DATABASE_URL unless --state is explicit.",
+        help="SQLAlchemy database URL. Defaults to FOUROK_DATABASE_URL unless --state is explicit.",
     )
     live_ingestion_status_parser.add_argument("--config", type=Path)
     live_ingestion_status_parser.add_argument(
@@ -209,7 +209,7 @@ def add_import_commands(subparsers) -> None:
     connector_checkpoint_parser.add_argument("connector_name")
     connector_checkpoint_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     connector_checkpoint_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
     )
 
     connector_jobs_parser = subparsers.add_parser(
@@ -217,5 +217,7 @@ def add_import_commands(subparsers) -> None:
         help="Print stored connector job runs.",
     )
     connector_jobs_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    connector_jobs_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    connector_jobs_parser.add_argument(
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
+    )
     connector_jobs_parser.add_argument("--connector-name")

@@ -145,9 +145,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         help="Dagster webserver health URL.",
     )
     diagnostics_parser.add_argument("--state", type=Path, default=Path(".local/context.sqlite"))
-    diagnostics_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
-    )
+    diagnostics_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
     diagnostics_parser.add_argument("--raw-store", type=Path)
     diagnostics_parser.add_argument(
         "--json", action="store_true", help="Accepted for agent clarity."
@@ -179,7 +177,7 @@ def main(argv: Sequence[str] | None = None) -> None:
 
     logs_status_parser = subparsers.add_parser(
         "logs-status",
-        help="Summarize Loki Docker log aggregation status and useful 4OK LogQL queries.",
+        help="Summarize Loki Docker log aggregation status and useful fourok LogQL queries.",
     )
     logs_status_parser.add_argument(
         "--loki-url",
@@ -470,9 +468,9 @@ def _compose_local_env() -> dict[str, str]:
     env.setdefault("DAGSTER_POSTGRES_PASSWORD", "local-check")
     env.setdefault("POSTGRES_PASSWORD", "local-check")
     env["COMPOSE_PROJECT_NAME"] = "fourok"
-    env.setdefault("FOUR_OK_IMAGE_TAG", _git_short_head(default="local-check"))
+    env.setdefault("FOUROK_IMAGE_TAG", _git_short_head(default="local-check"))
     env.setdefault(
-        "FOUR_OK_DATABASE_URL",
+        "FOUROK_DATABASE_URL",
         f"postgresql+psycopg://fourok:{env['POSTGRES_PASSWORD']}@postgres:5432/fourok",
     )
     return env

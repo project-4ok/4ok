@@ -62,8 +62,8 @@ def test_openai_embedding_provider_uses_api_when_key_is_configured(monkeypatch) 
         return FakeResponse()
 
     monkeypatch.setenv("OPENAI_API_KEY", "test-key")
-    monkeypatch.setenv("FOUR_OK_EMBEDDING_PROVIDER", "openai")
-    monkeypatch.setenv("FOUR_OK_EMBEDDING_DIMENSIONS", "4")
+    monkeypatch.setenv("FOUROK_EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("FOUROK_EMBEDDING_DIMENSIONS", "4")
     monkeypatch.setattr("fourok.retrieval.embeddings._urlopen", fake_urlopen)
 
     assert embedding_dimensions() == 4

@@ -20,7 +20,7 @@ env:
 
 jobs:
   publish:
-    name: publish 4OK runtime artifacts
+    name: publish fourok runtime artifacts
     runs-on: ubuntu-latest
     outputs:
       app_image: ${{ steps.manifest.outputs.app_image }}

@@ -12,7 +12,7 @@ def add_retention_commands(subparsers) -> None:
         help="Delete restricted raw source objects older than a retention window.",
     )
     purge_raw_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    purge_raw_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    purge_raw_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
     purge_raw_parser.add_argument(
         "--raw-store",
         type=Path,
@@ -30,7 +30,7 @@ def add_retention_commands(subparsers) -> None:
         help="Delete audit events older than a retention window.",
     )
     purge_audit_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    purge_audit_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    purge_audit_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
     purge_audit_parser.add_argument("--retention-days", type=int)
     purge_audit_parser.add_argument(
         "--config",
@@ -67,7 +67,9 @@ def add_retention_commands(subparsers) -> None:
         help="Delete terminal webhook events older than a retention window.",
     )
     purge_webhook_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    purge_webhook_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    purge_webhook_parser.add_argument(
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
+    )
     purge_webhook_parser.add_argument("--retention-days", type=int)
     purge_webhook_parser.add_argument(
         "--config",
@@ -85,7 +87,7 @@ def add_retention_commands(subparsers) -> None:
     )
     retention_status_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     retention_status_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
     )
     retention_status_parser.add_argument(
         "--config",

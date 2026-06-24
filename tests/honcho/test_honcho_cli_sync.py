@@ -103,8 +103,6 @@ def test_cli_honcho_sync_uses_persisted_employee_catalog_for_planning(
     )
 
 
-
-
 def test_cli_honcho_sync_write_persists_receipts(capsys, monkeypatch, tmp_path: Path) -> None:
     state_path = tmp_path / "honcho-sync-state.json"
 
@@ -175,9 +173,3 @@ def test_cli_honcho_sync_write_reports_connection_errors_without_traceback(
         assert str(exc) == "Honcho write failed: <urlopen error connection refused>"
     else:
         raise AssertionError("expected SystemExit")
-
-
-
-
-
-

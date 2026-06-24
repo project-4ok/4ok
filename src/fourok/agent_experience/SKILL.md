@@ -1,6 +1,6 @@
 # fourok agent experience tools
 
-This directory is the home for repo-local tools that help AI agents and human operators understand, debug, and maintain the current fourok/4OK deployment.
+This directory is the home for repo-local tools that help AI agents and human operators understand, debug, and maintain the current fourok/fourok deployment.
 
 Principles:
 
@@ -14,7 +14,7 @@ Principles:
 Agents access the dashboard through the Grafana HTTP API:
 
 ```bash
-uv run four-ok-agent-grafana --json
+uv run fourok-agent-grafana --json
 ```
 
 Default Grafana URL:

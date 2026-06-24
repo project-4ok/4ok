@@ -248,7 +248,7 @@ Internal v0 runs as Docker Compose on one host:
 The next production-readiness release should add Dagster as the pipeline
 orchestrator and visual control plane. Dagster owns the asset graph, schedules,
 run history, failure visibility, retries, and operator-facing pipeline state.
-Meltano/Singer owns batch source extraction where suitable taps exist. 4OK owns
+Meltano/Singer owns batch source extraction where suitable taps exist. fourok owns
 raw landing, SourceRecord adapters, source-change application, storage,
 retrieval, evidence packs, and audit.
 

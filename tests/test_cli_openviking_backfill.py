@@ -12,7 +12,7 @@ def test_cli_backfills_openviking_messages_and_is_idempotent(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("FOUR_OK_DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("FOUROK_DATABASE_URL", "sqlite:///:memory:")
     state_path = tmp_path / "state.sqlite"
 
     def run_once() -> dict[str, object]:

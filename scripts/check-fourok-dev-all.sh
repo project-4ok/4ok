@@ -6,8 +6,8 @@ REPO_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
 CHECK_TARGET="${CHECK_TARGET:-ssh}"
 GATEWAY_SSH_TARGET="${GATEWAY_SSH_TARGET:-root@178.105.10.7}"
 STAGE1_RUNNER="${STAGE1_RUNNER:-auto}"
-FOUR_OK_STAGE1_CONTAINER="${FOUR_OK_STAGE1_CONTAINER:-openclaw-fourok-app-1}"
-FOUR_OK_STAGE1_COMMAND="${FOUR_OK_STAGE1_COMMAND:-/app/.venv/bin/fourok}"
+FOUROK_STAGE1_CONTAINER="${FOUROK_STAGE1_CONTAINER:-openclaw-fourok-app-1}"
+FOUROK_STAGE1_COMMAND="${FOUROK_STAGE1_COMMAND:-/app/.venv/bin/fourok}"
 LOCAL_STAGE1_COMMAND="${LOCAL_STAGE1_COMMAND:-uv run fourok}"
 DAGSTER_GRAPHQL_URL="${DAGSTER_GRAPHQL_URL:-http://fourok-dagster-webserver:3001/graphql}"
 GRAFANA_URL="${GRAFANA_URL:-http://fourok-observability:3000}"
@@ -20,7 +20,7 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [--json]
 
-Run two 4OK/OpenClaw gates and combine their JSON results:
+Run two fourok/OpenClaw gates and combine their JSON results:
   1. deployment surface check via scripts/check-fourok-dev-deployment.sh --json
   2. fourok stage1-acceptance --json on the selected target
 
@@ -33,15 +33,15 @@ Target modes:
 
 Stage 1 runners:
   STAGE1_RUNNER=auto    ssh -> docker, local -> host (default)
-  STAGE1_RUNNER=docker  run stage1 inside FOUR_OK_STAGE1_CONTAINER on the target
+  STAGE1_RUNNER=docker  run stage1 inside FOUROK_STAGE1_CONTAINER on the target
   STAGE1_RUNNER=host    run stage1 with LOCAL_STAGE1_COMMAND on the target shell
 
 Environment overrides:
   CHECK_TARGET=ssh|local
   GATEWAY_SSH_TARGET=root@178.105.10.7
   STAGE1_RUNNER=auto|docker|host
-  FOUR_OK_STAGE1_CONTAINER=openclaw-fourok-app-1
-  FOUR_OK_STAGE1_COMMAND=/app/.venv/bin/fourok
+  FOUROK_STAGE1_CONTAINER=openclaw-fourok-app-1
+  FOUROK_STAGE1_COMMAND=/app/.venv/bin/fourok
   LOCAL_STAGE1_COMMAND='uv run fourok'
   DAGSTER_GRAPHQL_URL=http://fourok-dagster-webserver:3001/graphql
   GRAFANA_URL=http://fourok-observability:3000
@@ -73,8 +73,8 @@ python3 - \
   "${CHECK_TARGET}" \
   "${GATEWAY_SSH_TARGET}" \
   "${STAGE1_RUNNER}" \
-  "${FOUR_OK_STAGE1_CONTAINER}" \
-  "${FOUR_OK_STAGE1_COMMAND}" \
+  "${FOUROK_STAGE1_CONTAINER}" \
+  "${FOUROK_STAGE1_COMMAND}" \
   "${LOCAL_STAGE1_COMMAND}" \
   "${DAGSTER_GRAPHQL_URL}" \
   "${GRAFANA_URL}" \

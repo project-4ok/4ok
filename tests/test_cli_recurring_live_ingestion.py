@@ -16,7 +16,7 @@ def test_cli_run_live_ingestion_runs_selected_live_backfill_and_records_status(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("FOUR_OK_DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("FOUROK_DATABASE_URL", "sqlite:///:memory:")
     state_path = tmp_path / "state.sqlite"
     artifact_dir = tmp_path / "live-artifacts"
     calls: list[list[str]] = []
@@ -108,7 +108,7 @@ def test_cli_run_live_ingestion_without_explicit_state_uses_database_url(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     database_path = tmp_path / "live.sqlite"
-    monkeypatch.setenv("FOUR_OK_DATABASE_URL", f"sqlite:///{database_path}")
+    monkeypatch.setenv("FOUROK_DATABASE_URL", f"sqlite:///{database_path}")
     artifact_dir = tmp_path / "live-artifacts"
 
     class Completed:
@@ -153,7 +153,7 @@ def test_cli_run_live_ingestion_skips_source_with_running_job(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("FOUR_OK_DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("FOUROK_DATABASE_URL", "sqlite:///:memory:")
     state_path = tmp_path / "state.sqlite"
     state = create_governed_context_state(
         state_path=state_path,
@@ -208,7 +208,7 @@ def test_cli_live_ingestion_status_reports_source_freshness_and_idempotency(
     monkeypatch,
     tmp_path: Path,
 ) -> None:
-    monkeypatch.setenv("FOUR_OK_DATABASE_URL", "sqlite:///:memory:")
+    monkeypatch.setenv("FOUROK_DATABASE_URL", "sqlite:///:memory:")
     state_path = tmp_path / "state.sqlite"
     state = create_governed_context_state(
         state_path=state_path,

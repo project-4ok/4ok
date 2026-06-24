@@ -464,14 +464,6 @@ def test_cli_honcho_eval_can_scope_to_peer_search(capsys, monkeypatch, tmp_path:
     assert output["summary"]["passed"] == 1
 
 
-
-
-
-
-
-
-
-
 def test_cli_honcho_sync_dry_run_classifies_already_imported_source_refs(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:

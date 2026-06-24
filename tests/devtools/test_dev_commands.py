@@ -84,8 +84,8 @@ def test_compose_config_plan_uses_safe_required_env_defaults(monkeypatch, tmp_pa
     assert plan[0].env == {
         "COMPOSE_PROJECT_NAME": "fourok",
         "DAGSTER_POSTGRES_PASSWORD": "local-check",
-        "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:local-check@postgres:5432/fourok",
-        "FOUR_OK_IMAGE_TAG": "local-check",
+        "FOUROK_DATABASE_URL": "postgresql+psycopg://fourok:local-check@postgres:5432/fourok",
+        "FOUROK_IMAGE_TAG": "local-check",
         "POSTGRES_PASSWORD": "local-check",
     }
     assert plan[0].command == ("docker", "compose", "--profile", "pipeline", "config")
@@ -105,8 +105,8 @@ def test_compose_env_report_redacts_runtime_env_and_keeps_non_secret_values(
 
     assert report["status"] == "ok"
     assert report["env"]["POSTGRES_PASSWORD"] == "[REDACTED]"
-    assert report["env"]["FOUR_OK_DATABASE_URL"] == "[REDACTED]"
-    assert report["env"]["FOUR_OK_IMAGE_TAG"] == "abc1234"
+    assert report["env"]["FOUROK_DATABASE_URL"] == "[REDACTED]"
+    assert report["env"]["FOUROK_IMAGE_TAG"] == "abc1234"
     assert report["env"]["LINEAR_API_KEY"] == "[REDACTED]"
     assert report["usage"]["pipeline_ps"] == "uv run fourok-dev pipeline-ps"
     assert report["usage"]["app_up"] == "uv run fourok-dev app-up"

@@ -46,7 +46,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     args = _parser().parse_args(argv)
     project_root = args.project_root.resolve()
     env = operator_environment(project_root)
-    database_url = args.database_url or env.get("FOUR_OK_DATABASE_URL", "")
+    database_url = args.database_url or env.get("FOUROK_DATABASE_URL", "")
 
     if args.dry_run:
         print(
@@ -109,11 +109,11 @@ def run_operator_live(
     env: Mapping[str, str],
 ) -> dict[str, object]:
     run_env = dict(env)
-    run_env["FOUR_OK_PROJECT_ROOT"] = str(project_root)
-    run_env["FOUR_OK_RAW_LANDING_DIR"] = str(_project_path(project_root, raw_landing))
-    run_env["FOUR_OK_STATE_PATH"] = str(_project_path(project_root, state_path))
+    run_env["FOUROK_PROJECT_ROOT"] = str(project_root)
+    run_env["FOUROK_RAW_LANDING_DIR"] = str(_project_path(project_root, raw_landing))
+    run_env["FOUROK_STATE_PATH"] = str(_project_path(project_root, state_path))
     if database_url:
-        run_env["FOUR_OK_DATABASE_URL"] = database_url
+        run_env["FOUROK_DATABASE_URL"] = database_url
 
     dagster_status: dict[str, object] = {"status": "starting" if start_dagster else "skipped"}
     if start_dagster:
@@ -190,10 +190,10 @@ def operator_environment(project_root: Path) -> dict[str, str]:
     env.setdefault("DAGSTER_POSTGRES_PASSWORD", "local-check")
     env.setdefault("POSTGRES_PASSWORD", "local-check")
     env.setdefault(
-        "FOUR_OK_DATABASE_URL",
+        "FOUROK_DATABASE_URL",
         f"postgresql+psycopg://fourok:{env['POSTGRES_PASSWORD']}@postgres:5432/fourok",
     )
-    env.setdefault("FOUR_OK_OBSERVABILITY_ENABLED", "true")
+    env.setdefault("FOUROK_OBSERVABILITY_ENABLED", "true")
     env.setdefault("OTEL_EXPORTER_OTLP_ENDPOINT", "http://observability:4318")
     return env
 
@@ -264,8 +264,8 @@ def _materialize_live_assets(
                     database_url=database_url,
                 ),
                 "connector_env": module.ConnectorEnvResource(
-                    dotenv_path=env.get("FOUR_OK_DOTENV_PATH", ".env"),
-                    load_dotenv=_truthy(env.get("FOUR_OK_LOAD_DOTENV", "true")),
+                    dotenv_path=env.get("FOUROK_DOTENV_PATH", ".env"),
+                    load_dotenv=_truthy(env.get("FOUROK_LOAD_DOTENV", "true")),
                 ),
             },
         )

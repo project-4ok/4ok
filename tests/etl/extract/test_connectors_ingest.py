@@ -459,7 +459,7 @@ def test_fixture_tap_outputs_configured_singer_file(
         '{"type":"RECORD","stream":"email_messages","record":{"id":"msg-1","body":"body"}}\n',
         encoding="utf-8",
     )
-    monkeypatch.setenv("TAP_FOUR_OK_FIXTURE_FIXTURE_PATH", str(fixture))
+    monkeypatch.setenv("TAP_FOUROK_FIXTURE_FIXTURE_PATH", str(fixture))
 
     fixture_tap_main()
 
@@ -470,8 +470,8 @@ def test_fixture_tap_accepts_slack_namespace_config(
     capsys,
     monkeypatch,
 ) -> None:
-    monkeypatch.delenv("TAP_FOUR_OK_FIXTURE_FIXTURE_PATH", raising=False)
-    monkeypatch.setenv("TAP_FOUR_OK_SLACK_FIXTURE_FIXTURE_PATH", str(SINGER_SLACK_MESSAGES))
+    monkeypatch.delenv("TAP_FOUROK_FIXTURE_FIXTURE_PATH", raising=False)
+    monkeypatch.setenv("TAP_FOUROK_SLACK_FIXTURE_FIXTURE_PATH", str(SINGER_SLACK_MESSAGES))
 
     fixture_tap_main()
 
@@ -484,7 +484,7 @@ def test_raw_jsonl_target_lands_stdin_records(
     tmp_path: Path,
 ) -> None:
     landing_dir = tmp_path / "landing"
-    monkeypatch.setenv("TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR", str(landing_dir))
+    monkeypatch.setenv("TARGET_FOUROK_RAW_JSONL_LANDING_DIR", str(landing_dir))
     monkeypatch.setattr(
         "sys.stdin",
         [

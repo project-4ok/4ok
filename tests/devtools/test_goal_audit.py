@@ -127,7 +127,7 @@ def test_goal_alignment_audit_catches_systemd_embedded_runtime_password(
     _write_minimal_repo(tmp_path)
     service_path = tmp_path / "deploy/systemd/fourok-run-imports.service"
     service_path.write_text(
-        "Environment=FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:fourok_dev_password@postgres/fourok\n",
+        "Environment=FOUROK_DATABASE_URL=postgresql+psycopg://fourok:fourok_dev_password@postgres/fourok\n",
         encoding="utf-8",
     )
 
@@ -153,9 +153,9 @@ def test_goal_alignment_audit_catches_compose_app_database_url_default(
                 "    environment:",
                 "      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}",
                 "  app:",
-                "    image: fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}",
+                "    image: fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}",
                 "    environment:",
-                "      FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:-postgresql+psycopg://fourok:fourok_dev_password@postgres:5432/fourok}",
+                "      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:-postgresql+psycopg://fourok:fourok_dev_password@postgres:5432/fourok}",
             ]
         ),
         encoding="utf-8",
@@ -166,7 +166,7 @@ def test_goal_alignment_audit_catches_compose_app_database_url_default(
     failed = {check["name"]: check for check in report["checks"] if check["status"] != "ok"}
     assert report["status"] == "failed"
     assert failed["compose_app_requires_database_url"]["reason"] == (
-        "app service must require explicit FOUR_OK_DATABASE_URL"
+        "app service must require explicit FOUROK_DATABASE_URL"
     )
 
 
@@ -196,9 +196,9 @@ def _write_minimal_repo(root: Path) -> None:
                 "    environment:",
                 "      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}",
                 "  app:",
-                "    image: fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}",
+                "    image: fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}",
                 "    environment:",
-                "      FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}",
+                "      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}",
             ]
         ),
         encoding="utf-8",

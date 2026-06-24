@@ -1,8 +1,8 @@
-# 4OK MCP Retrieval Server
+# fourok MCP Retrieval Server
 
-4OK exposes a local stdio MCP server for agents that need to test retrieval
+fourok exposes a local stdio MCP server for agents that need to test retrieval
 against governed state. The server wraps the same `GovernedContext.search_context`
-path used by `four-ok search-state`.
+path used by `fourok search-state`.
 
 ## Tools
 
@@ -10,20 +10,20 @@ path used by `four-ok search-state`.
   returns `query`, `results`, `summary`, `result_candidates`, `evidence_items`,
   object/entity fields, `limitations`, and `audit_ref`.
 - `operator_status`: returns the same compact runtime operator status as
-  `four-ok operator-status`, including active imported-item counts, retrieval
+  `fourok operator-status`, including active imported-item counts, retrieval
   record totals/status counts, connector job freshness, and latest live
   ingestion metadata.
 
 Both tools accept optional `state`, `database_url`, and `config` arguments. If
 `database_url` is omitted and `state` is not provided, the server uses
-`FOUR_OK_DATABASE_URL`; otherwise it falls back to the explicit or default SQLite
-state path. `config` points at the normal 4OK runtime TOML file and applies the
+`FOUROK_DATABASE_URL`; otherwise it falls back to the explicit or default SQLite
+state path. `config` points at the normal fourok runtime TOML file and applies the
 configured raw-store and retrieval settings.
 
 ## Run
 
 ```bash
-uv run four-ok-mcp
+uv run fourok-mcp
 ```
 
 Hermes can connect to the stdio server with this native MCP config shape. Set
@@ -34,11 +34,11 @@ Hermes can connect to the stdio server with this native MCP config shape. Set
   "mcpServers": {
     "fourok-retrieval": {
       "command": "uv",
-      "args": ["run", "four-ok-mcp"],
+      "args": ["run", "fourok-mcp"],
       "cwd": "/home/simon/Projects/project-fourok/fourok",
       "env": {
-        "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:...@127.0.0.1:5432/fourok",
-        "FOUR_OK_CONFIG_PATH": "/home/simon/Projects/project-fourok/fourok/fourok.toml"
+        "FOUROK_DATABASE_URL": "postgresql+psycopg://fourok:...@127.0.0.1:5432/fourok",
+        "FOUROK_CONFIG_PATH": "/home/simon/Projects/project-fourok/fourok/fourok.toml"
       }
     }
   }
@@ -75,8 +75,8 @@ Live retrieval comparison, to run against the local runtime database after the
 database is available:
 
 ```bash
-uv run four-ok search-state "refund escalation" \
-  --database-url "$FOUR_OK_DATABASE_URL" \
+uv run fourok search-state "refund escalation" \
+  --database-url "$FOUROK_DATABASE_URL" \
   --role operator \
   --limit 5
 ```
@@ -84,7 +84,7 @@ uv run four-ok search-state "refund escalation" \
 Interactive MCP inspection, when the local runtime database is available:
 
 ```bash
-npx -y @modelcontextprotocol/inspector uv run four-ok-mcp
+npx -y @modelcontextprotocol/inspector uv run fourok-mcp
 ```
 
 Expected tools are `search_fourok` and `operator_status`. Use `search_fourok` with the
@@ -99,7 +99,7 @@ from mcp import ClientSession, StdioServerParameters
 from mcp.client.stdio import stdio_client
 
 async def main():
-    params = StdioServerParameters(command="uv", args=["run", "four-ok-mcp"])
+    params = StdioServerParameters(command="uv", args=["run", "fourok-mcp"])
     async with stdio_client(params) as (read, write):
         async with ClientSession(read, write) as session:
             await session.initialize()

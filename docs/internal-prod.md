@@ -87,7 +87,7 @@ Internal prod v0 has no public service surface.
   `127.0.0.1`.
 - OpenClaw should use a trusted internal plugin/service integration for the RAG
   hook. The agent should receive a short source summary before prompt assembly;
-  it should not call the 4OK CLI as the product path.
+  it should not call the fourok CLI as the product path.
 
 If remote operator access is needed, use host-level SSH/VPN access and keep
 Compose ports loopback-bound.
@@ -98,7 +98,7 @@ Create a non-committed runtime config and mount it into the app container:
 
 ```bash
 mkdir -p .local
-export FOUR_OK_CONFIG_PATH="$PWD/.local/fourok.toml"
+export FOUROK_CONFIG_PATH="$PWD/.local/fourok.toml"
 ```
 
 ```toml
@@ -152,12 +152,12 @@ otherwise they fall back to the OpenTelemetry environment variables.
 Set non-secret environment:
 
 ```bash
-export FOUR_OK_IMAGE_TAG="$(git rev-parse --short HEAD)"
-export FOUR_OK_DATABASE_URL="postgresql+psycopg://fourok:<password>@postgres:5432/fourok"
+export FOUROK_IMAGE_TAG="$(git rev-parse --short HEAD)"
+export FOUROK_DATABASE_URL="postgresql+psycopg://fourok:<password>@postgres:5432/fourok"
 export POSTGRES_PASSWORD="<database-password>"
-export FOUR_OK_EMBEDDING_PROVIDER="openai"
-export FOUR_OK_OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
-export FOUR_OK_EMBEDDING_DIMENSIONS="256"
+export FOUROK_EMBEDDING_PROVIDER="openai"
+export FOUROK_OPENAI_EMBEDDING_MODEL="text-embedding-3-small"
+export FOUROK_EMBEDDING_DIMENSIONS="256"
 ```
 
 Set machine identity through the host secret mechanism:
@@ -181,7 +181,7 @@ Do not use the local env-file fallback for internal prod.
 
    ```bash
    docker compose run --rm app \
-     health --database-url "$FOUR_OK_DATABASE_URL"
+     health --database-url "$FOUROK_DATABASE_URL"
    ```
 
 3. Verify Gmail credentials without printing secrets.
@@ -198,7 +198,7 @@ Do not use the local env-file fallback for internal prod.
    docker compose run --rm --entrypoint python app \
      scripts/run_gmail_pilot.py \
        --inspect-output \
-       --database-url "$FOUR_OK_DATABASE_URL"
+       --database-url "$FOUROK_DATABASE_URL"
    ```
 
 5. Ingest Gmail Singer records into governed state.
@@ -207,18 +207,18 @@ Do not use the local env-file fallback for internal prod.
    docker compose run --rm app \
      ingest-gmail-singer \
        .local/gmail-pilot/tap-gmail-output.jsonl \
-       --database-url "$FOUR_OK_DATABASE_URL" \
+       --database-url "$FOUROK_DATABASE_URL" \
        --config /etc/fourok/fourok.toml
    ```
 
 6. Validate operator queries.
 
    ```bash
-   docker compose run --rm app audit-summary --database-url "$FOUR_OK_DATABASE_URL"
-   docker compose run --rm app connector-jobs --database-url "$FOUR_OK_DATABASE_URL"
+   docker compose run --rm app audit-summary --database-url "$FOUROK_DATABASE_URL"
+   docker compose run --rm app connector-jobs --database-url "$FOUROK_DATABASE_URL"
    docker compose run --rm app retention-status --config /etc/fourok/fourok.toml
-   docker compose run --rm app dashboard --database-url "$FOUR_OK_DATABASE_URL" --config /etc/fourok/fourok.toml
-   docker compose run --rm app search-state "refund cancellation" --database-url "$FOUR_OK_DATABASE_URL"
+   docker compose run --rm app dashboard --database-url "$FOUROK_DATABASE_URL" --config /etc/fourok/fourok.toml
+   docker compose run --rm app search-state "refund cancellation" --database-url "$FOUROK_DATABASE_URL"
    docker compose run --rm app access-smoke --compose-file /app/docker-compose.yml
    ```
 
@@ -243,10 +243,10 @@ Do not use the local env-file fallback for internal prod.
    ```bash
    docker compose run --rm app \
      acceptance-proof \
-       --database-url "$FOUR_OK_DATABASE_URL" \
+       --database-url "$FOUROK_DATABASE_URL" \
        --config /etc/fourok/fourok.toml \
        --fixture /app/.local/seeds/context-substrate.json \
-       --backup-database-url "$FOUR_OK_DATABASE_URL" \
+       --backup-database-url "$FOUROK_DATABASE_URL" \
        --backup-output /app/.local/backups/acceptance-proof.dump \
        --observability-endpoint http://observability:4318
    ```
@@ -307,7 +307,7 @@ Template units live in `deploy/systemd/`:
 - `fourok-retention.timer`
 
 Copy them to the host systemd unit directory, set `WorkingDirectory`,
-`FOUR_OK_IMAGE_TAG`, `FOUR_OK_CONFIG_PATH`, and connector-specific arguments for the
+`FOUROK_IMAGE_TAG`, `FOUROK_CONFIG_PATH`, and connector-specific arguments for the
 deployed source. Copy `deploy/systemd/fourok.env.example` to `/etc/fourok/fourok.env`,
 set the real database URL and external secret manager machine identity there, restrict it to
 the operator/service account, and do not commit it:
@@ -340,7 +340,7 @@ docker compose run --rm app \
   run-imports \
     --connector gmail-singer \
     --singer-file /var/lib/fourok/raw/gmail/tap-gmail-output.jsonl \
-    --database-url "$FOUR_OK_DATABASE_URL"
+    --database-url "$FOUROK_DATABASE_URL"
 ```
 
 Example retry command:
@@ -350,7 +350,7 @@ docker compose run --rm app \
   run-imports \
     --connector gmail-singer \
     --singer-file /var/lib/fourok/raw/gmail/tap-gmail-output.jsonl \
-    --database-url "$FOUR_OK_DATABASE_URL" \
+    --database-url "$FOUROK_DATABASE_URL" \
     --config /etc/fourok/fourok.toml \
     --retry-failed \
     --retry-base-delay-seconds 300
@@ -397,7 +397,7 @@ Run backup:
 ```bash
 docker compose run --rm app \
   postgres-backup \
-    --database-url "$FOUR_OK_DATABASE_URL" \
+    --database-url "$FOUROK_DATABASE_URL" \
     --output /var/lib/fourok/backups/fourok-$(date +%Y%m%d-%H%M%S).dump
 ```
 
@@ -414,13 +414,13 @@ Restore drill:
 ```bash
 docker compose run --rm app \
   postgres-restore-drill \
-    --database-url "$FOUR_OK_DATABASE_URL" \
-    --restore-database-url "$FOUR_OK_RESTORE_DATABASE_URL" \
+    --database-url "$FOUROK_DATABASE_URL" \
+    --restore-database-url "$FOUROK_RESTORE_DATABASE_URL" \
     --backup-output /var/lib/fourok/backups/restore-drill.dump
 ```
 
-The drill refuses to run if `FOUR_OK_RESTORE_DATABASE_URL` points at the same
-database as `FOUR_OK_DATABASE_URL`. It runs a fresh backup, restores it into the
+The drill refuses to run if `FOUROK_RESTORE_DATABASE_URL` points at the same
+database as `FOUROK_DATABASE_URL`. It runs a fresh backup, restores it into the
 separate drill database, and verifies the restored database schema health
 without printing database passwords in command arguments.
 
@@ -434,9 +434,9 @@ Recorded local evidence:
 For manual follow-up after the drill, verify:
 
 ```bash
-docker compose run --rm -e FOUR_OK_DATABASE_URL="$FOUR_OK_RESTORE_DATABASE_URL" app health
-docker compose run --rm -e FOUR_OK_DATABASE_URL="$FOUR_OK_RESTORE_DATABASE_URL" app connector-jobs
-docker compose run --rm -e FOUR_OK_DATABASE_URL="$FOUR_OK_RESTORE_DATABASE_URL" app audit-summary
+docker compose run --rm -e FOUROK_DATABASE_URL="$FOUROK_RESTORE_DATABASE_URL" app health
+docker compose run --rm -e FOUROK_DATABASE_URL="$FOUROK_RESTORE_DATABASE_URL" app connector-jobs
+docker compose run --rm -e FOUROK_DATABASE_URL="$FOUROK_RESTORE_DATABASE_URL" app audit-summary
 ```
 
 ## Access Model

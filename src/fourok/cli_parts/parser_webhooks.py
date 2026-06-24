@@ -14,7 +14,7 @@ def add_webhook_commands(subparsers) -> None:
     webhook_enqueue_parser.add_argument("event_file", type=Path)
     webhook_enqueue_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     webhook_enqueue_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
     )
     webhook_enqueue_parser.add_argument(
         "--raw-store",
@@ -27,7 +27,9 @@ def add_webhook_commands(subparsers) -> None:
         help="Print durable webhook backlog events.",
     )
     webhook_events_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    webhook_events_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    webhook_events_parser.add_argument(
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
+    )
     webhook_events_parser.add_argument("--status")
 
     webhook_process_parser = subparsers.add_parser(
@@ -36,7 +38,7 @@ def add_webhook_commands(subparsers) -> None:
     )
     webhook_process_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     webhook_process_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
     )
     webhook_process_parser.add_argument("--config", type=Path)
     webhook_process_parser.add_argument("--limit", type=int)

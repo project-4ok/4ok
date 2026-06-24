@@ -47,7 +47,7 @@ ACTIVE_RUNTIME_DOCS = (
 MEMORY_EXPERIMENT_TERMS = ("Honcho", "honcho", "Graphiti", "graphiti")
 ACTIVE_REVEAL_TERMS = ("request_reveal", "Search, reveal", "reveal requires")
 ADD_PARSER_PATTERN = re.compile(r'add_parser\(\s*"([^"]+)"', re.DOTALL)
-PLAN_FOUR_OK_PROOF_PATTERN = re.compile(r"Proof: `uv run fourok ([a-z0-9-]+)(?:\s|`)")
+PLAN_FOUROK_PROOF_PATTERN = re.compile(r"Proof: `uv run fourok ([a-z0-9-]+)(?:\s|`)")
 PLAN_PYTEST_NODE_PROOF_PATTERN = re.compile(
     r"Proof: `uv run pytest ([^\s`]+\.py::[A-Za-z_][A-Za-z0-9_]*)"
 )
@@ -103,7 +103,7 @@ def _check_plan_active_queue(project_root: Path) -> GoalAuditCheck:
 
 def _check_plan_proof_commands_use_active_cli(project_root: Path) -> GoalAuditCheck:
     content = _read(project_root / "docs/plan.md")
-    commands = PLAN_FOUR_OK_PROOF_PATTERN.findall(content)
+    commands = PLAN_FOUROK_PROOF_PATTERN.findall(content)
     unknown = sorted({command for command in commands if command not in ACTIVE_CLI_COMMANDS})
     if unknown:
         return GoalAuditCheck(
@@ -224,7 +224,7 @@ def _check_active_imports_exclude_deferred_modules(project_root: Path) -> GoalAu
 
 def _check_compose_uses_pinned_internal_images(project_root: Path) -> GoalAuditCheck:
     content = _read(project_root / "docker-compose.yml")
-    required = ("fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}",)
+    required = ("fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}",)
     missing = [value for value in required if value not in content]
     if ":latest" in content:
         return GoalAuditCheck("compose_pinned_images", "failed", "contains :latest")
@@ -243,15 +243,13 @@ def _check_compose_app_requires_database_url(project_root: Path) -> GoalAuditChe
     content = _read(project_root / "docker-compose.yml")
     app_block = _compose_service_block(content, "app")
     postgres_block = _compose_service_block(content, "postgres")
-    required_database_url = (
-        "FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}"
-    )
+    required_database_url = "FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}"
     required_postgres_password = "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
     if required_database_url not in app_block:
         return GoalAuditCheck(
             "compose_app_requires_database_url",
             "failed",
-            "app service must require explicit FOUR_OK_DATABASE_URL",
+            "app service must require explicit FOUROK_DATABASE_URL",
         )
     if required_postgres_password not in postgres_block:
         return GoalAuditCheck(

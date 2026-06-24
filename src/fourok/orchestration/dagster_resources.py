@@ -46,18 +46,18 @@ class ConnectorEnvResource(ConfigurableResource):
 def build_default_resources() -> dict[str, ConfigurableResource]:
     return {
         "raw_landing": RawLandingResource(
-            path=os.environ.get("FOUR_OK_RAW_LANDING_DIR", ".local/raw/singer")
+            path=os.environ.get("FOUROK_RAW_LANDING_DIR", ".local/raw/singer")
         ),
         "meltano_project": MeltanoProjectResource(
-            project_root=os.environ.get("FOUR_OK_PROJECT_ROOT", ".")
+            project_root=os.environ.get("FOUROK_PROJECT_ROOT", ".")
         ),
         "fourok_runtime": FourokRuntimeResource(
-            state_path=os.environ.get("FOUR_OK_STATE_PATH", ".local/dagster/fourok-state.sqlite"),
-            database_url=os.environ.get("FOUR_OK_DATABASE_URL", ""),
+            state_path=os.environ.get("FOUROK_STATE_PATH", ".local/dagster/fourok-state.sqlite"),
+            database_url=os.environ.get("FOUROK_DATABASE_URL", ""),
         ),
         "connector_env": ConnectorEnvResource(
-            dotenv_path=os.environ.get("FOUR_OK_DOTENV_PATH", ".env"),
-            load_dotenv=_truthy(os.environ.get("FOUR_OK_LOAD_DOTENV", "true")),
+            dotenv_path=os.environ.get("FOUROK_DOTENV_PATH", ".env"),
+            load_dotenv=_truthy(os.environ.get("FOUROK_LOAD_DOTENV", "true")),
         ),
     }
 

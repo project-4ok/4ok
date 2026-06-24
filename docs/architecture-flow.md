@@ -161,7 +161,7 @@ flowchart TD
   same `SourceChange` applier as connector imports.
 - Text-layer PDFs can be imported as `Document` source records through `pypdf`.
   OCR and layout extraction are not implemented.
-- OpenClaw chat capture is implemented as a 4OK-side adapter that turns chat
+- OpenClaw chat capture is implemented as a fourok-side adapter that turns chat
   messages into `Message` source records. It strips untrusted control metadata
   from retrieval text and preserves source provenance. The next product path is
   an OpenClaw plugin RAG hook that injects a short permission-aware source
@@ -175,7 +175,7 @@ flowchart TD
 
 - Docker Compose can run PostgreSQL, local observability, and the
   Python app container.
-- App images are tagged with the current commit hash through `FOUR_OK_IMAGE_TAG`.
+- App images are tagged with the current commit hash through `FOUROK_IMAGE_TAG`.
 - Active Compose services have restart policies, health checks, named
   persistent volumes, loopback-bound host ports, and no `.reference` runtime
   dependency.

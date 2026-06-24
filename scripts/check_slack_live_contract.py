@@ -28,7 +28,7 @@ def main() -> int:
     )
     parser.add_argument(
         "--database-url",
-        default=os.environ.get("FOUR_OK_DATABASE_URL", ""),
+        default=os.environ.get("FOUROK_DATABASE_URL", ""),
         help="Optional runtime database URL for active Slack message and retrieval proof.",
     )
     args = parser.parse_args()

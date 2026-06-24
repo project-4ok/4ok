@@ -121,7 +121,7 @@ def test_cli_search_state_explicit_sqlite_state_ignores_ambient_database_url(
 
     state = tmp_path / "state.sqlite"
     monkeypatch.setenv(
-        "FOUR_OK_DATABASE_URL",
+        "FOUROK_DATABASE_URL",
         "postgresql+psycopg://fourok:stale@127.0.0.1:5432/fourok",
     )
     monkeypatch.setattr("fourok.cli_parts.commands_search.GovernedContext", FakeContext)
@@ -245,7 +245,9 @@ def test_cli_access_smoke_prints_compose_access_report(capsys, monkeypatch, tmp_
             "skipped_services": [],
         }
 
-    monkeypatch.setattr("fourok.cli_parts.commands_runtime.check_compose_access_boundary", fake_check)
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime.check_compose_access_boundary", fake_check
+    )
     monkeypatch.setattr(
         "sys.argv",
         ["fourok", "access-smoke", "--compose-file", str(compose_file)],

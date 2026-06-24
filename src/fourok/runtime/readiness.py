@@ -11,7 +11,7 @@ from fourok.runtime.dependency_contracts import dependency_contract_report
 
 ACTIVE_COMPOSE_SERVICES = ("postgres", "observability", "app")
 REQUIRED_APP_ENV = (
-    "FOUR_OK_DATABASE_URL",
+    "FOUROK_DATABASE_URL",
     "OTEL_EXPORTER_OTLP_ENDPOINT",
     "OTEL_SERVICE_NAME",
 )
@@ -79,8 +79,8 @@ def _check_active_services(services: dict[str, Any]) -> dict[str, object]:
 def _check_images(services: dict[str, Any]) -> dict[str, object]:
     problems: list[str] = []
     app_image = str(services.get("app", {}).get("image", ""))
-    if "${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" not in app_image:
-        problems.append("app image must be tagged by FOUR_OK_IMAGE_TAG")
+    if "${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}" not in app_image:
+        problems.append("app image must be tagged by FOUROK_IMAGE_TAG")
     for service_name, service in services.items():
         image = str(service.get("image", ""))
         if image.endswith(":latest") or image == "latest":
@@ -130,10 +130,10 @@ def _check_persistent_volumes(
 def _check_app_environment(services: dict[str, Any]) -> dict[str, object]:
     app_environment = services.get("app", {}).get("environment") or {}
     missing = [name for name in REQUIRED_APP_ENV if name not in app_environment]
-    if "${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}" not in str(
-        app_environment.get("FOUR_OK_DATABASE_URL", "")
+    if "${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}" not in str(
+        app_environment.get("FOUROK_DATABASE_URL", "")
     ):
-        missing.append("FOUR_OK_DATABASE_URL must fail fast when missing")
+        missing.append("FOUROK_DATABASE_URL must fail fast when missing")
     return _check("app_environment", missing=missing)
 
 

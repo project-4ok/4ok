@@ -1,4 +1,4 @@
-# 4OK local runtime, observability, import counts, and MCP retrieval evidence
+# fourok local runtime, observability, import counts, and MCP retrieval evidence
 
 Goal prompt: `reports/2026-06-09-local-runtime-observability-mcp-goal.md`
 
@@ -41,7 +41,7 @@ Freshly inspected state:
   - run ID `de36c858-93ec-4e2d-9cbb-fe890b21812b`
   - status `SUCCESS`
   - successful steps included all live raw landing assets, all live source-record conversion assets, `fourok_retrieval_records`, and `fourok_operator_dashboard`.
-- Grafana dashboard API reports dashboard `4OK Local Runtime Logs` with 14 panels:
+- Grafana dashboard API reports dashboard `fourok Local Runtime Logs` with 14 panels:
   - Loki panels: 3
   - Prometheus panels: 10
   - Tempo panels: 1
@@ -113,14 +113,14 @@ Operator counts/freshness snapshot against runtime Postgres:
 
 Grafana data-count dashboard update requested by user:
 
-- Dashboard `4OK Local Runtime Logs` now has 18 panels.
+- Dashboard `fourok Local Runtime Logs` now has 18 panels.
 - Added/verified data-count panels:
   - `Imported source records by source/type`
   - `Raw landed records by connector/stream`
   - `Processed canonical objects by type`
   - `Processed entity links by relationship`
   - `Processed retrieval records by status`
-- Metrics exporter now reads the runtime Postgres database through `FOUR_OK_DATABASE_URL` and exposes processed data-count metrics.
+- Metrics exporter now reads the runtime Postgres database through `FOUROK_DATABASE_URL` and exposes processed data-count metrics.
 - Live exporter/Prometheus verification returned 25 data-count series, including:
   - `fourok_source_records_total{source_system="google_drive",record_type="document"} 21`
   - `fourok_source_records_total{source_system="linear",record_type="work_item"} 3`
@@ -329,7 +329,7 @@ Extractor audit work in progress:
 
 MCP work in progress:
 
-- Current patch changes `mcp_retrieval._database_url` so an explicit `state` path prevents accidental fallback to `FOUR_OK_DATABASE_URL`; this keeps fixture/state-based MCP tests isolated from the live DB.
+- Current patch changes `mcp_retrieval._database_url` so an explicit `state` path prevents accidental fallback to `FOUROK_DATABASE_URL`; this keeps fixture/state-based MCP tests isolated from the live DB.
 - Current patch adds a deterministic MCP handler regression proving Slack channel permissions through `search_fourok`:
   - query without `slack:channel:C0TEMPCRM` returns zero results/evidence;
   - query with that role returns the restricted Slack source/evidence.
@@ -422,7 +422,7 @@ Gate 1B asset-node evidence after rebuild/restart:
 
 Operator-status caveat outside Gate 1B:
 
-- `uv run fourok operator-status --database-url "$FOUR_OK_DATABASE_URL"` now connects to runtime Postgres when `.env` is loaded, but reports `live_ingestion.status=attention_required` because connector-job freshness is still sourced from older connector job records around `2026-06-09T16:04:18Z` and is stale.
+- `uv run fourok operator-status --database-url "$FOUROK_DATABASE_URL"` now connects to runtime Postgres when `.env` is loaded, but reports `live_ingestion.status=attention_required` because connector-job freshness is still sourced from older connector job records around `2026-06-09T16:04:18Z` and is stale.
 - That is **not a Gate 1B blocker** because Gate 1B is specifically Dagster product lineage; it remains an open Gate 2/source-of-truth blocker.
 
 Observability smoke evidence:
@@ -476,7 +476,7 @@ Overall goal status remains **NOT COMPLETE** because Gate 2 and later gates stil
 The exact Gate 2 blocker was not that the live runtime was unavailable and not that Dagster failed to write data. The blocker was a source-of-truth/DX mismatch:
 
 - Host-side `fourok operator-status` without the same DB URL as Dagster can query an empty/stale local state/DB and report stale connector-job freshness.
-- The running Dagster code container has `FOUR_OK_DATABASE_URL` set to the Compose runtime DB (`postgres` inside Docker). For host-side proof this must be mapped to `127.0.0.1`.
+- The running Dagster code container has `FOUROK_DATABASE_URL` set to the Compose runtime DB (`postgres` inside Docker). For host-side proof this must be mapped to `127.0.0.1`.
 - Querying the exact runtime DB used by Dagster proves current data exists and is fresh.
 
 Runtime DB direct proof from the same DB URL used by Dagster (host-mapped):
@@ -537,7 +537,7 @@ Root cause/decision:
 
 - Plain host-side `uv run fourok operator-status` used the generic state helper and therefore did not reliably resolve the same Compose runtime Postgres DB used by Dagster.
 - `operator-status` and `operator-live` also counted all `source_records`, while the metrics exporter/Grafana count source counts current imported records with `lifecycle_state='active'`.
-- Decision: improve default DX for plain `fourok operator-status` because it is low risk when scoped to the default state path. The command now resolves `.env`/runtime Compose `FOUR_OK_DATABASE_URL`, maps Docker hostname `postgres` to host `127.0.0.1`, and still leaves explicit non-default `--state` fixture checks isolated unless `--database-url` is supplied.
+- Decision: improve default DX for plain `fourok operator-status` because it is low risk when scoped to the default state path. The command now resolves `.env`/runtime Compose `FOUROK_DATABASE_URL`, maps Docker hostname `postgres` to host `127.0.0.1`, and still leaves explicit non-default `--state` fixture checks isolated unless `--database-url` is supplied.
 - Decision: current operator-visible imported counts are active DB source records. Lifecycle totals remain available through the fuller dashboard surface; compact operator status should agree with metrics/Grafana active counts.
 
 Regression coverage added:
@@ -663,17 +663,17 @@ Grafana dashboard/API proof:
 
 - Endpoint: `GET http://127.0.0.1:3000/api/health`
 - Result summary: `database=ok`, `version=13.0.1`, `commit=a100054f`.
-- Endpoint: `GET http://127.0.0.1:3000/api/search?query=4OK`
-- Result summary: found provisioned dashboard `4OK Local Runtime Logs`, uid `fourok-local-runtime-logs`, URL `/d/fourok-local-runtime-logs/fourok-local-runtime-logs`.
+- Endpoint: `GET http://127.0.0.1:3000/api/search?query=fourok`
+- Result summary: found provisioned dashboard `fourok Local Runtime Logs`, uid `fourok-local-runtime-logs`, URL `/d/fourok-local-runtime-logs/fourok-local-runtime-logs`.
 - Endpoint: `GET http://127.0.0.1:3000/api/dashboards/uid/fourok-local-runtime-logs`
 - Result summary: dashboard is provisioned, version `4`, refreshes every `10s`, and contains 18 panels plus an Explore link.
 - Operator-usable log surfaces:
-  - Dashboard link `Explore all 4OK logs` uses `/explore` with Loki query `{compose_project="fourok"}` over `now-4h` to `now`.
+  - Dashboard link `Explore all fourok logs` uses `/explore` with Loki query `{compose_project="fourok"}` over `now-4h` to `now`.
   - Panel `All fourok Docker logs` uses Loki range query `{compose_project="fourok"}`.
   - Panel `Dagster code logs` uses Loki range query `{compose_service="dagster-code"}`.
   - Panel `Dagster failures` uses Loki range query `{compose_service="dagster-code"} |= "STEP_FAILURE"`.
 - Operator-usable trace surface:
-  - Panel `Recent 4OK traces (Tempo)` uses Tempo TraceQL query `{ resource.service.name =~ "fourok.*" }`.
+  - Panel `Recent fourok traces (Tempo)` uses Tempo TraceQL query `{ resource.service.name =~ "fourok.*" }`.
 - Operator-usable count surfaces:
   - Panel `Imported source records by source/type` uses Prometheus query `fourok_source_records_total`.
   - Panel `Raw landed records by connector/stream` uses `fourok_raw_landed_records_total`.
@@ -715,9 +715,9 @@ Prometheus target and metric proof from inside the observability container:
 
 Gate 3 conclusion:
 
-- Recent 4OK service logs are queryable in Loki through a range query, including the explicit `service_name="fourok-dagster-code"` path and the Docker label path used by the dashboard.
-- Recent 4OK service traces are queryable in Tempo through TraceQL for `resource.service.name="fourok-dagster-code"`.
-- Grafana exposes operator-usable log, trace, and count panels in the provisioned `4OK Local Runtime Logs` dashboard.
+- Recent fourok service logs are queryable in Loki through a range query, including the explicit `service_name="fourok-dagster-code"` path and the Docker label path used by the dashboard.
+- Recent fourok service traces are queryable in Tempo through TraceQL for `resource.service.name="fourok-dagster-code"`.
+- Grafana exposes operator-usable log, trace, and count panels in the provisioned `fourok Local Runtime Logs` dashboard.
 - Prometheus inside the observability container has an up `fourok-dagster-runtime` scrape target and current runtime count series.
 ### 2026-06-10 Gate 4 MCP stdio retrieval proof
 
@@ -731,8 +731,8 @@ Repository/launch documentation:
   - `command`: `uv`
   - `args`: `["run", "fourok-mcp"]`
   - `cwd`: repository checkout containing `pyproject.toml`
-  - `env.FOUR_OK_DATABASE_URL`: runtime DB URL injected from local environment/secrets, never committed.
-- Exact worktree command used for live proof: stdio MCP client launched `uv run fourok-mcp` from `/home/simon/Projects/project-fourok/fourok.worktrees/gate4-mcp-retrieval` with `FOUR_OK_DATABASE_URL` set to the host-mapped runtime Postgres URL.
+  - `env.FOUROK_DATABASE_URL`: runtime DB URL injected from local environment/secrets, never committed.
+- Exact worktree command used for live proof: stdio MCP client launched `uv run fourok-mcp` from `/home/simon/Projects/project-fourok/fourok.worktrees/gate4-mcp-retrieval` with `FOUROK_DATABASE_URL` set to the host-mapped runtime Postgres URL.
 
 Test/contract proof:
 
@@ -744,7 +744,7 @@ Test/contract proof:
 
 Live stdio MCP client proof:
 
-- Command used an MCP SDK `ClientSession` with `StdioServerParameters(command="uv", args=["run", "fourok-mcp"], cwd=<worktree>, env={"FOUR_OK_DATABASE_URL": <runtime-db>})`.
+- Command used an MCP SDK `ClientSession` with `StdioServerParameters(command="uv", args=["run", "fourok-mcp"], cwd=<worktree>, env={"FOUROK_DATABASE_URL": <runtime-db>})`.
 - The command did not print credentials; DB URL in logs was redacted as `postgresql+psycopg://fourok:[REDACTED]@127.0.0.1:5432/fourok`.
 - `list_tools` returned exactly:
   - `search_fourok`
@@ -771,7 +771,7 @@ Live retrieval via MCP `search_fourok`:
   - roles: `["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]`
   - result count: `1`
   - evidence count: `1`
-  - source ref: `linear:issue:4OK-691`
+  - source ref: `linear:issue:fourok-691`
   - subject: `Message frank`
   - evidence permission ref: `linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d`
 - Twenty query:
@@ -864,7 +864,7 @@ Post-restart operator-status proof:
 
 Post-restart MCP stdio proof:
 
-- Stdio MCP client launched `uv run fourok-mcp` from the repo with `FOUR_OK_DATABASE_URL` set to the host-mapped runtime DB URL.
+- Stdio MCP client launched `uv run fourok-mcp` from the repo with `FOUROK_DATABASE_URL` set to the host-mapped runtime DB URL.
 - `list_tools` returned exactly `search_fourok` and `operator_status`.
 - MCP `operator_status` returned the same compact active-count contract as `fourok operator-status`:
   - `imported_items_by_source.google_drive=23`
@@ -876,7 +876,7 @@ Post-restart MCP stdio proof:
   - `freshness.live_ingestion.status=fresh`
 - MCP `search_fourok` live retrieval proof after restart:
   - Google Drive query `Buena Progress Update`: `result_count=3`, `evidence_count=3`, source refs included real `google_drive:file:*` records.
-  - Linear query `Message frank` with role `linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d`: `result_count=1`, source ref `linear:issue:4OK-691`, evidence permission ref matched the Linear team role.
+  - Linear query `Message frank` with role `linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d`: `result_count=1`, source ref `linear:issue:fourok-691`, evidence permission ref matched the Linear team role.
   - Twenty query `Pennylane`: `result_count=1`, source ref `twenty:company:3fa2685d-64d7-406b-8503-0c8ad2bb9f78`.
   - Slack allowed query `tech-support` with role `slack:channel:C0AUGURHABA`: `result_count=1`, source ref `slack:channel:C0AUGURHABA`, evidence permission ref matched the Slack channel role.
   - Slack denied query `tech-support` with only role `operator`: `result_count=0`, `evidence_count=0`.
@@ -886,7 +886,7 @@ Post-restart observability proof:
 - Loki range query `{service_name="fourok-dagster-code"}` over the recent window returned `5` streams.
 - Tempo TraceQL query `{ resource.service.name =~ "fourok.*" }` returned `5` traces.
 - Grafana health returned `database=ok`.
-- Grafana dashboard API returned dashboard title `4OK Local Runtime Logs` with `18` panels.
+- Grafana dashboard API returned dashboard title `fourok Local Runtime Logs` with `18` panels.
 - Prometheus inside the observability container:
   - target `job="fourok-dagster-runtime"` had `health="up"`, `lastError=""`, `scrapeUrl="http://fourok-metrics-exporter:9108/metrics"`.
   - query `fourok_retrieval_records_total` returned `status="current"` value `2674`.

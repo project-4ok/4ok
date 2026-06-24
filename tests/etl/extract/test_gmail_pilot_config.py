@@ -42,12 +42,6 @@ class FakeRunner:
         raise AssertionError(f"Unexpected command: {command}")
 
 
-
-
-
-
-
-
 def _required_env_text() -> str:
     return "\n".join(
         [
@@ -66,7 +60,7 @@ def test_gmail_pilot_env_loader_supports_export_and_quoted_values(tmp_path: Path
             [
                 'export TAP_GMAIL_USER_ID="pilot@example.com"',
                 "TAP_GMAIL_MESSAGES_INCLUDE_SPAM_TRASH=true",
-                "TAP_GMAIL_MESSAGES_Q='newer_than:30d 4OK-PILOT'",
+                "TAP_GMAIL_MESSAGES_Q='newer_than:30d fourok-PILOT'",
                 "",
             ]
         ),
@@ -77,7 +71,7 @@ def test_gmail_pilot_env_loader_supports_export_and_quoted_values(tmp_path: Path
 
     assert values["TAP_GMAIL_USER_ID"] == "pilot@example.com"
     assert values["TAP_GMAIL_MESSAGES_INCLUDE_SPAM_TRASH"] == "true"
-    assert values["TAP_GMAIL_MESSAGES_Q"] == "newer_than:30d 4OK-PILOT"
+    assert values["TAP_GMAIL_MESSAGES_Q"] == "newer_than:30d fourok-PILOT"
 
 
 def test_gmail_pilot_validation_reports_missing_required_values() -> None:
@@ -97,7 +91,7 @@ def test_gmail_pilot_summary_does_not_expose_secret_values() -> None:
             "TAP_GMAIL_OAUTH_CREDENTIALS_CLIENT_ID": "client-id",
             "TAP_GMAIL_OAUTH_CREDENTIALS_CLIENT_SECRET": "client-secret",
             "TAP_GMAIL_OAUTH_CREDENTIALS_REFRESH_TOKEN": "refresh-token",
-            "TAP_GMAIL_MESSAGES_Q": "newer_than:30d 4OK-PILOT",
+            "TAP_GMAIL_MESSAGES_Q": "newer_than:30d fourok-PILOT",
         }
     )
 
@@ -165,14 +159,6 @@ def test_gmail_pilot_preflight_reports_missing_required_values(
     assert '"status": "missing_required_env"' in captured.out
     assert "pilot@example.com" not in captured.out
     assert "TAP_GMAIL_OAUTH_CREDENTIALS_REFRESH_TOKEN" in captured.out
-
-
-
-
-
-
-
-
 
 
 def test_gmail_pilot_runner_writes_tap_stdout_without_printing_secrets(
@@ -263,8 +249,6 @@ def test_gmail_pilot_runner_can_inspect_successful_tap_output(
     assert "secret body" not in captured.out
     assert "client-secret" not in captured.out
     assert f'"inspection_output": "{inspection_output.as_posix()}"' in captured.out
-
-
 
 
 def test_gmail_pilot_runner_records_successful_job_checkpoint(

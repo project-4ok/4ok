@@ -364,7 +364,9 @@ def test_cli_ingests_text_layer_pdf_source_record(
             metadata={"ocr_used": False},
         )
 
-    monkeypatch.setattr("fourok.cli_parts.commands_imports.pdf_source_record", fake_pdf_source_record)
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_imports.pdf_source_record", fake_pdf_source_record
+    )
     monkeypatch.setattr(
         "sys.argv",
         [

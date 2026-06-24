@@ -95,7 +95,7 @@ def configure_observability(
 
 
 def configure_observability_from_env() -> ObservabilityConfig | None:
-    if os.environ.get("FOUR_OK_OBSERVABILITY_ENABLED", "").lower() not in {"1", "true", "yes"}:
+    if os.environ.get("FOUROK_OBSERVABILITY_ENABLED", "").lower() not in {"1", "true", "yes"}:
         return None
     return configure_observability(
         service_name=os.environ.get("OTEL_SERVICE_NAME", DEFAULT_SERVICE_NAME),

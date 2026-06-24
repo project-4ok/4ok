@@ -276,7 +276,7 @@ def _live_command_env(*, database_url: str) -> dict[str, str] | None:
         return None
     import os
 
-    return {**os.environ, "FOUR_OK_DATABASE_URL": database_url}
+    return {**os.environ, "FOUROK_DATABASE_URL": database_url}
 
 
 def _timestamp_datetime(value: datetime | None) -> datetime:

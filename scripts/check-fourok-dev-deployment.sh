@@ -3,26 +3,26 @@ set -euo pipefail
 
 CHECK_TARGET="${CHECK_TARGET:-ssh}"
 GATEWAY_SSH_TARGET="${GATEWAY_SSH_TARGET:-root@178.105.10.7}"
-QUERY="${FOUR_OK_STATUS_QUERY:-${FOUR_OK_DEV_STATUS_QUERY:-4OK}}"
+QUERY="${FOUROK_STATUS_QUERY:-${FOUROK_DEV_STATUS_QUERY:-fourok}}"
 INCLUDE_GH="${INCLUDE_GH:-true}"
 GH_REPO="${GH_REPO:-project-fourok/fourok-infrastructure-prod}"
 OPENCLAW_IMAGE_WORKFLOW="${OPENCLAW_IMAGE_WORKFLOW:-fourok-openclaw-dev-image.yml}"
 OPENCLAW_IMAGE_WORKFLOW_REQUIRED="${OPENCLAW_IMAGE_WORKFLOW_REQUIRED:-false}"
 RUNTIME_DEPLOY_WORKFLOW="${RUNTIME_DEPLOY_WORKFLOW:-dev-customer-gateway-fourok-runtime-deploy}"
 GATEWAY_CONTAINER="${GATEWAY_CONTAINER:-openclaw-openclaw-gateway-1}"
-FOUR_OK_RETRIEVE_CONTAINER="${FOUR_OK_RETRIEVE_CONTAINER:-openclaw-fourok-app-1}"
-FOUR_OK_RETRIEVE_COMMAND="${FOUR_OK_RETRIEVE_COMMAND:-/app/.venv/bin/fourok}"
-FOUR_OK_CRITICAL_CONTAINERS="${FOUR_OK_CRITICAL_CONTAINERS:-openclaw-openclaw-gateway-1,openclaw-fourok-app-1,openclaw-fourok-postgres-1,openclaw-fourok-dagster-code-1,openclaw-fourok-dagster-postgres-1,openclaw-fourok-observability-1}"
+FOUROK_RETRIEVE_CONTAINER="${FOUROK_RETRIEVE_CONTAINER:-openclaw-fourok-app-1}"
+FOUROK_RETRIEVE_COMMAND="${FOUROK_RETRIEVE_COMMAND:-/app/.venv/bin/fourok}"
+FOUROK_CRITICAL_CONTAINERS="${FOUROK_CRITICAL_CONTAINERS:-openclaw-openclaw-gateway-1,openclaw-fourok-app-1,openclaw-fourok-postgres-1,openclaw-fourok-dagster-code-1,openclaw-fourok-dagster-postgres-1,openclaw-fourok-observability-1}"
 CONTAINER_FILTER_REGEX="${CONTAINER_FILTER_REGEX:-openclaw-fourok|openclaw-openclaw-gateway}"
 GRAFANA_URL="${GRAFANA_URL:-http://127.0.0.1:13000}"
 DAGSTER_SERVER_INFO_URL="${DAGSTER_SERVER_INFO_URL:-http://127.0.0.1:13001/server_info}"
-FOUR_OK_DASHBOARD_UID="${FOUR_OK_DASHBOARD_UID:-fourok-local-runtime-logs}"
+FOUROK_DASHBOARD_UID="${FOUROK_DASHBOARD_UID:-fourok-local-runtime-logs}"
 
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [--json]
 
-Run a one-command status check for a 4OK/OpenClaw deployment surface.
+Run a one-command status check for a fourok/OpenClaw deployment surface.
 
 Target modes:
   CHECK_TARGET=ssh    run Docker/curl checks on GATEWAY_SSH_TARGET over SSH (default)
@@ -34,15 +34,15 @@ Environment overrides:
   GH_REPO=project-fourok/fourok-infrastructure-prod
   INCLUDE_GH=true
   OPENCLAW_IMAGE_WORKFLOW_REQUIRED=false
-  FOUR_OK_STATUS_QUERY=4OK
+  FOUROK_STATUS_QUERY=fourok
   GATEWAY_CONTAINER=openclaw-openclaw-gateway-1
-  FOUR_OK_RETRIEVE_CONTAINER=openclaw-fourok-app-1
-  FOUR_OK_RETRIEVE_COMMAND=/app/.venv/bin/fourok
-  FOUR_OK_CRITICAL_CONTAINERS=comma,separated,container,names
+  FOUROK_RETRIEVE_CONTAINER=openclaw-fourok-app-1
+  FOUROK_RETRIEVE_COMMAND=/app/.venv/bin/fourok
+  FOUROK_CRITICAL_CONTAINERS=comma,separated,container,names
   CONTAINER_FILTER_REGEX='openclaw-fourok|openclaw-openclaw-gateway'
   GRAFANA_URL=http://127.0.0.1:13000
   DAGSTER_SERVER_INFO_URL=http://127.0.0.1:13001/server_info
-  FOUR_OK_DASHBOARD_UID=fourok-local-runtime-logs
+  FOUROK_DASHBOARD_UID=fourok-local-runtime-logs
 
 The command prints JSON and exits non-zero unless the deployment status is ok.
 EOF
@@ -75,13 +75,13 @@ python3 - \
   "$OPENCLAW_IMAGE_WORKFLOW_REQUIRED" \
   "$RUNTIME_DEPLOY_WORKFLOW" \
   "$GATEWAY_CONTAINER" \
-  "$FOUR_OK_RETRIEVE_CONTAINER" \
-  "$FOUR_OK_RETRIEVE_COMMAND" \
-  "$FOUR_OK_CRITICAL_CONTAINERS" \
+  "$FOUROK_RETRIEVE_CONTAINER" \
+  "$FOUROK_RETRIEVE_COMMAND" \
+  "$FOUROK_CRITICAL_CONTAINERS" \
   "$CONTAINER_FILTER_REGEX" \
   "$GRAFANA_URL" \
   "$DAGSTER_SERVER_INFO_URL" \
-  "$FOUR_OK_DASHBOARD_UID" <<'PY'
+  "$FOUROK_DASHBOARD_UID" <<'PY'
 from __future__ import annotations
 
 import json

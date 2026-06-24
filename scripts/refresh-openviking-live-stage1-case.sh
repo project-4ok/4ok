@@ -3,7 +3,7 @@ set -euo pipefail
 
 CHECK_TARGET="${CHECK_TARGET:-ssh}"
 GATEWAY_SSH_TARGET="${GATEWAY_SSH_TARGET:-root@178.105.10.7}"
-FOUR_OK_APP_CONTAINER="${FOUR_OK_APP_CONTAINER:-openclaw-fourok-app-1}"
+FOUROK_APP_CONTAINER="${FOUROK_APP_CONTAINER:-openclaw-fourok-app-1}"
 OPENVIKING_SESSIONS_DIR="${OPENVIKING_SESSIONS_DIR:-/var/lib/openclaw/sessions}"
 OPENVIKING_QUERY="${OPENVIKING_QUERY:-What are my priorities today}"
 OPENVIKING_CASE_ID="${OPENVIKING_CASE_ID:-openviking-live-current-message}"
@@ -15,8 +15,8 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [--json]
 
-Normalize OpenClaw/OpenViking session messages already mounted in the 4OK app
-container, backfill them into 4OK, and generate a Stage 1 case set that points
+Normalize OpenClaw/OpenViking session messages already mounted in the fourok app
+container, backfill them into fourok, and generate a Stage 1 case set that points
 at a current host-specific OpenViking message.
 
 Target modes:
@@ -25,7 +25,7 @@ Target modes:
 
 Environment overrides:
   GATEWAY_SSH_TARGET=root@178.105.10.7
-  FOUR_OK_APP_CONTAINER=openclaw-fourok-app-1
+  FOUROK_APP_CONTAINER=openclaw-fourok-app-1
   OPENVIKING_SESSIONS_DIR=/var/lib/openclaw/sessions
   OPENVIKING_QUERY='What are my priorities today'
   OPENVIKING_CASE_ID=openviking-live-current-message
@@ -56,7 +56,7 @@ done
 
 remote_script=$(cat <<'SH'
 set -euo pipefail
-: "${FOUR_OK_APP_CONTAINER:?set FOUR_OK_APP_CONTAINER}"
+: "${FOUROK_APP_CONTAINER:?set FOUROK_APP_CONTAINER}"
 : "${OPENVIKING_SESSIONS_DIR:?set OPENVIKING_SESSIONS_DIR}"
 : "${OPENVIKING_QUERY:?set OPENVIKING_QUERY}"
 : "${OPENVIKING_CASE_ID:?set OPENVIKING_CASE_ID}"
@@ -71,7 +71,7 @@ docker exec \
   -e STAGE1_CASES_OUTPUT \
   -e NORMALIZED_OUTPUT \
   -e BASE_CASES_PATH \
-  "$FOUR_OK_APP_CONTAINER" \
+  "$FOUROK_APP_CONTAINER" \
   /app/.venv/bin/python - <<'PY'
 from __future__ import annotations
 
@@ -203,7 +203,7 @@ SH
 )
 
 env_prefix=(
-  "FOUR_OK_APP_CONTAINER=$(printf '%q' "${FOUR_OK_APP_CONTAINER}")"
+  "FOUROK_APP_CONTAINER=$(printf '%q' "${FOUROK_APP_CONTAINER}")"
   "OPENVIKING_SESSIONS_DIR=$(printf '%q' "${OPENVIKING_SESSIONS_DIR}")"
   "OPENVIKING_QUERY=$(printf '%q' "${OPENVIKING_QUERY}")"
   "OPENVIKING_CASE_ID=$(printf '%q' "${OPENVIKING_CASE_ID}")"

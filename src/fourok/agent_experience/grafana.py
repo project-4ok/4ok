@@ -60,7 +60,7 @@ def grafana_report(
 
 
 def main(argv: Sequence[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(prog="four-ok-agent-grafana")
+    parser = argparse.ArgumentParser(prog="fourok-agent-grafana")
     parser.add_argument("--grafana-url", default=DEFAULT_GRAFANA_URL)
     parser.add_argument("--json", action="store_true", help="Print machine-readable JSON.")
     args = parser.parse_args(argv)

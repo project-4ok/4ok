@@ -214,16 +214,16 @@ def host_operator_database_url(
     if app_database_url := _running_app_database_url():
         return host_database_url(app_database_url)
     dotenv_env = _dotenv_values(Path(".") / ".env")
-    if compose_database_url := dotenv_env.get("FOUR_OK_DATABASE_URL"):
+    if compose_database_url := dotenv_env.get("FOUROK_DATABASE_URL"):
         return host_database_url(compose_database_url)
     if postgres_password := dotenv_env.get("POSTGRES_PASSWORD"):
         return host_database_url(
             f"postgresql+psycopg://fourok:{postgres_password}@postgres:5432/fourok"
         )
     operator_env = operator_environment(Path("."))
-    if compose_database_url := operator_env.get("FOUR_OK_DATABASE_URL"):
+    if compose_database_url := operator_env.get("FOUROK_DATABASE_URL"):
         return host_database_url(compose_database_url)
-    if env_database_url := os.environ.get("FOUR_OK_DATABASE_URL"):
+    if env_database_url := os.environ.get("FOUROK_DATABASE_URL"):
         return host_database_url(env_database_url)
     return None
 
@@ -239,7 +239,7 @@ def _running_app_database_url() -> str:
                 "exec",
                 container_id,
                 "printenv",
-                "FOUR_OK_DATABASE_URL",
+                "FOUROK_DATABASE_URL",
             ],
             check=False,
             capture_output=True,

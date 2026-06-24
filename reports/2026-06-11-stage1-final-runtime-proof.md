@@ -9,7 +9,7 @@ Scope: final evidence for `docs/goal.md` Stage 1 freshness/check closure after d
 Status: PASS on local runtime after rebuild/restart at commit `92fd453`.
 
 - Corrected Stage 1 acceptance now fails on current Dagster run failures, incomplete required steps, or stale hourly success freshness.
-- Dagster image/app image were rebuilt with `FOUR_OK_IMAGE_TAG=92fd453` and local runtime services restarted.
+- Dagster image/app image were rebuilt with `FOUROK_IMAGE_TAG=92fd453` and local runtime services restarted.
 - Manual `fourok_hourly_live_backfill` run succeeded after rebuild.
 - Grafana/Prometheus freshness reported the successful hourly backfill within SLA.
 - `uv run fourok stage1-acceptance --json` exited 0 and all checks were `ok`.
@@ -40,7 +40,7 @@ Rebuild/restart:
 
 ```text
 uv run fourok-dev pipeline-up
-FOUR_OK_IMAGE_TAG=92fd453 docker compose --profile observability up --build --force-recreate -d fourok-metrics-exporter promtail
+FOUROK_IMAGE_TAG=92fd453 docker compose --profile observability up --build --force-recreate -d fourok-metrics-exporter promtail
 ```
 
 Manual Dagster run:

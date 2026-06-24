@@ -116,9 +116,9 @@ def _compose_config_env() -> dict[str, str]:
         "XDG_CONFIG_HOME",
     }
     env = {key: value for key, value in os.environ.items() if key in allowlist}
-    env["FOUR_OK_IMAGE_TAG"] = os.environ.get("FOUR_OK_IMAGE_TAG", "access-smoke")
-    env["FOUR_OK_DATABASE_URL"] = os.environ.get(
-        "FOUR_OK_DATABASE_URL",
+    env["FOUROK_IMAGE_TAG"] = os.environ.get("FOUROK_IMAGE_TAG", "access-smoke")
+    env["FOUROK_DATABASE_URL"] = os.environ.get(
+        "FOUROK_DATABASE_URL",
         "postgresql+psycopg://fourok:access-smoke@postgres:5432/fourok",
     )
     env["POSTGRES_PASSWORD"] = os.environ.get("POSTGRES_PASSWORD", "access-smoke")

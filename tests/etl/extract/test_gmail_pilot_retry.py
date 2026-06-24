@@ -42,12 +42,6 @@ class FakeRunner:
         raise AssertionError(f"Unexpected command: {command}")
 
 
-
-
-
-
-
-
 def _required_env_text() -> str:
     return "\n".join(
         [

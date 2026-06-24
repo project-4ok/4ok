@@ -337,13 +337,13 @@ def test_dagster_meltano_environment_injects_secrets_without_overriding_landing_
         landing_dir=Path(".local/raw/singer/slack"),
         secret_env={
             "SLACK_BOT_TOKEN": "secret-token",
-            "TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR": "wrong",
+            "TARGET_FOUROK_RAW_JSONL_LANDING_DIR": "wrong",
         },
     )
 
     assert env["EXISTING_ENV"] == "kept"
     assert env["SLACK_BOT_TOKEN"] == "secret-token"
-    assert env["TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR"] == ".local/raw/singer/slack"
+    assert env["TARGET_FOUROK_RAW_JSONL_LANDING_DIR"] == ".local/raw/singer/slack"
 
 
 def test_dagster_meltano_environment_adds_singer_secret_aliases() -> None:

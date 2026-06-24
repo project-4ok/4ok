@@ -11,7 +11,7 @@ DEFAULT_LANDING_DIR = Path(".local/raw/singer")
 
 
 def main() -> None:
-    landing_dir = Path(os.environ.get("TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR", DEFAULT_LANDING_DIR))
+    landing_dir = Path(os.environ.get("TARGET_FOUROK_RAW_JSONL_LANDING_DIR", DEFAULT_LANDING_DIR))
     report = land_singer_stream(sys.stdin, landing_dir)
     print(
         json.dumps(

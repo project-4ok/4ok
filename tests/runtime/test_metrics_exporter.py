@@ -184,11 +184,12 @@ def test_metrics_exporter_renders_dagster_run_and_source_freshness_metrics(tmp_p
 
     assert 'fourok_dagster_run_status{job="fourok_hourly_live_backfill",status="SUCCESS"} 1' in text
     assert (
-        'fourok_dagster_latest_run_status{job="fourok_hourly_live_backfill",status="SUCCESS"} 1' in text
+        'fourok_dagster_latest_run_status{job="fourok_hourly_live_backfill",status="SUCCESS"} 1'
+        in text
     )
     assert (
-        'fourok_dagster_last_success_timestamp_seconds{job="fourok_hourly_live_backfill"} 1781028065'
-        in text
+        "fourok_dagster_last_success_timestamp_seconds"
+        '{job="fourok_hourly_live_backfill"} 1781028065' in text
     )
     assert 'fourok_dagster_schedule_running{name="fourok_hourly_live_backfill_schedule"} 1' in text
     assert (
@@ -208,17 +209,25 @@ def test_metrics_exporter_renders_dagster_run_and_source_freshness_metrics(tmp_p
         'stage="fourok_retrieval_records",status="FAILURE"} 1' in text
     )
     assert 'fourok_source_records_total{record_type="message",source_system="slack"} 2' in text
-    assert 'fourok_source_records_total{record_type="organization",source_system="twenty"} 1' in text
+    assert (
+        'fourok_source_records_total{record_type="organization",source_system="twenty"} 1' in text
+    )
     assert (
         'fourok_google_drive_files_total{content_status="metadata_only",'
         'export_status="unsupported_mime_type",mime_type="image/png"} 1' in text
     )
-    assert 'fourok_raw_landed_records_total{source_system="slack",stream="slack_messages"} 2' in text
+    assert (
+        'fourok_raw_landed_records_total{source_system="slack",stream="slack_messages"} 2' in text
+    )
     assert 'fourok_canonical_objects_total{object_type="company"} 2' in text
     assert 'fourok_entity_links_total{relationship="mentions"} 1' in text
-    assert 'fourok_source_latest_record_timestamp_seconds{source_system="linear"} 1781032530' in text
+    assert (
+        'fourok_source_latest_record_timestamp_seconds{source_system="linear"} 1781032530' in text
+    )
     assert 'fourok_source_latest_record_timestamp_seconds{source_system="slack"} 1781033100' in text
-    assert 'fourok_source_latest_record_timestamp_seconds{source_system="twenty"} 1780063291' in text
+    assert (
+        'fourok_source_latest_record_timestamp_seconds{source_system="twenty"} 1780063291' in text
+    )
     assert 'fourok_retrieval_records_total{status="current"} 2' in text
     assert 'fourok_embedding_records_total{status="embedded"} 1' in text
     assert 'fourok_embedding_records_total{status="missing"} 1' in text
@@ -228,7 +237,8 @@ def test_metrics_exporter_renders_dagster_run_and_source_freshness_metrics(tmp_p
         'status="FAILURE"} 10' in text
     )
     assert (
-        'fourok_retrieval_requests_total{retriever_set="keyword,vector",status="succeeded"} 1' in text
+        'fourok_retrieval_requests_total{retriever_set="keyword,vector",status="succeeded"} 1'
+        in text
     )
     assert 'fourok_retrieval_requests_total{retriever_set="keyword",status="succeeded"} 1' in text
     assert 'fourok_retrieval_requests_total{retriever_set="vector",status="failed"} 1' in text
@@ -244,7 +254,9 @@ def test_metrics_exporter_renders_dagster_run_and_source_freshness_metrics(tmp_p
     assert 'fourok_connector_job_runs_total{connector="linear",status="failed"} 1' in text
     assert 'fourok_connector_latest_run_status{connector="linear",status="failed"} 1' in text
     assert 'fourok_connector_latest_run_status{connector="slack",status="success"} 1' in text
-    assert 'fourok_connector_latest_finished_timestamp_seconds{connector="linear"} 1781031780' in text
+    assert (
+        'fourok_connector_latest_finished_timestamp_seconds{connector="linear"} 1781031780' in text
+    )
     assert 'fourok_dagster_repository_discovery_status{status="ok"} 1' in text
 
 
@@ -291,7 +303,8 @@ def test_metrics_exporter_discovers_fourok_repo_from_multiple_graphql_nodes(tmp_
     text_metrics = render_prometheus_metrics(metrics)
 
     assert (
-        'fourok_dagster_schedule_running{name="fourok_hourly_live_backfill_schedule"} 1' in text_metrics
+        'fourok_dagster_schedule_running{name="fourok_hourly_live_backfill_schedule"} 1'
+        in text_metrics
     )
     assert 'fourok_dagster_sensor_running{name="fourok_webhook_backlog_sensor"} 1' in text_metrics
     assert 'fourok_dagster_repository_discovery_status{status="ok"} 1' in text_metrics
@@ -395,7 +408,9 @@ def test_metrics_exporter_sql_database_url_uses_mapping_rows(tmp_path: Path) -> 
         'fourok_google_drive_files_total{content_status="metadata_only",'
         'export_status="unsupported_mime_type",mime_type="image/png"} 1' in text_metrics
     )
-    assert 'fourok_connector_latest_run_status{connector="slack",status="success"} 1' in text_metrics
+    assert (
+        'fourok_connector_latest_run_status{connector="slack",status="success"} 1' in text_metrics
+    )
     assert (
         'fourok_connector_latest_finished_timestamp_seconds{connector="slack"} 1781031660'
         in text_metrics

@@ -26,8 +26,8 @@ Owning docs:
    runs/assets, DX/AX resume state, useful refactors, and final restart proof.
 2. Stage 2: ship local OpenClaw product value.
    Build the OpenClaw plugin RAG hook. Before each prompt, inject a short,
-   permission-aware 4OK source summary with refs, timestamps, and limitations.
-   The agent should not call the 4OK CLI as the product path.
+   permission-aware fourok source summary with refs, timestamps, and limitations.
+   The agent should not call the fourok CLI as the product path.
 3. Stage 3: improve retrieval usefulness for real questions.
    Use 5-10 approved live questions to improve query generation, snippets,
    ranking, limitations, and provenance. Investigate whether query expansion

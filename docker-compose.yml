@@ -83,7 +83,7 @@ services:
 
   fourok-metrics-exporter:
     profiles: ["observability"]
-    image: fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
+    image: fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}
     build:
       context: .
       dockerfile: docker/app.Dockerfile
@@ -99,9 +99,9 @@ services:
         "9108",
       ]
     environment:
-      FOUR_OK_DAGSTER_GRAPHQL_URL: http://dagster-webserver:3001/graphql
-      FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}
-      FOUR_OK_STATE_PATH: /app/.local/dagster/fourok-state.sqlite
+      FOUROK_DAGSTER_GRAPHQL_URL: http://dagster-webserver:3001/graphql
+      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}
+      FOUROK_STATE_PATH: /app/.local/dagster/fourok-state.sqlite
     expose:
       - "9108"
     volumes:
@@ -128,27 +128,27 @@ services:
 
   dagster-code:
     profiles: ["pipeline"]
-    image: fourok-dagster-code:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
+    image: fourok-dagster-code:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}
     restart: unless-stopped
     build:
       context: .
       dockerfile: docker/dagster.Dockerfile
       target: dagster-code
     environment:
-      DAGSTER_CURRENT_IMAGE: fourok-dagster-code:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
+      DAGSTER_CURRENT_IMAGE: fourok-dagster-code:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}
       DAGSTER_POSTGRES_USER: dagster
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}
-      FOUR_OK_PROJECT_ROOT: /app
-      FOUR_OK_RAW_LANDING_DIR: /app/.local/raw/singer
-      FOUR_OK_STATE_PATH: /app/.local/dagster/fourok-state.sqlite
-      FOUR_OK_EMBEDDING_PROVIDER: ${FOUR_OK_EMBEDDING_PROVIDER:-}
-      FOUR_OK_OPENAI_EMBEDDING_MODEL: ${FOUR_OK_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
-      FOUR_OK_EMBEDDING_DIMENSIONS: ${FOUR_OK_EMBEDDING_DIMENSIONS:-256}
+      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}
+      FOUROK_PROJECT_ROOT: /app
+      FOUROK_RAW_LANDING_DIR: /app/.local/raw/singer
+      FOUROK_STATE_PATH: /app/.local/dagster/fourok-state.sqlite
+      FOUROK_EMBEDDING_PROVIDER: ${FOUROK_EMBEDDING_PROVIDER:-}
+      FOUROK_OPENAI_EMBEDDING_MODEL: ${FOUROK_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      FOUROK_EMBEDDING_DIMENSIONS: ${FOUROK_EMBEDDING_DIMENSIONS:-256}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      FOUR_OK_OBSERVABILITY_ENABLED: ${FOUR_OK_OBSERVABILITY_ENABLED:-true}
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-code}
     depends_on:
@@ -167,7 +167,7 @@ services:
 
   dagster-webserver:
     profiles: ["pipeline"]
-    image: ${FOUR_OK_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
+    image: ${FOUROK_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
     restart: unless-stopped
     command:
       - sh
@@ -182,7 +182,7 @@ services:
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      FOUR_OK_OBSERVABILITY_ENABLED: ${FOUR_OK_OBSERVABILITY_ENABLED:-true}
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-webserver}
     ports:
@@ -209,7 +209,7 @@ services:
 
   dagster-daemon:
     profiles: ["pipeline"]
-    image: ${FOUR_OK_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
+    image: ${FOUROK_DAGSTER_RUNTIME_IMAGE:-docker.io/dagster/dagster-k8s:1.13.8@sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301}
     restart: unless-stopped
     command:
       - sh
@@ -224,7 +224,7 @@ services:
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      FOUR_OK_OBSERVABILITY_ENABLED: ${FOUR_OK_OBSERVABILITY_ENABLED:-true}
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-daemon}
     volumes:
@@ -244,17 +244,17 @@ services:
       start_period: 15s
 
   app:
-    image: fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}
+    image: fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}
     restart: unless-stopped
     build:
       context: .
       dockerfile: docker/app.Dockerfile
     environment:
-      FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}
-      FOUR_OK_OBSERVABILITY_ENABLED: ${FOUR_OK_OBSERVABILITY_ENABLED:-false}
-      FOUR_OK_EMBEDDING_PROVIDER: ${FOUR_OK_EMBEDDING_PROVIDER:-}
-      FOUR_OK_OPENAI_EMBEDDING_MODEL: ${FOUR_OK_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
-      FOUR_OK_EMBEDDING_DIMENSIONS: ${FOUR_OK_EMBEDDING_DIMENSIONS:-256}
+      FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}
+      FOUROK_EMBEDDING_PROVIDER: ${FOUROK_EMBEDDING_PROVIDER:-}
+      FOUROK_OPENAI_EMBEDDING_MODEL: ${FOUROK_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
+      FOUROK_EMBEDDING_DIMENSIONS: ${FOUROK_EMBEDDING_DIMENSIONS:-256}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-app}
@@ -266,7 +266,7 @@ services:
     volumes:
       - fourok-local:/app/.local
       - fourok-data:/var/lib/fourok
-      - ${FOUR_OK_CONFIG_PATH:-./.local/fourok.toml}:/etc/fourok/fourok.toml:ro
+      - ${FOUROK_CONFIG_PATH:-./.local/fourok.toml}:/etc/fourok/fourok.toml:ro
     healthcheck:
       test:
         [

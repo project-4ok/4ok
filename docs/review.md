@@ -103,7 +103,7 @@ Append audit-relevant open questions here. Keep this file short.
   local Dagster services. Run the actual live command against a credentialed
   local environment before treating live SaaS ingestion as operationally
   verified.
-- 4OK MCP retrieval: handler and SDK registration tests cover the local
+- fourok MCP retrieval: handler and SDK registration tests cover the local
   contract, but Hermes has not yet connected to `uv run fourok-mcp` against the
   runtime database. Run the Hermes stdio integration and compare `search_fourok`
   with `fourok search-state` before treating the server as operationally verified.

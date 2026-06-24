@@ -9,9 +9,9 @@ def test_compose_declares_app_context_cli_runtime() -> None:
     app_service = _compose_service_block(compose, "app")
 
     assert "  app:" in compose
-    assert "fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in compose
+    assert "fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}" in compose
     assert "docker/app.Dockerfile" in compose
-    assert "FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}" in app_service
+    assert "FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}" in app_service
     assert (
         "POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD}"
         in _compose_service_block(compose, "postgres")
@@ -22,12 +22,12 @@ def test_compose_declares_app_context_cli_runtime() -> None:
     assert '"honcho-sync"' not in app_service
     assert '"runtime-monitor"' in app_service
     assert '"health"' in app_service
-    assert "FOUR_OK_OBSERVABILITY_ENABLED" in app_service
+    assert "FOUROK_OBSERVABILITY_ENABLED" in app_service
     assert "OTEL_EXPORTER_OTLP_ENDPOINT" in app_service
     assert "http://observability:4318" in app_service
     assert "fourok-local:/app/.local" in app_service
     assert "fourok-data:/var/lib/fourok" in app_service
-    assert "${FOUR_OK_CONFIG_PATH:-./.local/fourok.toml}:/etc/fourok/fourok.toml:ro" in app_service
+    assert "${FOUROK_CONFIG_PATH:-./.local/fourok.toml}:/etc/fourok/fourok.toml:ro" in app_service
 
 
 def test_compose_does_not_use_latest_image_tags() -> None:
@@ -387,7 +387,9 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
         < positions["[Logs] Latest 5 runtime errors by service"]
     )
     trace_panel = next(
-        panel for panel in tempo_panels if panel["title"] == "[Tracing] Recent 4OK traces (Tempo)"
+        panel
+        for panel in tempo_panels
+        if panel["title"] == "[Tracing] Recent fourok traces (Tempo)"
     )
     assert trace_panel["type"] == "table"
     assert trace_panel["targets"][0]["query"] == '{ name =~ "fourok.*|meltano.*" }'
@@ -418,13 +420,13 @@ def test_compose_declares_fourok_metrics_exporter_for_prometheus() -> None:
     prometheus = Path("deploy/observability/prometheus.yaml").read_text(encoding="utf-8")
 
     assert 'profiles: ["observability"]' in service
-    assert "image: fourok-app:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in service
+    assert "image: fourok-app:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}" in service
     assert 'entrypoint: ["/app/.venv/bin/python"]' in service
     assert '"-m"' in service
     assert '"fourok.runtime.metrics_exporter"' in service
     assert '"9108"' in service
-    assert "FOUR_OK_DAGSTER_GRAPHQL_URL: http://dagster-webserver:3001/graphql" in service
-    assert "FOUR_OK_DATABASE_URL: ${FOUR_OK_DATABASE_URL:?set FOUR_OK_DATABASE_URL}" in service
+    assert "FOUROK_DAGSTER_GRAPHQL_URL: http://dagster-webserver:3001/graphql" in service
+    assert "FOUROK_DATABASE_URL: ${FOUROK_DATABASE_URL:?set FOUROK_DATABASE_URL}" in service
     assert "fourok-local:/app/.local" in service
     assert "fourok-metrics-exporter:9108" in prometheus
     assert "fourok-dagster-runtime" in prometheus
@@ -448,8 +450,8 @@ def test_compose_declares_dagster_pipeline_profile() -> None:
         "docker.io/dagster/dagster-k8s:1.13.8@"
         "sha256:24661edd6c98705eba61823804afab65ecd4691bf74a697b7c0d0659df5ed301"
     )
-    assert f"${{FOUR_OK_DAGSTER_RUNTIME_IMAGE:-{public_dagster_runtime_image}}}" in compose
-    assert "fourok-dagster-code:${FOUR_OK_IMAGE_TAG:?set FOUR_OK_IMAGE_TAG}" in compose
+    assert f"${{FOUROK_DAGSTER_RUNTIME_IMAGE:-{public_dagster_runtime_image}}}" in compose
+    assert "fourok-dagster-code:${FOUROK_IMAGE_TAG:?set FOUROK_IMAGE_TAG}" in compose
     assert "docker/dagster.Dockerfile" in compose
     assert "target: dagster-code" in _compose_service_block(compose, "dagster-code")
     assert "target: dagster-runtime" not in _compose_service_block(compose, "dagster-webserver")
@@ -463,7 +465,7 @@ def test_compose_declares_dagster_pipeline_profile() -> None:
         ("dagster-daemon", "fourok-dagster-daemon"),
     ]:
         service = _compose_service_block(compose, service_name)
-        assert "FOUR_OK_OBSERVABILITY_ENABLED: ${FOUR_OK_OBSERVABILITY_ENABLED:-true}" in service
+        assert "FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}" in service
         assert (
             "OTEL_EXPORTER_OTLP_ENDPOINT: "
             "${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}" in service

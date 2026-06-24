@@ -26,7 +26,7 @@ def add_backup_commands(subparsers) -> None:
         help="Run pg_dump for a PostgreSQL governed-context database.",
     )
     postgres_backup_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
     )
     postgres_backup_parser.add_argument("--output", type=Path, required=True)
 
@@ -35,7 +35,7 @@ def add_backup_commands(subparsers) -> None:
         help="Run pg_restore into a PostgreSQL governed-context database.",
     )
     postgres_restore_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
     )
     postgres_restore_parser.add_argument("--input", type=Path, required=True)
     postgres_restore_parser.add_argument("--confirm-destructive-restore", action="store_true")
@@ -45,10 +45,10 @@ def add_backup_commands(subparsers) -> None:
         help="Backup PostgreSQL, restore into a separate drill database, and verify health.",
     )
     postgres_restore_drill_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
     )
     postgres_restore_drill_parser.add_argument(
         "--restore-database-url",
-        default=os.environ.get("FOUR_OK_RESTORE_DATABASE_URL"),
+        default=os.environ.get("FOUROK_RESTORE_DATABASE_URL"),
     )
     postgres_restore_drill_parser.add_argument("--backup-output", type=Path, required=True)

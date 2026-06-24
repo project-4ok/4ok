@@ -77,8 +77,8 @@ Additional Codex workers fixed run-live-ingestion subprocess/runtime-state defec
 ```bash
 env -u POSTGRES_PASSWORD \
   -u DAGSTER_POSTGRES_PASSWORD \
-  -u FOUR_OK_IMAGE_TAG \
-  -u FOUR_OK_DATABASE_URL \
+  -u FOUROK_IMAGE_TAG \
+  -u FOUROK_DATABASE_URL \
   -u TAP_GMAIL_USER_ID \
   -u TAP_GMAIL_OAUTH_CREDENTIALS_CLIENT_ID \
   uv run pytest -q
@@ -300,12 +300,12 @@ google_drive:file:1_2jCrzIC7fR2H-VApIxm_y_unb81QW5s
 Latest gate run on 2026-06-10 from the `codex/slack-gate` worktree:
 
 ```bash
-FOUR_OK_DATABASE_URL="$(docker exec fourok-app-1 printenv FOUR_OK_DATABASE_URL)"
-FOUR_OK_DATABASE_URL="${FOUR_OK_DATABASE_URL/@postgres:/@127.0.0.1:}"
-export FOUR_OK_DATABASE_URL
+FOUROK_DATABASE_URL="$(docker exec fourok-app-1 printenv FOUROK_DATABASE_URL)"
+FOUROK_DATABASE_URL="${FOUROK_DATABASE_URL/@postgres:/@127.0.0.1:}"
+export FOUROK_DATABASE_URL
 uv run --group pipeline python scripts/check_slack_live_contract.py \
   --artifact-dir .local/stage1-live-checks/slack-contract \
-  --database-url "$FOUR_OK_DATABASE_URL"
+  --database-url "$FOUROK_DATABASE_URL"
 ```
 
 Safe result summary:
@@ -364,7 +364,7 @@ No final-run `messages.jsonl` or `threads.jsonl` exists under the Slack raw land
 Codex audit conclusion in `.local/codex-reports/slack-live-gate-audit.md`:
 
 - The tap discovers `messages` and `threads` streams.
-- 4OK adapter code maps landed `messages` and `threads` to `record_type="message"`.
+- fourok adapter code maps landed `messages` and `threads` to `record_type="message"`.
 - The blocker is live Slack history access/content for the configured token/channel selection: current live token/config can enumerate public channels, members, and users, but returns no message/thread records.
 
 Completion command once Slack access is fixed:
@@ -430,7 +430,7 @@ No production `messages.jsonl` was copied or normalized. The live production
 OpenViking/OpenClaw export proof remains blocked on SSH credentials or gateway
 authorization for the production source path.
 
-Runtime DB proof was also blocked in this shell because `FOUR_OK_DATABASE_URL` was
+Runtime DB proof was also blocked in this shell because `FOUROK_DATABASE_URL` was
 unset and `docker compose ps postgres app` returned no running services for this
 checkout. No runtime DB backfill was attempted without an explicit database URL.
 
@@ -558,7 +558,7 @@ Loki/Grafana/Prometheus checks:
 ```text
 Loki query for recent Dagster RUN_SUCCESS: streams=1
 Grafana Prometheus proxy query fourok_source_records_total: result_count=12
-Grafana dashboard 4OK Local Runtime Logs exists and includes Loki, Prometheus, and Tempo panels.
+Grafana dashboard fourok Local Runtime Logs exists and includes Loki, Prometheus, and Tempo panels.
 ```
 
 Ignored observability audit report:
@@ -577,7 +577,7 @@ state review:
 - `fourok_connector_latest_run_status` and
   `fourok_connector_latest_finished_timestamp_seconds` expose latest live connector
   state and freshness through Prometheus.
-- The provisioned `4OK Local Runtime Logs` dashboard includes panels for runtime
+- The provisioned `fourok Local Runtime Logs` dashboard includes panels for runtime
   service log activity, recent runtime errors, latest Dagster run status, latest
   connector run status, connector freshness, source freshness, source/retrieval
   counts, Dagster step failures, Loki logs, and representative Tempo traces.
@@ -595,8 +595,8 @@ Safe live Grafana API checks:
 GET /api/health
 database=ok, version=13.0.1
 
-GET /api/search?query=4OK
-found dashboard uid=fourok-local-runtime-logs, title="4OK Local Runtime Logs"
+GET /api/search?query=fourok
+found dashboard uid=fourok-local-runtime-logs, title="fourok Local Runtime Logs"
 ```
 
 The running local Grafana initially served the older provisioned dashboard with
@@ -640,7 +640,7 @@ Non-Grafana drilldown gaps:
 
 ## Local runtime rebuild/restart status
 
-Docker images were rebuilt from commit `7e79b9d` and the local pipeline/app services were restarted with `FOUR_OK_IMAGE_TAG=7e79b9d` after the app-service fix:
+Docker images were rebuilt from commit `7e79b9d` and the local pipeline/app services were restarted with `FOUROK_IMAGE_TAG=7e79b9d` after the app-service fix:
 
 ```bash
 docker compose --profile pipeline build dagster-code dagster-webserver dagster-daemon app
@@ -682,7 +682,7 @@ Scope: Stage 1 Grafana-first state review proof for local runtime health/log/met
 ### Commands
 
 - `curl -sS http://127.0.0.1:3000/api/health`
-- `curl -sS 'http://127.0.0.1:3000/api/search?query=4OK'`
+- `curl -sS 'http://127.0.0.1:3000/api/search?query=fourok'`
 - `curl -sS 'http://127.0.0.1:3000/api/dashboards/uid/fourok-local-runtime-logs'`
 - `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=fourok_source_records_total'`
 - `curl -sS 'http://127.0.0.1:3000/api/datasources/proxy/uid/prometheus/api/v1/query?query=fourok_raw_landed_records_total'`
@@ -753,7 +753,7 @@ curl -sS -X POST http://127.0.0.1:3001/graphql -H 'content-type: application/jso
 Command (run against live runtime DB):
 
 ```bash
-FOUR_OK_DATABASE_URL='postgresql+psycopg://fourok:local-check@127.0.0.1:5432/fourok' \
+FOUROK_DATABASE_URL='postgresql+psycopg://fourok:local-check@127.0.0.1:5432/fourok' \
 uv run --group pipeline dagster asset materialize -f deploy/dagster/definitions.py \
   --select fourok_canonical_objects_and_entity_links,fourok_retrieval_records,fourok_operator_dashboard,fourok_audit_metadata
 ```
@@ -830,7 +830,7 @@ latest_failed_rows sample includes job_id=a64224ea-aae0-4c8d-92e0-4ece911d4755, 
 Runtime command:
 
 ```bash
-FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok \
+FOUROK_DATABASE_URL=postgresql+psycopg://fourok:***@127.0.0.1:5432/fourok \
 uv run fourok live-retrieval-case-set \
   --cases fixtures/retrieval_eval/live_retrieval_case_set.json \
   --case-limit 5 \
@@ -898,7 +898,7 @@ Final restart/rebuild proof:
 uv run fourok-dev app-up
 uv run fourok-dev pipeline-up
 uv run fourok-dev observability-up
-FOUR_OK_IMAGE_TAG=$(git rev-parse --short HEAD) \
+FOUROK_IMAGE_TAG=$(git rev-parse --short HEAD) \
   docker compose --profile observability up --build --force-recreate -d \
   fourok-metrics-exporter promtail
 uv run fourok stage1-acceptance --json \
@@ -937,7 +937,7 @@ Covered current runtime refs:
 - Slack: `slack:message:C0ASNARACMT:1781089083.931829`
 - Google Drive: `google_drive:file:1OxsH8MoJYVtudzlNFfJvRUSoXajH0urTBcn46HP_qXw`
 - OpenViking: `openviking:conversation:b63d391a-27fa-4165-a5fe-4da648b01409-topic-1781095303.717729:session:b63d391a-27fa-4165-a5fe-4da648b01409-topic-1781095303.717729:message:9b12b014`
-- Linear: `linear:issue:4OK-697`
+- Linear: `linear:issue:fourok-697`
 - Twenty: `twenty:person:8878cbe4-761c-4183-9817-15e4539e3c8a`
 
 Focused regression proof:

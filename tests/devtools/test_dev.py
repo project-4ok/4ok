@@ -32,7 +32,7 @@ def test_pipeline_up_loads_project_dotenv_and_sets_stable_local_defaults(
     assert step.env["POSTGRES_PASSWORD"] == "local-check"
     assert step.env["DAGSTER_POSTGRES_PASSWORD"] == "local-check"
     assert (
-        step.env["FOUR_OK_DATABASE_URL"]
+        step.env["FOUROK_DATABASE_URL"]
         == "postgresql+psycopg://fourok:local-check@postgres:5432/fourok"
     )
     assert step.env["LINEAR_API_KEY"] == "linear-token"
@@ -61,7 +61,7 @@ def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkey
         "app",
     )
     assert core_step.command == app_step.command
-    assert app_step.env["FOUR_OK_IMAGE_TAG"] == "abc1234"
+    assert app_step.env["FOUROK_IMAGE_TAG"] == "abc1234"
     assert app_step.env["POSTGRES_PASSWORD"] == "local-check"
     assert app_step.env["COMPOSE_PROJECT_NAME"] == "fourok"
     assert observability_step.command == (
@@ -73,7 +73,7 @@ def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkey
         "-d",
         "observability",
     )
-    assert observability_step.env["FOUR_OK_DATABASE_URL"] == (
+    assert observability_step.env["FOUROK_DATABASE_URL"] == (
         "postgresql+psycopg://fourok:local-check@postgres:5432/fourok"
     )
 
@@ -104,14 +104,14 @@ def test_dev_step_dry_run_redacts_secret_env_values() -> None:
             "LINEAR_API_KEY": "linear-value",
             "SLACK_BOT_TOKEN": "secret-value",
             "POSTGRES_PASSWORD": "local-check",
-            "FOUR_OK_DATABASE_URL": "postgresql+psycopg://fourok:local-check@postgres:5432/fourok",
+            "FOUROK_DATABASE_URL": "postgresql+psycopg://fourok:local-check@postgres:5432/fourok",
         },
     )
 
     data = step.to_dict()
 
     assert data["env"] == {
-        "FOUR_OK_DATABASE_URL": "[REDACTED]",
+        "FOUROK_DATABASE_URL": "[REDACTED]",
         "LINEAR_API_KEY": "[REDACTED]",
         "SLACK_BOT_TOKEN": "[REDACTED]",
         "POSTGRES_PASSWORD": "[REDACTED]",

@@ -96,7 +96,7 @@ def test_retrieve_prints_llm_ready_augmentation_block(capsys, monkeypatch, tmp_p
     main()
 
     output = capsys.readouterr().out
-    assert output.startswith("4OK RETRIEVAL FOR AGENTS\n")
+    assert output.startswith("fourok RETRIEVAL FOR AGENTS\n")
     assert "How to use this: Answer from these evidence cards only when relevant." in output
     assert "cancellation invoice follow-up" not in output
     assert "[1] Slack-Live message — #customer-success" in output
@@ -130,7 +130,7 @@ def test_retrieve_json_returns_stable_machine_shape_without_echoing_query(
     output = json.loads(capsys.readouterr().out)
     assert "query" not in output
     assert output["status"] == "ok"
-    assert output["context_block"].startswith("4OK RETRIEVAL FOR AGENTS\n")
+    assert output["context_block"].startswith("fourok RETRIEVAL FOR AGENTS\n")
     assert output["results"][0] == {
         "source_ref": "slack:message:cancellation",
         "source_system": "slack-live",
@@ -196,7 +196,7 @@ def test_retrieve_vector_snippet_does_not_repeat_title(capsys, monkeypatch, tmp_
                 record_type="work_item",
                 title="linkedin outreach 10 inmail exact icp",
                 body=(
-                    "linkedin outreach 10 inmail exact icp 4OK-385 "
+                    "linkedin outreach 10 inmail exact icp fourok-385 "
                     "Jespers booking link and ICP outreach draft."
                 ),
                 occurred_at="2026-05-11T09:12:49.085Z",
@@ -223,7 +223,7 @@ def test_retrieve_vector_snippet_does_not_repeat_title(capsys, monkeypatch, tmp_
     repeated_title = "linkedin outreach 10 inmail exact icp\nlinkedin outreach 10 inmail exact icp"
     assert repeated_title not in output
     assert "[1] Linear work item — linkedin outreach 10 inmail exact icp" in output
-    assert "evidence: 4OK-385 Jespers booking link" in output
+    assert "evidence: fourok-385 Jespers booking link" in output
 
 
 def test_retrieve_centers_evidence_snippet_on_query_terms(
@@ -243,7 +243,7 @@ def test_retrieve_centers_evidence_snippet_on_query_terms(
                     "Developer Advocate. "
                     + "generic CRM metadata without task evidence. " * 18
                     + "The useful evidence says the runtime deployment decision "
-                    "belongs with the 4OK OpenClaw rollout notes."
+                    "belongs with the fourok OpenClaw rollout notes."
                 ),
                 occurred_at="2026-06-15T12:00:00+00:00",
             )
@@ -266,7 +266,7 @@ def test_retrieve_centers_evidence_snippet_on_query_terms(
 
     output = capsys.readouterr().out
     assert "evidence: Developer Advocate." not in output
-    assert "runtime deployment decision belongs with the 4OK OpenClaw rollout notes" in output
+    assert "runtime deployment decision belongs with the fourok OpenClaw rollout notes" in output
 
 
 def test_retrieve_no_results_is_successful_augmentation_block(

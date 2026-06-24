@@ -28,7 +28,7 @@ def add_search_commands(subparsers) -> None:
     )
     search_parser.add_argument(
         "--database-url",
-        default=os.environ.get("FOUR_OK_DATABASE_URL"),
+        default=os.environ.get("FOUROK_DATABASE_URL"),
         help="SQLAlchemy database URL. Defaults to SQLite --state when unset.",
     )
 
@@ -41,7 +41,7 @@ def add_search_commands(subparsers) -> None:
     search_state_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     search_state_parser.add_argument(
         "--database-url",
-        default=os.environ.get("FOUR_OK_DATABASE_URL"),
+        default=os.environ.get("FOUROK_DATABASE_URL"),
         help="SQLAlchemy database URL. Defaults to SQLite --state when unset.",
     )
     search_state_parser.add_argument("--human-id", default="local-human")
@@ -58,7 +58,7 @@ def add_search_commands(subparsers) -> None:
     retrieve_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     retrieve_parser.add_argument(
         "--database-url",
-        default=os.environ.get("FOUR_OK_DATABASE_URL"),
+        default=os.environ.get("FOUROK_DATABASE_URL"),
         help="SQLAlchemy database URL. Defaults to SQLite --state when unset.",
     )
     retrieve_parser.add_argument(
@@ -81,7 +81,7 @@ def add_search_commands(subparsers) -> None:
     ask_parser.add_argument("--emails", type=Path, default=Path("fixtures/emails"))
     ask_parser.add_argument("--limit", type=int, default=5)
     ask_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    ask_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    ask_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
     ask_parser.add_argument("--human-id", default="local-human")
     ask_parser.add_argument("--agent-id", default="local-agent")
     ask_parser.add_argument("--role", action="append", default=["operator"])
@@ -102,7 +102,7 @@ def add_search_commands(subparsers) -> None:
     )
     live_retrieval_case_set_parser.add_argument(
         "--database-url",
-        default=os.environ.get("FOUR_OK_DATABASE_URL"),
+        default=os.environ.get("FOUROK_DATABASE_URL"),
     )
     live_retrieval_case_set_parser.add_argument("--seed-fixtures", action="store_true")
     live_retrieval_case_set_parser.add_argument("--case-limit", type=int, default=5)

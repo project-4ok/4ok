@@ -13,7 +13,7 @@ usage() {
   cat <<EOF
 Usage: $(basename "$0") [--print-urls] [--] [extra ssh args...]
 
-Open SSH tunnels to the 4OK dev gateway observability UIs.
+Open SSH tunnels to the fourok dev gateway observability UIs.
 
 Defaults:
   Grafana: http://127.0.0.1:${LOCAL_GRAFANA_PORT} -> ${GATEWAY_SSH_TARGET}:${REMOTE_GRAFANA_HOST}:${REMOTE_GRAFANA_PORT}
@@ -65,7 +65,7 @@ if [[ "${print_urls}" == "true" ]]; then
   exit 0
 fi
 
-printf 'Opening 4OK dev observability tunnel to %s\n' "${GATEWAY_SSH_TARGET}" >&2
+printf 'Opening fourok dev observability tunnel to %s\n' "${GATEWAY_SSH_TARGET}" >&2
 printf 'Grafana: http://127.0.0.1:%s/d/fourok-local-runtime-logs/fourok-local-runtime-logs\n' "${LOCAL_GRAFANA_PORT}" >&2
 printf 'Dagster: http://127.0.0.1:%s\n' "${LOCAL_DAGSTER_PORT}" >&2
 printf 'Press Ctrl-C to close the tunnel.\n' >&2

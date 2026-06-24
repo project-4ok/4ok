@@ -353,7 +353,9 @@ def test_cli_run_imports_emits_safe_runtime_span(capsys, monkeypatch, tmp_path: 
         def start_as_current_span(self, name: str) -> FakeSpan:
             return FakeSpan(name)
 
-    monkeypatch.setattr("fourok.cli_parts.import_helpers.trace.get_tracer", lambda _name: FakeTracer())
+    monkeypatch.setattr(
+        "fourok.cli_parts.import_helpers.trace.get_tracer", lambda _name: FakeTracer()
+    )
     monkeypatch.setattr(
         "sys.argv",
         [

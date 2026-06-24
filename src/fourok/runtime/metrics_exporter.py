@@ -23,10 +23,10 @@ from fourok.runtime.retrieval_metrics import (
 Metric = tuple[str, dict[str, str], float]
 
 DAGSTER_JOB = "fourok_hourly_live_backfill"
-FOUR_OK_DAGSTER_LOCATION = "fourok_pipeline"
-FOUR_OK_DAGSTER_PIPELINE = "fourok_hourly_live_backfill"
-FOUR_OK_DAGSTER_SCHEDULE = "fourok_hourly_live_backfill_schedule"
-FOUR_OK_DAGSTER_SENSOR = "fourok_webhook_backlog_sensor"
+FOUROK_DAGSTER_LOCATION = "fourok_pipeline"
+FOUROK_DAGSTER_PIPELINE = "fourok_hourly_live_backfill"
+FOUROK_DAGSTER_SCHEDULE = "fourok_hourly_live_backfill_schedule"
+FOUROK_DAGSTER_SENSOR = "fourok_webhook_backlog_sensor"
 UPDATED_OR_OCCURRED_EXPR = "coalesce(nullif(updated_at, ''), nullif(occurred_at, ''))"
 
 
@@ -48,7 +48,9 @@ def collect_runtime_metrics(
 
 
 def render_prometheus_metrics(metrics: Sequence[Metric]) -> str:
-    lines = ["# HELP fourok_runtime_exporter_up Whether the 4OK runtime exporter rendered metrics."]
+    lines = [
+        "# HELP fourok_runtime_exporter_up Whether the fourok runtime exporter rendered metrics."
+    ]
     lines.append("# TYPE fourok_runtime_exporter_up gauge")
     lines.append("fourok_runtime_exporter_up 1")
     for name, labels, value in metrics:
@@ -69,18 +71,22 @@ def metrics_response(
 
 def main(argv: Sequence[str] | None = None) -> None:
     parser = argparse.ArgumentParser(prog="python -m fourok.runtime.metrics_exporter")
-    parser.add_argument("--host", default=os.environ.get("FOUR_OK_METRICS_HOST", "0.0.0.0"))
-    parser.add_argument("--port", type=int, default=int(os.environ.get("FOUR_OK_METRICS_PORT", "9108")))
+    parser.add_argument("--host", default=os.environ.get("FOUROK_METRICS_HOST", "0.0.0.0"))
+    parser.add_argument(
+        "--port", type=int, default=int(os.environ.get("FOUROK_METRICS_PORT", "9108"))
+    )
     parser.add_argument(
         "--dagster-url",
-        default=os.environ.get("FOUR_OK_DAGSTER_GRAPHQL_URL", "http://127.0.0.1:3001/graphql"),
+        default=os.environ.get("FOUROK_DAGSTER_GRAPHQL_URL", "http://127.0.0.1:3001/graphql"),
     )
     parser.add_argument(
         "--state",
         type=Path,
-        default=Path(os.environ.get("FOUR_OK_STATE_PATH", "/app/.local/dagster/fourok-state.sqlite")),
+        default=Path(
+            os.environ.get("FOUROK_STATE_PATH", "/app/.local/dagster/fourok-state.sqlite")
+        ),
     )
-    parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL", ""))
+    parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL", ""))
     args = parser.parse_args(argv)
 
     def app(environ, start_response):
@@ -96,7 +102,7 @@ def main(argv: Sequence[str] | None = None) -> None:
             status = "200 OK"
         except Exception as exc:  # pragma: no cover - defensive HTTP surface
             body = (
-                "# HELP fourok_runtime_exporter_up Whether the 4OK runtime exporter "
+                "# HELP fourok_runtime_exporter_up Whether the fourok runtime exporter "
                 "rendered metrics.\n"
                 "# TYPE fourok_runtime_exporter_up gauge\n"
                 "fourok_runtime_exporter_up 0\n"
@@ -287,7 +293,11 @@ def _state_metrics(state_path: Path) -> list[Metric]:
                 "select status, count(*) as count from retrieval_records group by status"
             ):
                 metrics.append(
-                    ("fourok_retrieval_records_total", {"status": row["status"]}, float(row["count"]))
+                    (
+                        "fourok_retrieval_records_total",
+                        {"status": row["status"]},
+                        float(row["count"]),
+                    )
                 )
             metrics.extend(embedding_coverage_metrics_sqlite(connection))
         if _has_table(connection, "retrieval_query_events"):
@@ -621,20 +631,20 @@ def _discover_fourok_repository(payload: dict[str, object]) -> dict[str, object]
         if not isinstance(node, dict):
             return None
         location = node.get("location")
-        if isinstance(location, dict) and location.get("name") == FOUR_OK_DAGSTER_LOCATION:
+        if isinstance(location, dict) and location.get("name") == FOUROK_DAGSTER_LOCATION:
             return node
         pipelines = [
             item.get("name") for item in node.get("pipelines", []) if isinstance(item, dict)
         ]
-        if FOUR_OK_DAGSTER_PIPELINE in pipelines:
+        if FOUROK_DAGSTER_PIPELINE in pipelines:
             return node
         schedules = [
             item.get("name") for item in node.get("schedules", []) if isinstance(item, dict)
         ]
-        if FOUR_OK_DAGSTER_SCHEDULE in schedules:
+        if FOUROK_DAGSTER_SCHEDULE in schedules:
             return node
         sensors = [item.get("name") for item in node.get("sensors", []) if isinstance(item, dict)]
-        if FOUR_OK_DAGSTER_SENSOR in sensors:
+        if FOUROK_DAGSTER_SENSOR in sensors:
             return node
         return None
 

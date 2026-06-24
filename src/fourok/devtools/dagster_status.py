@@ -21,7 +21,9 @@ def dagster_status_report(
     if repositories.get("__typename") != "RepositoryConnection":
         return {"status": "error", "repository_status": "error", "raw": repositories}
     repository_nodes = repositories.get("nodes", [])
-    repo = _discover_fourok_repository(repository_nodes if isinstance(repository_nodes, list) else [])
+    repo = _discover_fourok_repository(
+        repository_nodes if isinstance(repository_nodes, list) else []
+    )
     runs_data = graphql_call(
         dagster_url,
         _DAGSTER_RUNS_QUERY,

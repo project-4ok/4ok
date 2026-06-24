@@ -65,7 +65,9 @@ def test_search_context_emits_safe_search_and_evidence_span(monkeypatch) -> None
             )
         ]
     )
-    monkeypatch.setattr("fourok.governance.context.trace.get_tracer", lambda _name: FakeTracer(spans))
+    monkeypatch.setattr(
+        "fourok.governance.context.trace.get_tracer", lambda _name: FakeTracer(spans)
+    )
 
     response = context.search_context("Robin renewal", limit=1)
 
@@ -221,7 +223,9 @@ def test_document_extraction_emits_safe_failure_span(monkeypatch, tmp_path: Path
 def test_source_record_ingest_emits_safe_import_span(monkeypatch) -> None:
     spans: list[dict[str, object]] = []
     context = GovernedContext()
-    monkeypatch.setattr("fourok.governance.context.trace.get_tracer", lambda _name: FakeTracer(spans))
+    monkeypatch.setattr(
+        "fourok.governance.context.trace.get_tracer", lambda _name: FakeTracer(spans)
+    )
 
     context.ingest_source_records(
         [
@@ -394,7 +398,9 @@ def test_dashboard_emits_safe_status_span(monkeypatch, tmp_path: Path) -> None:
             payload={"source_ref": "linear:issue:OPS-1"},
         ),
     )
-    monkeypatch.setattr("fourok.runtime.dashboard.trace.get_tracer", lambda _name: FakeTracer(spans))
+    monkeypatch.setattr(
+        "fourok.runtime.dashboard.trace.get_tracer", lambda _name: FakeTracer(spans)
+    )
 
     report = operator_dashboard(state)
 

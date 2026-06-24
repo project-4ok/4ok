@@ -1,4 +1,4 @@
-# 4OK live ingestion, retrieval, and deployment verification evidence
+# fourok live ingestion, retrieval, and deployment verification evidence
 
 Report started: 2026-06-09T19:19:26+02:00
 Overall status: NOT COMPLETE — evidence collection in progress.
@@ -10,12 +10,12 @@ Status: IN PROGRESS
 ```text
 timestamp=2026-06-09T19:19:26+02:00
 
---- 4OK git status ---
+--- fourok git status ---
 ## main...origin/main [ahead 17]
 ?? .hermes/
 ?? reports/
 
---- 4OK latest commits ---
+--- fourok latest commits ---
 54afb5b (HEAD -> main) fix: restore sources when permission snapshots recover
 1f4dc7b fix: make permissionless drive imports operator searchable
 8485f96 (codex/retrieval-live-verification) fix: preserve google drive domain permissions
@@ -303,11 +303,11 @@ twenty:person:115f3e64-b5c9-4b9d-9f48-174acb1b8047	--4-D2 (8)	[]	--4-D2 (8) code
 twenty:person:2357d596-a042-48ff-a3b6-0deaaa63599c	--4-Scissors (25)	[]	--4-Scissors (25) code.berlin_3934313230373536353639@resource.calendar.google.com
 twenty:person:11434783-bb4b-4864-b11f-ac329b5e2ef6	CODE-1-B Present	[]	CODE-1-B Present c_1880c8auig7m6ie4l3p4j749vu83u@resource.calendar.google.com
 -- linear samples
-linear:issue:4OK-640	qontext meeting voice record + transcript. i didnt go over the auto transcript. ive cut the auido for only important parts. its also in our crm	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	4OK-640 qontext meeting voice record + transcript. i didnt go over the auto transcript. ive cut the auido for only important parts. its also in our crm So we're
-linear:issue:4OK-672	frank meeting prep	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	4OK-672 frank meeting prep find with whom frank can meet us  | Person / role / connection | Company / headcount / industry | What they do, very simply | What we
-linear:issue:4OK-385	linkedin outreach 10 inmail exact icp	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	4OK-385 linkedin outreach 10 inmail exact icp jespers booking link: [https://fourok.fillout.com/kurzes-forschungsgesprach-zu-vertriebsprozessen](<https://fourok
-linear:issue:4OK-373	Explore n8n as OpenClaw workflow automation layer	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	4OK-373 Explore n8n as OpenClaw workflow automation layer Short take: *n8n is probably the best first bet* for OpenClaw workflow automation, with *Activepieces
-linear:comment:a001cf67-a8ac-4a25-bfec-c3310798247a	Comment on 4OK-405	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	4OK-405 Spike: evaluate Agent Vault for Baby Jules/n8n credential boundary ## Spike result: Agent Vault for Baby Jules / n8n credential boundary  **Verdict: PAR
+linear:issue:fourok-640	qontext meeting voice record + transcript. i didnt go over the auto transcript. ive cut the auido for only important parts. its also in our crm	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	fourok-640 qontext meeting voice record + transcript. i didnt go over the auto transcript. ive cut the auido for only important parts. its also in our crm So we're
+linear:issue:fourok-672	frank meeting prep	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	fourok-672 frank meeting prep find with whom frank can meet us  | Person / role / connection | Company / headcount / industry | What they do, very simply | What we
+linear:issue:fourok-385	linkedin outreach 10 inmail exact icp	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	fourok-385 linkedin outreach 10 inmail exact icp jespers booking link: [https://fourok.fillout.com/kurzes-forschungsgesprach-zu-vertriebsprozessen](<https://fourok
+linear:issue:fourok-373	Explore n8n as OpenClaw workflow automation layer	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	fourok-373 Explore n8n as OpenClaw workflow automation layer Short take: *n8n is probably the best first bet* for OpenClaw workflow automation, with *Activepieces
+linear:comment:a001cf67-a8ac-4a25-bfec-c3310798247a	Comment on fourok-405	["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]	fourok-405 Spike: evaluate Agent Vault for Baby Jules/n8n credential boundary ## Spike result: Agent Vault for Baby Jules / n8n credential boundary  **Verdict: PAR
 -- slack samples
 slack:channel:C0APCSD1118	#general	["slack:channel:C0APCSD1118"]	general This channel won't be used for now. Share announcements and updates about company news, upcoming events, or teammates who deserve some kudos. ⭐
 slack:channel:C0AUGURHABA	#tech-support	["slack:channel:C0AUGURHABA"]	tech-support You can also just add tickets here <https://linear.app/fourok-tech/project/jules-improvements-and-bugs-fd8ae325e94d/issues>
@@ -1735,13 +1735,13 @@ prod:
 ## Gate status summary as of finalization attempt
 ```text
 timestamp=2026-06-09T19:27:15+02:00
-Gate 1 baseline/runtime health: PASS — 4OK runtime DB reachable, relevant containers healthy, 4OK/infra git state recorded.
+Gate 1 baseline/runtime health: PASS — fourok runtime DB reachable, relevant containers healthy, fourok/infra git state recorded.
 Gate 2 live ingestion: PASS — run-live-ingestion --source all succeeded; connector states fresh; current rows/retrieval/lifecycle/permission/raw counts recorded.
 Gate 3 verification tooling: PASS — verifier accepts idempotent current rows, rejects decreases; targeted regression tests passed; google_drive --verify-live-db succeeded.
 Gate 4 retrieval proof: PASS — two Twenty, two Linear, Slack denied+allowed role behavior, and two Google Drive searches passed in summary matrix.
-Gate 5 deployment/infra proof: NOT COMPLETE — infra repo is clean and recent existing workflows are green, but no new infra deployment change was made/verified for this 4OK goal; runtime lineage script could not complete via gh api workflow lookup. Existing green CI predates this 4OK verifier commit and does not prove a new deployment.
-Gate 6 final report: NOT COMPLETE — report committed in 4OK commit below, but deployment gate remains unverified.
-4OK evidence/verifier commit: 9a5e091 fix: accept idempotent live DB verification
+Gate 5 deployment/infra proof: NOT COMPLETE — infra repo is clean and recent existing workflows are green, but no new infra deployment change was made/verified for this fourok goal; runtime lineage script could not complete via gh api workflow lookup. Existing green CI predates this fourok verifier commit and does not prove a new deployment.
+Gate 6 final report: NOT COMPLETE — report committed in fourok commit below, but deployment gate remains unverified.
+fourok evidence/verifier commit: 9a5e091 fix: accept idempotent live DB verification
 ```
 
 ## Scope update — deployment intentionally out of scope

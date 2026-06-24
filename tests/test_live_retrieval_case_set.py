@@ -165,7 +165,7 @@ def test_live_retrieval_case_set_uses_runtime_database_when_configured(
         + load_twenty_source_records(TWENTY_FIXTURE)
     )
 
-    monkeypatch.setenv("FOUR_OK_DATABASE_URL", database_url)
+    monkeypatch.setenv("FOUROK_DATABASE_URL", database_url)
     report_path = tmp_path / "report-runtime.md"
     monkeypatch.setattr(
         "sys.argv",

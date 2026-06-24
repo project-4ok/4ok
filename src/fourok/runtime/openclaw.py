@@ -80,7 +80,7 @@ def call_openclaw_tool(
     arguments: dict[str, object],
 ) -> dict[str, object]:
     if name != "fourok_search_context":
-        raise ValueError(f"unsupported OpenClaw 4OK tool: {name}")
+        raise ValueError(f"unsupported OpenClaw fourok tool: {name}")
     query = arguments.get("query")
     if not isinstance(query, str) or not query.strip():
         raise ValueError("fourok_search_context.query must be a non-empty string")

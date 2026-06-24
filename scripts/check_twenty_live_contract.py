@@ -34,7 +34,7 @@ def check_twenty_live_contract(artifact_dir: Path) -> dict[str, Any]:
     stderr_path = artifact_dir / "meltano.stderr.log"
 
     env = effective_env()
-    env["TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR"] = str(landing_dir)
+    env["TARGET_FOUROK_RAW_JSONL_LANDING_DIR"] = str(landing_dir)
     env.setdefault("TWENTY_LIMIT", "25")
 
     with stderr_path.open("w", encoding="utf-8") as stderr:
@@ -80,8 +80,6 @@ def check_twenty_live_contract(artifact_dir: Path) -> dict[str, Any]:
         "state_keys": sorted(state.keys()) if isinstance(state, dict) else [],
         "streams": sorted(path.stem for path in landing_dir.glob("*.jsonl")),
     }
-
-
 
 
 if __name__ == "__main__":

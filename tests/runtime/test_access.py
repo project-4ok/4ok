@@ -204,8 +204,8 @@ def test_access_boundary_loads_rendered_compose_config_with_safe_env(monkeypatch
         "--format",
         "json",
     ]
-    assert captured["env"]["FOUR_OK_IMAGE_TAG"] == "access-smoke"
-    assert captured["env"]["FOUR_OK_DATABASE_URL"] == (
+    assert captured["env"]["FOUROK_IMAGE_TAG"] == "access-smoke"
+    assert captured["env"]["FOUROK_DATABASE_URL"] == (
         "postgresql+psycopg://fourok:access-smoke@postgres:5432/fourok"
     )
     assert captured["env"]["POSTGRES_PASSWORD"] == "access-smoke"

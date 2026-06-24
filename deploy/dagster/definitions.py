@@ -611,8 +611,8 @@ fourok_hourly_live_backfill_schedule = ScheduleDefinition(
 def fourok_webhook_backlog_sensor():
     state = _governed_state(
         FourokRuntimeResource(
-            state_path=os.environ.get("FOUR_OK_STATE_PATH", ".local/dagster/fourok-state.sqlite"),
-            database_url=os.environ.get("FOUR_OK_DATABASE_URL", ""),
+            state_path=os.environ.get("FOUROK_STATE_PATH", ".local/dagster/fourok-state.sqlite"),
+            database_url=os.environ.get("FOUROK_DATABASE_URL", ""),
         )
     )
     pending_events = [
@@ -681,7 +681,7 @@ def _meltano_environment(*, landing_dir: Path, secret_env: dict[str, str]) -> di
         {
             **os.environ,
             **_singer_secret_aliases(secret_env),
-            "TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR": str(landing_dir),
+            "TARGET_FOUROK_RAW_JSONL_LANDING_DIR": str(landing_dir),
         }
     )
 
@@ -693,7 +693,7 @@ def _singer_secret_aliases(secret_env: dict[str, str]) -> dict[str, str]:
     if "LINEAR_API_KEY" not in env:
         for alias in (
             "TAP_LINEAR_API_KEY",
-            "FOUR_OK_LINEAR_API_KEY",
+            "FOUROK_LINEAR_API_KEY",
             "LINEAR_API_TOKEN",
             "LINEAR_TOKEN",
             "LINEAR_PAT",

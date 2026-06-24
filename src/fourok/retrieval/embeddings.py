@@ -49,7 +49,7 @@ def embed_text(text: str, *, dimensions: int | None = None) -> list[float]:
 
 
 def embedding_provider() -> str:
-    configured = os.environ.get("FOUR_OK_EMBEDDING_PROVIDER")
+    configured = os.environ.get("FOUROK_EMBEDDING_PROVIDER")
     if configured:
         return configured.strip().casefold()
     if os.environ.get("OPENAI_API_KEY"):
@@ -58,7 +58,7 @@ def embedding_provider() -> str:
 
 
 def embedding_dimensions() -> int:
-    configured = os.environ.get("FOUR_OK_EMBEDDING_DIMENSIONS")
+    configured = os.environ.get("FOUROK_EMBEDDING_DIMENSIONS")
     if configured:
         return int(configured)
     if embedding_provider() == "openai":
@@ -93,11 +93,9 @@ def _hash_embed_text(text: str, *, dimensions: int) -> list[float]:
 def _openai_embed_text(text: str, *, dimensions: int) -> list[float]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
-        raise RuntimeError("OPENAI_API_KEY is required when FOUR_OK_EMBEDDING_PROVIDER=openai")
-    model = os.environ.get("FOUR_OK_OPENAI_EMBEDDING_MODEL", OPENAI_EMBEDDING_MODEL)
-    endpoint = os.environ.get(
-        "FOUR_OK_OPENAI_EMBEDDING_URL", "https://api.openai.com/v1/embeddings"
-    )
+        raise RuntimeError("OPENAI_API_KEY is required when FOUROK_EMBEDDING_PROVIDER=openai")
+    model = os.environ.get("FOUROK_OPENAI_EMBEDDING_MODEL", OPENAI_EMBEDDING_MODEL)
+    endpoint = os.environ.get("FOUROK_OPENAI_EMBEDDING_URL", "https://api.openai.com/v1/embeddings")
     payload = {
         "model": model,
         "input": text,

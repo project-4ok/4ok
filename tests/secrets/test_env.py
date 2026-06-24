@@ -15,7 +15,7 @@ def test_parse_dotenv_export_lines_supports_export_quotes_and_comments() -> None
     values = parse_dotenv_export_lines(
         [
             'export TAP_GMAIL_USER_ID="pilot@example.com"',
-            "TAP_GMAIL_MESSAGES_Q='newer_than:30d 4OK-PILOT'",
+            "TAP_GMAIL_MESSAGES_Q='newer_than:30d fourok-PILOT'",
             "# comment",
             "",
         ]
@@ -23,7 +23,7 @@ def test_parse_dotenv_export_lines_supports_export_quotes_and_comments() -> None
 
     assert values == {
         "TAP_GMAIL_USER_ID": "pilot@example.com",
-        "TAP_GMAIL_MESSAGES_Q": "newer_than:30d 4OK-PILOT",
+        "TAP_GMAIL_MESSAGES_Q": "newer_than:30d fourok-PILOT",
     }
 
 

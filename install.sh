@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-REPO_URL="${FOUR_OK_REPO_URL:-https://github.com/project-fourok/fourok.git}"
-INSTALL_DIR="${FOUR_OK_INSTALL_DIR:-$HOME/fourok}"
-START_STACK="${FOUR_OK_INSTALL_START_STACK:-1}"
+REPO_URL="${FOUROK_REPO_URL:-https://github.com/project-fourok/fourok.git}"
+INSTALL_DIR="${FOUROK_INSTALL_DIR:-$HOME/fourok}"
+START_STACK="${FOUROK_INSTALL_START_STACK:-1}"
 
 log() {
   printf '\n==> %s\n' "$*"
@@ -44,7 +44,7 @@ require_runtime() {
 }
 
 checkout_repo() {
-  if [ -z "${FOUR_OK_INSTALL_DIR:-}" ] && [ -f "pyproject.toml" ] && [ -d "src/fourok" ]; then
+  if [ -z "${FOUROK_INSTALL_DIR:-}" ] && [ -f "pyproject.toml" ] && [ -d "src/fourok" ]; then
     log "Using current fourok checkout: $(pwd)"
     return 0
   fi
@@ -90,8 +90,8 @@ EOF
 start_local_stack() {
   export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-local-check}"
   export DAGSTER_POSTGRES_PASSWORD="${DAGSTER_POSTGRES_PASSWORD:-local-check}"
-  export FOUR_OK_IMAGE_TAG="${FOUR_OK_IMAGE_TAG:-$(git rev-parse --short HEAD)}"
-  export FOUR_OK_DATABASE_URL="${FOUR_OK_DATABASE_URL:-postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok}"
+  export FOUROK_IMAGE_TAG="${FOUROK_IMAGE_TAG:-$(git rev-parse --short HEAD)}"
+  export FOUROK_DATABASE_URL="${FOUROK_DATABASE_URL:-postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok}"
 
   docker compose \
     --profile observability \
@@ -138,7 +138,7 @@ main() {
   uv run fourok-dev compose-config >/dev/null
 
   if [ "$START_STACK" = "0" ]; then
-    log "Skipping container startup because FOUR_OK_INSTALL_START_STACK=0"
+    log "Skipping container startup because FOUROK_INSTALL_START_STACK=0"
   else
     log "Starting local runtime, observability, and pipeline containers"
     start_local_stack

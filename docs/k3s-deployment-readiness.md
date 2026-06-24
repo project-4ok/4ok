@@ -1,17 +1,17 @@
 # K3s Deployment Readiness
 
-Purpose: hand off the smallest practical 4OK runtime contract for future K3s
+Purpose: hand off the smallest practical fourok runtime contract for future K3s
 deployment through the fourok infrastructure repository. This is recon/prep, not a
 remote deployment instruction.
 
-Current recommendation: do not add 4OK Kubernetes manifests until the local
+Current recommendation: do not add fourok Kubernetes manifests until the local
 Docker Compose and Dagster runtime is promoted into a pinned image set and an
 infrastructure engineer confirms the target service graph in
 `/home/simon/Projects/project-fourok/fourok-infrastructure-prod`.
 
 ## Chosen Slice
 
-Create a 4OK-owned readiness runbook and checklist. This keeps product/runtime
+Create a fourok-owned readiness runbook and checklist. This keeps product/runtime
 facts with the application repo while treating the infrastructure repo as
 read-only deployment context.
 
@@ -27,7 +27,7 @@ already has:
   - `clusters/prod/customers/fourok/n8n`
 - external secret manager operator-based secret sync patterns
 
-## 4OK Runtime Surfaces
+## fourok Runtime Surfaces
 
 Application image:
 
@@ -56,7 +56,7 @@ Local proof topology:
 
 ## K3s Service Mapping
 
-Minimum useful K3s mapping for 4OK:
+Minimum useful K3s mapping for fourok:
 
 - `fourok-app`: Deployment or Job image that runs `fourok` commands.
 - `fourok-live-ingestion`: CronJob that runs `run-live-ingestion`.
@@ -73,7 +73,7 @@ Minimum useful K3s mapping for 4OK:
 Keep `concurrencyPolicy: Forbid` on CronJobs that mutate source state, imports,
 backups, or retention. The existing infra ETL CronJobs already use this pattern.
 
-Do not expose 4OK publicly in the first K3s cut. If an ingress is needed for
+Do not expose fourok publicly in the first K3s cut. If an ingress is needed for
 Dagster, make it private/admin-only and follow the infra repo's existing admin
 access pattern rather than adding a public Ingress.
 
@@ -81,8 +81,8 @@ access pattern rather than adding a public Ingress.
 
 Required non-secret or secret-backed environment variables:
 
-- `FOUR_OK_DATABASE_URL`
-- `FOUR_OK_CONFIG_PATH`
+- `FOUROK_DATABASE_URL`
+- `FOUROK_CONFIG_PATH`
 - `POSTGRES_PASSWORD` if PostgreSQL is provisioned by the same release path
 - `OTEL_EXPORTER_OTLP_ENDPOINT` when telemetry is enabled
 - `OTEL_SERVICE_NAME`
@@ -102,7 +102,7 @@ instead.
 
 ## Persistent State
 
-4OK needs persistent storage for:
+fourok needs persistent storage for:
 
 - PostgreSQL data, unless an external PostgreSQL service is used
 - `/var/lib/fourok/raw`
@@ -113,18 +113,18 @@ instead.
 
 The current infra repo has a Google Drive ETL PVC at
 `clusters/prod/customers/fourok/etl/pvc-etl-state-google-drive.yaml`. Treat that
-as a source-specific precedent, not as a 4OK database or raw-store volume.
+as a source-specific precedent, not as a fourok database or raw-store volume.
 
 ## Network Policy
 
 Expected first-pass NetworkPolicy posture:
 
-- default deny for 4OK namespaces
+- default deny for fourok namespaces
 - egress to DNS
 - egress to external secret manager API
 - egress to approved source APIs for enabled connectors
-- egress from 4OK to PostgreSQL
-- optional egress from 4OK to OTLP collector
+- egress from fourok to PostgreSQL
+- optional egress from fourok to OTLP collector
 - no public ingress for `fourok-app`
 - private/admin-only ingress for Dagster UI only if explicitly approved
 
@@ -144,12 +144,12 @@ Relevant infra pointers:
 
 Infrastructure engineer checklist:
 
-- confirm the external secret manager source path for 4OK runtime secrets
-- confirm whether 4OK shares an existing customer path or receives a dedicated
+- confirm the external secret manager source path for fourok runtime secrets
+- confirm whether fourok shares an existing customer path or receives a dedicated
   path
 - create the bootstrap Universal Auth Kubernetes Secret out-of-band
 - verify the external secret manager operator watches the target namespace
-- verify the `external secret managerSecret` object reconciles before enabling 4OK workloads
+- verify the `external secret managerSecret` object reconciles before enabling fourok workloads
 - validate secret availability by workload readiness/errors, not by printing
   values
 
@@ -164,9 +164,9 @@ fourok health
 Operator checks:
 
 ```bash
-fourok dashboard --database-url "$FOUR_OK_DATABASE_URL" --config "$FOUR_OK_CONFIG_PATH"
-fourok live-ingestion-status --database-url "$FOUR_OK_DATABASE_URL" --config "$FOUR_OK_CONFIG_PATH"
-fourok retention-status --database-url "$FOUR_OK_DATABASE_URL" --config "$FOUR_OK_CONFIG_PATH"
+fourok dashboard --database-url "$FOUROK_DATABASE_URL" --config "$FOUROK_CONFIG_PATH"
+fourok live-ingestion-status --database-url "$FOUROK_DATABASE_URL" --config "$FOUROK_CONFIG_PATH"
+fourok retention-status --database-url "$FOUROK_DATABASE_URL" --config "$FOUROK_CONFIG_PATH"
 ```
 
 Pipeline checks if Dagster is enabled:
@@ -176,7 +176,7 @@ dagster api grpc-health-check -p 4000
 dagster-daemon liveness-check
 ```
 
-Pre-deployment local proof should still be run in 4OK before the infra repo is
+Pre-deployment local proof should still be run in fourok before the infra repo is
 asked to deploy the workload:
 
 ```bash
@@ -188,9 +188,9 @@ uv run fourok-dev fast
 
 The first K3s rollout should be reversible by:
 
-- suspending 4OK CronJobs
-- scaling 4OK Deployments to zero
-- reverting the Flux commit that introduced or enabled 4OK resources
+- suspending fourok CronJobs
+- scaling fourok Deployments to zero
+- reverting the Flux commit that introduced or enabled fourok resources
 - preserving PostgreSQL, raw-store, backup, Dagster, and checkpoint PVCs
 - restoring PostgreSQL from a `postgres-backup` artifact if schema/data changes
   need rollback
@@ -200,22 +200,22 @@ connector checkpoints needs a separate retention/deletion decision.
 
 ## Infrastructure Engineer Checklist
 
-- [ ] Confirm the target namespace layout for 4OK in the infra repo.
-- [ ] Decide whether 4OK is a new customer workload group or part of existing
+- [ ] Confirm the target namespace layout for fourok in the infra repo.
+- [ ] Decide whether fourok is a new customer workload group or part of existing
       `clusters/prod/customers/fourok/etl`.
 - [ ] Confirm image registry, tag, and digest policy for `docker/app.Dockerfile`.
 - [ ] Confirm whether `docker/dagster.Dockerfile` is deployed in the first K3s
       cut or deferred.
 - [ ] Confirm PostgreSQL location: in-cluster StatefulSet, existing managed
       service, or external host.
-- [ ] Create 4OK config as a ConfigMap or secret-backed rendered file without
+- [ ] Create fourok config as a ConfigMap or secret-backed rendered file without
       embedding credentials.
-- [ ] Wire `external secret managerSecret` for 4OK runtime secrets.
+- [ ] Wire `external secret managerSecret` for fourok runtime secrets.
 - [ ] Add PVCs for `/var/lib/fourok/raw` and `/var/lib/fourok/backups`.
 - [ ] Add health probes using `fourok health`.
 - [ ] Add CronJobs for imports, backups, and retention with
       `concurrencyPolicy: Forbid`.
-- [ ] Keep all 4OK services private until an explicit ingress decision exists.
+- [ ] Keep all fourok services private until an explicit ingress decision exists.
 - [ ] Run `fourok dashboard`, `fourok live-ingestion-status`, and
       `fourok retention-status` after the first reconcile.
 - [ ] Record any unresolved external-service or retention risks in
@@ -225,10 +225,10 @@ connector checkpoints needs a separate retention/deletion decision.
 
 Open deployment questions:
 
-- final 4OK namespace and ownership boundary in the infra repo
+- final fourok namespace and ownership boundary in the infra repo
 - image publication path and immutable digest/tag convention
 - PostgreSQL deployment target and backup restore drill location
 - whether Dagster moves to K3s immediately or stays Compose/host-operated
-- exact external secret manager path and key names for the 4OK runtime
+- exact external secret manager path and key names for the fourok runtime
 - private operator access path for Dagster, if enabled
 - retention policy for PVC-backed raw stores and backups

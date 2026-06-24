@@ -15,7 +15,7 @@ for expected in \
   "CHECK_TARGET=ssh    run target checks on GATEWAY_SSH_TARGET over SSH" \
   "CHECK_TARGET=local  run target checks on this machine" \
   "STAGE1_RUNNER=auto    ssh -> docker, local -> host" \
-  "STAGE1_RUNNER=docker  run stage1 inside FOUR_OK_STAGE1_CONTAINER on the target" \
+  "STAGE1_RUNNER=docker  run stage1 inside FOUROK_STAGE1_CONTAINER on the target" \
   "STAGE1_RUNNER=host    run stage1 with LOCAL_STAGE1_COMMAND on the target shell" \
   "GATEWAY_SSH_TARGET=root@178.105.10.7" \
   "LOCAL_STAGE1_COMMAND='uv run fourok'" \

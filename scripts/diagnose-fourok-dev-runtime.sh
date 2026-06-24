@@ -5,14 +5,14 @@ CHECK_TARGET="${CHECK_TARGET:-ssh}"
 GATEWAY_SSH_TARGET="${GATEWAY_SSH_TARGET:-root@178.105.10.7}"
 DAGSTER_WEBSERVER_CONTAINER="${DAGSTER_WEBSERVER_CONTAINER:-openclaw-fourok-dagster-webserver-1}"
 DAGSTER_CODE_CONTAINER="${DAGSTER_CODE_CONTAINER:-openclaw-fourok-dagster-code-1}"
-FOUR_OK_APP_CONTAINER="${FOUR_OK_APP_CONTAINER:-openclaw-fourok-app-1}"
+FOUROK_APP_CONTAINER="${FOUROK_APP_CONTAINER:-openclaw-fourok-app-1}"
 CONNECTOR_SMOKE="${CONNECTOR_SMOKE:-true}"
 
 usage() {
   cat <<EOF
 Usage: $(basename "$0") [--json]
 
-Print detailed non-secret diagnostics for a 4OK/OpenClaw target.
+Print detailed non-secret diagnostics for a fourok/OpenClaw target.
 
 Target modes:
   CHECK_TARGET=ssh    run on GATEWAY_SSH_TARGET over SSH (default)
@@ -22,7 +22,7 @@ Environment overrides:
   GATEWAY_SSH_TARGET=root@178.105.10.7
   DAGSTER_WEBSERVER_CONTAINER=openclaw-fourok-dagster-webserver-1
   DAGSTER_CODE_CONTAINER=openclaw-fourok-dagster-code-1
-  FOUR_OK_APP_CONTAINER=openclaw-fourok-app-1
+  FOUROK_APP_CONTAINER=openclaw-fourok-app-1
   CONNECTOR_SMOKE=true
 EOF
 }
@@ -35,7 +35,7 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-python3 - "$CHECK_TARGET" "$GATEWAY_SSH_TARGET" "$DAGSTER_WEBSERVER_CONTAINER" "$DAGSTER_CODE_CONTAINER" "$FOUR_OK_APP_CONTAINER" "$CONNECTOR_SMOKE" <<'PY'
+python3 - "$CHECK_TARGET" "$GATEWAY_SSH_TARGET" "$DAGSTER_WEBSERVER_CONTAINER" "$DAGSTER_CODE_CONTAINER" "$FOUROK_APP_CONTAINER" "$CONNECTOR_SMOKE" <<'PY'
 from __future__ import annotations
 
 import json
@@ -113,7 +113,7 @@ if connector_smoke.lower() == "true":
         "twenty-live-to-raw",
     ]
     for job in jobs:
-        cmd = f"cd /app && TARGET_FOUR_OK_RAW_JSONL_LANDING_DIR=/app/.local/diagnostics-{job} /app/.venv/bin/meltano run {job}"
+        cmd = f"cd /app && TARGET_FOUROK_RAW_JSONL_LANDING_DIR=/app/.local/diagnostics-{job} /app/.venv/bin/meltano run {job}"
         p = docker_exec(code, cmd, 120)
         combined = "\n".join([p.stdout, p.stderr])
         interesting = [

@@ -8,7 +8,7 @@ Telegraphic style. Root rules only. Keep this file short, scannable, and project
 - Read relevant docs only; avoid broad context loading.
 - Verify dependency-backed behavior from upstream docs/source/types before relying on it.
 - Never print secrets.
-- Do not use in-repository worktrees. For orchestrated 4OK Codex implementation, use only project-adjacent worktrees such as `../fourok.worktrees/<task-slug>/`.
+- Do not use in-repository worktrees. For orchestrated fourok Codex implementation, use only project-adjacent worktrees such as `../fourok.worktrees/<task-slug>/`.
 - Do not use `/tmp` for project artifacts, datasets, state, or experiment outputs; use a project-local ignored scratch directory.
 - Use `.reference` only as a local, read-only research shelf for external repositories.
 - Never import code from `.reference`, copy files from it into the product, mount it
@@ -23,10 +23,10 @@ Telegraphic style. Root rules only. Keep this file short, scannable, and project
 acceptance criterion -> failing test/check -> smallest change -> refactor -> live/operator proof -> summarize
 ```
 
-- For non-trivial 4OK coding, Hermes may implement small/medium changes directly.
+- For non-trivial fourok coding, Hermes may implement small/medium changes directly.
 - Use Codex when 2-4 independent slices can run in parallel, or when one task is large enough to justify worktree/prompt/review overhead.
 - Spawn supervised Codex worker processes/sessions for large independent implementation; use Hermes subagents for parallel research/review.
-- Launch Codex workers with explicit model `gpt-5.3-codex-spark`; do not use fast mode/service-tier fast or the Codex default model for 4OK implementation work.
+- Launch Codex workers with explicit model `gpt-5.3-codex-spark`; do not use fast mode/service-tier fast or the Codex default model for fourok implementation work.
 - Codex worker prompts must include scope, TDD/proof command, commit policy, and a durable `.local/codex-runs/<slug>/` report path.
 - Keep adjacent Codex worktrees tidy: after integrating or rejecting a worker, remove its worktree/branch once evidence is preserved; before launching more than a few workers, run `git worktree list` and prune stale directories under `../fourok.worktrees/`.
 
@@ -83,7 +83,7 @@ If two agents need the same lane, shrink the slice or serialize. Schema/storage 
   3. live-data evidence when credentials/runtime access are expected to work.
 - Fixture or synthetic tests may prove edge cases, but they do not replace live
   connector/import/retrieval proof when the claim is about real local data.
-- For 4OK runtime work, prove the same surface a human or agent will use:
+- For fourok runtime work, prove the same surface a human or agent will use:
   Dagster, operator CLI/status, Grafana/Loki/Tempo/Prometheus, MCP tools, and
   permission allow/deny paths as applicable.
 - Keep acceptance data current. If a live case fails because expected source refs

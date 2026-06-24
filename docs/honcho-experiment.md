@@ -5,7 +5,7 @@ Status: historical/deferred experiment.
 Purpose: run the internal Linear + Slack-identity Honcho experiment using
 env/.env-backed source credentials and an externally supplied Honcho service.
 The project Docker Compose file no longer starts Honcho; active Compose is kept
-focused on the 4OK runtime.
+focused on the fourok runtime.
 
 This path is internal-only. It intentionally excludes governance, PII masking,
 tokenization, reveal policy, and Slack message ingestion.
@@ -37,13 +37,13 @@ confirmed from the runtime network.
 Validate Compose config:
 
 ```bash
-FOUR_OK_IMAGE_TAG=$(git rev-parse --short HEAD) \
+FOUROK_IMAGE_TAG=$(git rev-parse --short HEAD) \
 POSTGRES_PASSWORD=local-check \
-FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:local-check@postgres:5432/fourok \
+FOUROK_DATABASE_URL=postgresql+psycopg://fourok:local-check@postgres:5432/fourok \
 docker compose config >/dev/null
 ```
 
-Build the app image and start only the active 4OK dependencies:
+Build the app image and start only the active fourok dependencies:
 
 ```bash
 docker compose build app

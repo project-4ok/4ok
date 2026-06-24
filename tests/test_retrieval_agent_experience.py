@@ -30,7 +30,7 @@ def test_default_retrieval_block_is_agent_facing_and_citation_ready() -> None:
 
     block = render_augmentation_block(response)
 
-    assert block.startswith("4OK RETRIEVAL FOR AGENTS\n")
+    assert block.startswith("fourok RETRIEVAL FOR AGENTS\n")
     assert "How to use this:" in block
     assert "Answer from these evidence cards only when relevant" in block
     assert "[1] Slack message — Dev Jules auth E2E marker" in block
@@ -57,7 +57,7 @@ def test_default_reranker_demotes_tool_noise_and_boosts_current_work_items() -> 
             "permission_refs": (),
         },
         {
-            "source_ref": "linear:issue:4OK-84",
+            "source_ref": "linear:issue:fourok-84",
             "source_system": "linear",
             "record_type": "work_item",
             "title": "Align with Simon on priorities — what's really important right now",
@@ -74,10 +74,10 @@ def test_default_reranker_demotes_tool_noise_and_boosts_current_work_items() -> 
     ]
 
     ranked = RetrievalReranker(default_rerank_rules()).rerank(
-        rows, query="What are current 4OK priorities?"
+        rows, query="What are current fourok priorities?"
     )
 
-    assert ranked[0]["source_ref"] == "linear:issue:4OK-84"
+    assert ranked[0]["source_ref"] == "linear:issue:fourok-84"
     assert ranked[0]["rerank_score"] > ranked[1]["rerank_score"]
     assert "boost_linear_work_item_for_current_priority_query" in ranked[0]["rerank_reasons"]
     assert "penalize_openviking_tool_noise" in ranked[1]["rerank_reasons"]

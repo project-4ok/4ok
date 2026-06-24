@@ -22,7 +22,9 @@ def tool_schemas() -> list[dict[str, object]]:
     return [
         {
             "name": "search_fourok",
-            "description": "Search governed 4OK state and return evidence-pack fields for agents.",
+            "description": (
+                "Search governed fourok state and return evidence-pack fields for agents."
+            ),
             "input_schema": {
                 "type": "object",
                 "required": ["query"],
@@ -61,12 +63,13 @@ def tool_schemas() -> list[dict[str, object]]:
                     "database_url": {
                         "type": ["string", "null"],
                         "description": (
-                            "SQLAlchemy database URL. Defaults to FOUR_OK_DATABASE_URL or SQLite state."
+                            "SQLAlchemy database URL. Defaults to FOUROK_DATABASE_URL "
+                            "or SQLite state."
                         ),
                     },
                     "config": {
                         "type": ["string", "null"],
-                        "description": "Optional 4OK runtime TOML config path.",
+                        "description": "Optional fourok runtime TOML config path.",
                     },
                 },
             },
@@ -74,7 +77,7 @@ def tool_schemas() -> list[dict[str, object]]:
         {
             "name": "operator_status",
             "description": (
-                "Return local 4OK source/retrieval counts and simple freshness metadata."
+                "Return local fourok source/retrieval counts and simple freshness metadata."
             ),
             "input_schema": {
                 "type": "object",
@@ -88,12 +91,13 @@ def tool_schemas() -> list[dict[str, object]]:
                     "database_url": {
                         "type": ["string", "null"],
                         "description": (
-                            "SQLAlchemy database URL. Defaults to FOUR_OK_DATABASE_URL or SQLite state."
+                            "SQLAlchemy database URL. Defaults to FOUROK_DATABASE_URL "
+                            "or SQLite state."
                         ),
                     },
                     "config": {
                         "type": ["string", "null"],
-                        "description": "Optional 4OK runtime TOML config path.",
+                        "description": "Optional fourok runtime TOML config path.",
                     },
                 },
             },
@@ -223,11 +227,11 @@ def build_mcp_server():
         from mcp.server.fastmcp import FastMCP
     except ImportError as exc:  # pragma: no cover - exercised only without optional runtime dep.
         raise RuntimeError(
-            "The 4OK MCP server requires the Python MCP SDK. "
+            "The fourok MCP server requires the Python MCP SDK. "
             'Install project dependencies or run `uv add "mcp>=1.0"`.'
         ) from exc
 
-    mcp = FastMCP("4OK Retrieval")
+    mcp = FastMCP("fourok Retrieval")
 
     @mcp.tool(name="search_fourok")
     def search_fourok_tool(
@@ -240,7 +244,7 @@ def build_mcp_server():
         database_url: str | None = None,
         config: str | None = None,
     ) -> dict[str, object]:
-        """Search governed 4OK state and return evidence-pack fields for agents."""
+        """Search governed fourok state and return evidence-pack fields for agents."""
         return search_fourok(
             query=query,
             limit=limit,
@@ -258,7 +262,7 @@ def build_mcp_server():
         database_url: str | None = None,
         config: str | None = None,
     ) -> dict[str, object]:
-        """Return local 4OK source/retrieval counts and simple freshness metadata."""
+        """Return local fourok source/retrieval counts and simple freshness metadata."""
         return operator_status(state=state, database_url=database_url, config=config)
 
     return mcp
@@ -297,11 +301,11 @@ def _database_url(database_url: str | None, *, state: str | None = None) -> str 
         return database_url
     if state:
         return None
-    return os.environ.get("FOUR_OK_DATABASE_URL")
+    return os.environ.get("FOUROK_DATABASE_URL")
 
 
 def _runtime_config(config: str | None) -> RuntimeConfig:
-    config_path = config or os.environ.get("FOUR_OK_CONFIG_PATH")
+    config_path = config or os.environ.get("FOUROK_CONFIG_PATH")
     return load_runtime_config(Path(config_path)) if config_path else RuntimeConfig()
 
 

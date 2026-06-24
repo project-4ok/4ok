@@ -9,7 +9,7 @@ ROOT = Path(__file__).resolve().parents[1]
 LEGACY = "".join(["g", "c", "b"])
 LEGACY_UPPER = LEGACY.upper()
 NEW_MODULE = "fourok"
-NEW_PRODUCT = "4OK"
+NEW_PRODUCT = "fourok"
 SKIP_DIRS = {
     ".git",
     ".venv",
@@ -55,9 +55,9 @@ def is_text_candidate(path: Path) -> bool:
 
 def replace_text(text: str) -> str:
     replacements = [
-        (f"{LEGACY_UPPER}_DATABASE_URL", "FOUR_OK_DATABASE_URL"),
-        (f"{LEGACY_UPPER}_CONFIG_PATH", "FOUR_OK_CONFIG_PATH"),
-        (f"{LEGACY_UPPER}_", "FOUR_OK_"),
+        (f"{LEGACY_UPPER}_DATABASE_URL", "FOUROK_DATABASE_URL"),
+        (f"{LEGACY_UPPER}_CONFIG_PATH", "FOUROK_CONFIG_PATH"),
+        (f"{LEGACY_UPPER}_", "FOUROK_"),
         (LEGACY_UPPER, NEW_PRODUCT),
         (f"{LEGACY}_", f"{NEW_MODULE}_"),
         (f"_{LEGACY}", f"_{NEW_MODULE}"),
@@ -91,7 +91,12 @@ def rewrite_files() -> int:
 
 
 def renamed_path(path: Path) -> Path:
-    return Path(*(part.replace(LEGACY, NEW_MODULE).replace(LEGACY_UPPER, NEW_PRODUCT) for part in path.parts))
+    return Path(
+        *(
+            part.replace(LEGACY, NEW_MODULE).replace(LEGACY_UPPER, NEW_PRODUCT)
+            for part in path.parts
+        )
+    )
 
 
 def merge_or_rename(path: Path, target: Path) -> int:

@@ -26,7 +26,7 @@
   {
     "id": "linear-mahir-maximilian-outreach",
     "query": "Reach out to Maximilian Jendrall and Mahir Isikli schedule meetings",
-    "expected_source_ref_prefix": "linear:issue:4OK-697",
+    "expected_source_ref_prefix": "linear:issue:fourok-697",
     "expected_source_system": "linear",
     "expected_record_type": "work_item",
     "expected_permission_refs": ["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]

@@ -39,14 +39,14 @@ def test_pinned_runtime_compose_uses_public_dagster_runtime_image_without_builds
     services = compose["services"]
     assert (
         services["app"]["image"]
-        == "${FOUR_OK_APP_IMAGE:?set FOUR_OK_APP_IMAGE to a digest image ref}"
+        == "${FOUROK_APP_IMAGE:?set FOUROK_APP_IMAGE to a digest image ref}"
     )
     assert services["fourok-metrics-exporter"]["image"] == services["app"]["image"]
     assert services["dagster-code"]["image"] == (
-        "${FOUR_OK_DAGSTER_CODE_IMAGE:?set FOUR_OK_DAGSTER_CODE_IMAGE to a digest image ref}"
+        "${FOUROK_DAGSTER_CODE_IMAGE:?set FOUROK_DAGSTER_CODE_IMAGE to a digest image ref}"
     )
     assert services["dagster-webserver"]["image"] == (
-        "${FOUR_OK_DAGSTER_RUNTIME_IMAGE:-" + PUBLIC_DAGSTER_RUNTIME_IMAGE + "}"
+        "${FOUROK_DAGSTER_RUNTIME_IMAGE:-" + PUBLIC_DAGSTER_RUNTIME_IMAGE + "}"
     )
     assert services["dagster-daemon"]["image"] == services["dagster-webserver"]["image"]
     assert (
@@ -62,9 +62,9 @@ def test_pinned_runtime_compose_uses_public_dagster_runtime_image_without_builds
         in services["dagster-webserver"]["volumes"]
     )
     assert services["dagster-code"]["environment"]["DAGSTER_CURRENT_IMAGE"] == (
-        "${FOUR_OK_DAGSTER_CODE_IMAGE:?set FOUR_OK_DAGSTER_CODE_IMAGE to a digest image ref}"
+        "${FOUROK_DAGSTER_CODE_IMAGE:?set FOUROK_DAGSTER_CODE_IMAGE to a digest image ref}"
     )
-    assert "FOUR_OK_DATABASE_URL" in services["app"]["environment"]
+    assert "FOUROK_DATABASE_URL" in services["app"]["environment"]
     assert services["dagster-webserver"]["ports"] == ["127.0.0.1:3001:3001"]
 
 
@@ -81,11 +81,9 @@ def test_standalone_cli_install_script_builds_clean_python313_wheel() -> None:
 def test_runtime_env_example_exposes_pinned_artifact_contract() -> None:
     example = Path("deploy/runtime/fourok-runtime.env.example").read_text(encoding="utf-8")
 
-    assert "FOUR_OK_GIT_SHA=" in example
-    assert "FOUR_OK_CLI_WHEEL_URL=" in example
-    assert "FOUR_OK_CLI_WHEEL_SHA256=" in example
-    assert "FOUR_OK_APP_IMAGE=ghcr.io/project-fourok/fourok-app@sha256:" in example
-    assert (
-        "FOUR_OK_DAGSTER_CODE_IMAGE=ghcr.io/project-fourok/fourok-dagster-code@sha256:" in example
-    )
-    assert f"FOUR_OK_DAGSTER_RUNTIME_IMAGE={PUBLIC_DAGSTER_RUNTIME_IMAGE}" in example
+    assert "FOUROK_GIT_SHA=" in example
+    assert "FOUROK_CLI_WHEEL_URL=" in example
+    assert "FOUROK_CLI_WHEEL_SHA256=" in example
+    assert "FOUROK_APP_IMAGE=ghcr.io/project-fourok/fourok-app@sha256:" in example
+    assert "FOUROK_DAGSTER_CODE_IMAGE=ghcr.io/project-fourok/fourok-dagster-code@sha256:" in example
+    assert f"FOUROK_DAGSTER_RUNTIME_IMAGE={PUBLIC_DAGSTER_RUNTIME_IMAGE}" in example

@@ -228,7 +228,7 @@ def test_openclaw_tool_dispatch_rejects_unknown_tools_and_bad_arguments() -> Non
     try:
         call_openclaw_tool(tools, "request_reveal", {"token": "BANK_ACCOUNT_1"})
     except ValueError as exc:
-        assert str(exc) == "unsupported OpenClaw 4OK tool: request_reveal"
+        assert str(exc) == "unsupported OpenClaw fourok tool: request_reveal"
     else:
         raise AssertionError("unknown tool should be rejected")
 

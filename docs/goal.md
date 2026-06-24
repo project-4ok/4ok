@@ -1,4 +1,4 @@
-# Goal: Deploy 4OK Runtime and CLI for Internal Agent Use
+# Goal: Deploy fourok Runtime and CLI for Internal Agent Use
 
 Source code and executable tests are truth; this file tracks only current gates.
 
@@ -36,24 +36,24 @@ Source code and executable tests are truth; this file tracks only current gates.
   Proof: `uv run pytest tests/retrieval/test_retrieve_cli.py -q` and live smoke
   `uv run fourok retrieve "Coaches fintech partnerships" --database-url <local-db>
   --limit 3` return source-backed excerpts.
-- [ ] Make the 4OK CLI installable standalone for the internal agent runtime.
-  Proof: a clean Python 3.13 environment or pinned runtime image installs 4OK
+- [ ] Make the fourok CLI installable standalone for the internal agent runtime.
+  Proof: a clean Python 3.13 environment or pinned runtime image installs fourok
   from a durable artifact/ref and `fourok --help` lists `retrieve` without a source
   checkout.
-- [ ] Publish/pin deployable 4OK runtime artifacts.
+- [ ] Publish/pin deployable fourok runtime artifacts.
   Proof: app, Dagster code/runtime, and CLI artifacts are pinned by digest/SHA;
   no deployment path depends on `latest` or an uncommitted local build.
-- [ ] Add 4OK pipeline/runtime deployment to the 4OK infrastructure repo.
-  Proof: dev gateway/runtime assets can deploy Postgres/pgvector, 4OK app,
+- [ ] Add fourok pipeline/runtime deployment to the fourok infrastructure repo.
+  Proof: dev gateway/runtime assets can deploy Postgres/pgvector, fourok app,
   Dagster webserver/code/daemon, metrics/exporter, and Grafana/LGTM-equivalent
   observability with secrets resolved through external secret manager.
-- [ ] Install the standalone `fourok` CLI in the 4OK dev internal-agent image.
+- [ ] Install the standalone `fourok` CLI in the fourok dev internal-agent image.
   Proof: inside the dev OpenClaw/internal-agent container, `fourok --help` includes
-  `retrieve` and `fourok retrieve <known-query>` can reach the deployed dev 4OK DB.
-- [ ] Add internal-agent usage guidance in 4OK infrastructure repo.
-  Proof: a 4OK `SKILL.md` and workspace `TOOLS.md` tell the agent when to use
+  `retrieve` and `fourok retrieve <known-query>` can reach the deployed dev fourok DB.
+- [ ] Add internal-agent usage guidance in fourok infrastructure repo.
+  Proof: a fourok `SKILL.md` and workspace `TOOLS.md` tell the agent when to use
   `fourok retrieve`, include safe example commands, and document limitations.
-- [ ] Deploy to the 4OK development environment and verify end to end.
+- [ ] Deploy to the fourok development environment and verify end to end.
   Proof: the dev GitHub Actions build/deploy succeeds, runtime containers are
   healthy, Dagster/Grafana are usable, and the internal agent uses `fourok retrieve`
   for a real source-backed question without plugin wiring.
@@ -65,8 +65,8 @@ None.
 ## Product-Value Exit
 
 Internal-agent use is a deployment problem, not a plugin-hook problem. The next
-slice is: publish/pin 4OK runtime artifacts, deploy the 4OK pipeline/runtime in
-the 4OK dev environment, install standalone `fourok` in the internal-agent image,
+slice is: publish/pin fourok runtime artifacts, deploy the fourok pipeline/runtime in
+the fourok dev environment, install standalone `fourok` in the internal-agent image,
 and teach the agent through SkillMD/ToolsMD when to call `fourok retrieve`.
 
 ## Operating Rules
@@ -92,9 +92,9 @@ and teach the agent through SkillMD/ToolsMD when to call `fourok retrieve`.
 - [x] End-to-end local proof survives rebuild/restart.
 - [x] All goal commits are pushed; repo has no uncommitted work and no local-ahead
   commits.
-- [ ] Standalone `fourok retrieve` is installed in the 4OK dev internal-agent
-  container and can reach the deployed dev 4OK runtime.
-- [ ] 4OK infra `SKILL.md`/`TOOLS.md` guidance causes the internal agent to use
+- [ ] Standalone `fourok retrieve` is installed in the fourok dev internal-agent
+  container and can reach the deployed dev fourok runtime.
+- [ ] fourok infra `SKILL.md`/`TOOLS.md` guidance causes the internal agent to use
   `fourok retrieve` for source-backed company-context questions.
-- [ ] Dev deployment proof covers 4OK pipeline, Dagster, Grafana/observability,
+- [ ] Dev deployment proof covers fourok pipeline, Dagster, Grafana/observability,
   runtime health, and one real retrieval from the internal-agent container.

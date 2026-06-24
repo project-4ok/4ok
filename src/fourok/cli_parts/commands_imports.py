@@ -252,4 +252,4 @@ def _database_url_unless_explicit_state(args: argparse.Namespace) -> str | None:
         return args.database_url
     if getattr(args, "state_explicit", False):
         return None
-    return os.environ.get("FOUR_OK_DATABASE_URL")
+    return os.environ.get("FOUROK_DATABASE_URL")

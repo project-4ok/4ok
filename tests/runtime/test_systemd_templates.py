@@ -6,7 +6,9 @@ def test_internal_prod_systemd_templates_run_compose_app_commands() -> None:
     import_timer = Path("deploy/systemd/fourok-run-imports.timer").read_text(encoding="utf-8")
     retry_service = Path("deploy/systemd/fourok-retry-imports.service").read_text(encoding="utf-8")
     retry_timer = Path("deploy/systemd/fourok-retry-imports.timer").read_text(encoding="utf-8")
-    backup_service = Path("deploy/systemd/fourok-postgres-backup.service").read_text(encoding="utf-8")
+    backup_service = Path("deploy/systemd/fourok-postgres-backup.service").read_text(
+        encoding="utf-8"
+    )
     backup_timer = Path("deploy/systemd/fourok-postgres-backup.timer").read_text(encoding="utf-8")
     retention_service = Path("deploy/systemd/fourok-retention.service").read_text(encoding="utf-8")
     retention_timer = Path("deploy/systemd/fourok-retention.timer").read_text(encoding="utf-8")
@@ -15,7 +17,7 @@ def test_internal_prod_systemd_templates_run_compose_app_commands() -> None:
     assert "--connector gmail-singer" in import_service
     assert "--connector context-fixture" not in import_service
     assert "--config /etc/fourok/fourok.toml" in import_service
-    assert "FOUR_OK_IMAGE_TAG=" in import_service
+    assert "FOUROK_IMAGE_TAG=" in import_service
     assert "EnvironmentFile=/etc/fourok/fourok.env" in import_service
     assert "fourok_dev_password" not in import_service
     assert "OnUnitActiveSec=30min" in import_timer
@@ -48,7 +50,7 @@ def test_internal_prod_systemd_templates_run_compose_app_commands() -> None:
 
     env_example = Path("deploy/systemd/fourok.env.example").read_text(encoding="utf-8")
     assert (
-        "FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:replace-with-password@postgres:5432/fourok"
+        "FOUROK_DATABASE_URL=postgresql+psycopg://fourok:replace-with-password@postgres:5432/fourok"
         in env_example
     )
     assert "POSTGRES_PASSWORD=replace-with-postgres-password" in env_example

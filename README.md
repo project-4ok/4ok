@@ -47,7 +47,7 @@ Prerequisites: Python 3.13 and [uv](https://docs.astral.sh/uv/).
 git clone https://github.com/project-fourok/fourok.git
 cd fourok
 uv sync
-uv run four-ok-dev fast
+uv run fourok-dev fast
 ```
 
 That installs the project and runs the default local development gate: lint,
@@ -56,17 +56,17 @@ format check, tracked tests, goal audit, and whitespace checks.
 Try a fixture-only retrieval path:
 
 ```bash
-uv run four-ok search "refund cancellation payment"
+uv run fourok search "refund cancellation payment"
 ```
 
 Try the source-record flow with a deterministic context snapshot:
 
 ```bash
-uv run four-ok import-context-fixture \
+uv run fourok import-context-fixture \
   --fixture fixtures/context_substrate/source_snapshot_eval.json \
   --state .local/context-substrate.sqlite
 
-uv run four-ok search-state \
+uv run fourok search-state \
   "renewal meeting Thursday" \
   --state .local/context-substrate.sqlite \
   --role linear:team:sales
@@ -75,7 +75,7 @@ uv run four-ok search-state \
 Run the local MCP retrieval server for stdio clients:
 
 ```bash
-uv run four-ok-mcp
+uv run fourok-mcp
 ```
 
 ## What is implemented now
@@ -119,32 +119,32 @@ docs/                     architecture, operations, compliance, and internal-v0 
 
 ```bash
 # default local gate for development
-uv run four-ok-dev fast
+uv run fourok-dev fast
 
 # full release-style local gate
-uv run four-ok-dev full
+uv run fourok-dev full
 
 # run a narrow test target
-uv run four-ok-dev test tests/retrieval -q
+uv run fourok-dev test tests/retrieval -q
 
 # inspect CLI surfaces
-uv run four-ok --help
-uv run four-ok-dev --help
+uv run fourok --help
+uv run fourok-dev --help
 
 # local golden-query retrieval/evidence evaluation
-uv run four-ok eval-retrieval
+uv run fourok eval-retrieval
 
 # operator health and dashboard checks
-uv run four-ok health
-uv run four-ok dashboard
+uv run fourok health
+uv run fourok dashboard
 
 # Docker Compose config check with safe local placeholders
-uv run four-ok-dev compose-config
+uv run fourok-dev compose-config
 ```
 
 ## Onboarding path for contributors
 
-1. Run `uv sync` and `uv run four-ok-dev fast`.
+1. Run `uv sync` and `uv run fourok-dev fast`.
 2. Read [Architecture](docs/architecture.md) for the source-record contract.
 3. Read [Development](docs/development.md) for the local gates.
 4. Pick a small vertical slice and prove it with a fixture, CLI command, or
@@ -162,7 +162,7 @@ mixed with behavior changes.
 - [Development](docs/development.md)
 - [Operations](docs/operations.md)
 - [Internal production v0](docs/internal-prod.md)
-- [4OK MCP retrieval server](docs/mcp-retrieval.md)
+- [fourok MCP retrieval server](docs/mcp-retrieval.md)
 - [Contracts](docs/contracts.md)
 - [Compliance](docs/compliance.md)
 - [K3s deployment readiness](docs/k3s-deployment-readiness.md)

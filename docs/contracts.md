@@ -91,7 +91,7 @@ OpenClaw plugin RAG hook:
 - primary product path is not agent-initiated CLI use
 - optional and explicitly enabled per OpenClaw runtime or agent
 - runs before prompt assembly, after the user turn is known
-- retrieves permitted 4OK evidence through the in-process/plugin integration or
+- retrieves permitted fourok evidence through the in-process/plugin integration or
   internal service boundary, not by asking the agent to call `fourok`
 - injects a short source summary into the agent input: source refs, source URLs
   when available, timestamps, limitations, and audit refs
@@ -121,7 +121,7 @@ Local plugin package:
 - `plugins/openclaw-fourok/openclaw.plugin.json` declares the RAG hook capability
   plus optional `fourok_search_context` and `fourok_health` tools
 - `plugins/openclaw-fourok/src/index.ts` registers the hook and optional tools
-- the plugin must not use the 4OK CLI as the production product path; CLI checks
+- the plugin must not use the fourok CLI as the production product path; CLI checks
   are operator/dev smoke equivalents only
 
 ## Source Record

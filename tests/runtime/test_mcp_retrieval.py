@@ -198,7 +198,7 @@ def test_status_handler_uses_config_env_fallback(
     FakeContext.created.clear()
     config_path = tmp_path / "fourok.toml"
     config_path.write_text("[retrieval]\nmax_words = 20\noverlap_words = 5\n", encoding="utf-8")
-    monkeypatch.setenv("FOUR_OK_CONFIG_PATH", str(config_path))
+    monkeypatch.setenv("FOUROK_CONFIG_PATH", str(config_path))
 
     mcp_retrieval.operator_status(context_factory=FakeContext)
 

@@ -13,7 +13,7 @@ def add_runtime_commands(subparsers) -> None:
     )
     stage1_parser.add_argument("--json", action="store_true", help="Print JSON output.")
     stage1_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    stage1_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    stage1_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
     stage1_parser.add_argument(
         "--cases",
         type=Path,
@@ -40,7 +40,7 @@ def add_runtime_commands(subparsers) -> None:
         ),
     )
     acceptance_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    acceptance_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    acceptance_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
     acceptance_parser.add_argument("--config", type=Path)
     acceptance_parser.add_argument(
         "--compose-file",
@@ -57,7 +57,8 @@ def add_runtime_commands(subparsers) -> None:
     acceptance_parser.add_argument("--query", default="Robin Scharf")
     acceptance_parser.add_argument(
         "--backup-database-url",
-        default=os.environ.get("FOUR_OK_BACKUP_DATABASE_URL") or os.environ.get("FOUR_OK_DATABASE_URL"),
+        default=os.environ.get("FOUROK_BACKUP_DATABASE_URL")
+        or os.environ.get("FOUROK_DATABASE_URL"),
     )
     acceptance_parser.add_argument(
         "--backup-output",
@@ -78,7 +79,7 @@ def add_runtime_commands(subparsers) -> None:
         help="Print operator import, lifecycle, link, connector, and audit stats.",
     )
     dashboard_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    dashboard_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    dashboard_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
     dashboard_parser.add_argument("--config", type=Path)
 
     operator_status_parser = subparsers.add_parser(
@@ -116,7 +117,7 @@ def add_runtime_commands(subparsers) -> None:
     )
     rebuild_retrieval_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     rebuild_retrieval_parser.add_argument(
-        "--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL")
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
     )
     rebuild_retrieval_parser.add_argument(
         "--config",
@@ -147,7 +148,7 @@ def add_runtime_commands(subparsers) -> None:
         help="Keep the local app container alive and emit periodic health reports.",
     )
     monitor_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
-    monitor_parser.add_argument("--database-url", default=os.environ.get("FOUR_OK_DATABASE_URL"))
+    monitor_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
     monitor_parser.add_argument(
         "--raw-store",
         type=Path,

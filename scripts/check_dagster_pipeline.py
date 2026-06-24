@@ -53,7 +53,7 @@ def main() -> None:
     parser.add_argument(
         "--verify-live-db",
         action="store_true",
-        help="Require FOUR_OK_DATABASE_URL and verify live Dagster import changes runtime DB rows.",
+        help="Require FOUROK_DATABASE_URL and verify live Dagster import changes runtime DB rows.",
     )
     parser.add_argument(
         "--live-connector",
@@ -64,7 +64,7 @@ def main() -> None:
     parser.add_argument(
         "--verify-retrieval",
         action="store_true",
-        help="Verify search, evidence, and audit against the materialized 4OK state.",
+        help="Verify search, evidence, and audit against the materialized fourok state.",
     )
     parser.add_argument(
         "--verify-webhook",
@@ -109,7 +109,7 @@ def main() -> None:
             seed_webhook=False,
             asset_names=_live_connector_asset_names(args.live_connector),
             load_dotenv=True,
-            database_url=os.environ.get("FOUR_OK_DATABASE_URL", "") if args.verify_live_db else "",
+            database_url=os.environ.get("FOUROK_DATABASE_URL", "") if args.verify_live_db else "",
         )
         print("live_connector_materialize_status=ok")
         if args.verify_live_db:
@@ -157,7 +157,7 @@ def _materialize_assets(
             "raw_landing": module.RawLandingResource(path=str(raw_landing)),
             "meltano_project": module.MeltanoProjectResource(project_root="."),
             "connector_env": module.ConnectorEnvResource(
-                dotenv_path=os.environ.get("FOUR_OK_DOTENV_PATH", ".env"),
+                dotenv_path=os.environ.get("FOUROK_DOTENV_PATH", ".env"),
                 load_dotenv=load_dotenv,
             ),
             "fourok_runtime": module.FourokRuntimeResource(
@@ -198,9 +198,9 @@ def _live_connector_asset_names(connector: str) -> set[str]:
 
 
 def _runtime_db_counts() -> dict[str, int]:
-    database_url = os.environ.get("FOUR_OK_DATABASE_URL", "")
+    database_url = os.environ.get("FOUROK_DATABASE_URL", "")
     if not database_url:
-        raise SystemExit("--verify-live-db requires FOUR_OK_DATABASE_URL")
+        raise SystemExit("--verify-live-db requires FOUROK_DATABASE_URL")
     engine = create_engine(database_url)
     try:
         with engine.connect() as connection:

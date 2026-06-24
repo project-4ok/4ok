@@ -24,13 +24,13 @@ Resolution order for these host-side operator checks:
 1. `--database-url`, when provided.
 2. Explicit `--state`, which keeps the command on SQLite and ignores ambient
    runtime database variables.
-3. The running Compose `app` container's `FOUR_OK_DATABASE_URL`.
-4. `.env` `FOUR_OK_DATABASE_URL`, then `.env` `POSTGRES_PASSWORD` composed into the
+3. The running Compose `app` container's `FOUROK_DATABASE_URL`.
+4. `.env` `FOUROK_DATABASE_URL`, then `.env` `POSTGRES_PASSWORD` composed into the
    local Postgres URL.
 5. Compose runtime defaults.
-6. Ambient shell `FOUR_OK_DATABASE_URL`.
+6. Ambient shell `FOUROK_DATABASE_URL`.
 
-If a stale exported `FOUR_OK_DATABASE_URL` or stale `.env` password disagrees with a
+If a stale exported `FOUROK_DATABASE_URL` or stale `.env` password disagrees with a
 running app container, trust the running container first and refresh the stale
 host setting after the smoke check passes.
 
@@ -77,13 +77,13 @@ surfaces as `skipped` rather than creating project state.
 Search an existing governed runtime database without loading local fixtures:
 
 ```bash
-uv run fourok search-state "refund cancellation" --database-url "$FOUR_OK_DATABASE_URL"
+uv run fourok search-state "refund cancellation" --database-url "$FOUROK_DATABASE_URL"
 ```
 
 Inspect operator stats for an existing governed runtime database:
 
 ```bash
-uv run fourok dashboard --database-url "$FOUR_OK_DATABASE_URL" --config fourok.toml
+uv run fourok dashboard --database-url "$FOUROK_DATABASE_URL" --config fourok.toml
 ```
 
 Connector job stats include `recent_failure_count` for retryable failures and
@@ -110,7 +110,7 @@ host scheduler or manually while testing:
 
 ```bash
 uv run fourok run-live-ingestion \
-  --database-url "$FOUR_OK_DATABASE_URL" \
+  --database-url "$FOUROK_DATABASE_URL" \
   --config fourok.toml
 ```
 
@@ -146,15 +146,15 @@ Safe local proof commands:
 ```bash
 uv run fourok backfill-openviking-messages \
   .local/openviking/messages.jsonl \
-  --database-url "$FOUR_OK_DATABASE_URL" \
+  --database-url "$FOUROK_DATABASE_URL" \
   > .local/openviking/backfill-runtime-db-report.json
 
 uv run fourok operator-status \
-  --database-url "$FOUR_OK_DATABASE_URL" \
+  --database-url "$FOUROK_DATABASE_URL" \
   > .local/openviking/operator-status-after-openviking.json
 
 uv run fourok search-state OpenClaw \
-  --database-url "$FOUR_OK_DATABASE_URL" \
+  --database-url "$FOUROK_DATABASE_URL" \
   --role customer:fourok \
   --limit 10 \
   > .local/openviking/search-openclaw-customer-role-results.json
@@ -170,7 +170,7 @@ Check freshness and idempotency status for every recurring live source:
 
 ```bash
 uv run fourok live-ingestion-status \
-  --database-url "$FOUR_OK_DATABASE_URL" \
+  --database-url "$FOUROK_DATABASE_URL" \
   --config fourok.toml
 ```
 
@@ -196,7 +196,7 @@ against the approved internal connector output:
 uv run fourok run-imports \
   --connector gmail-singer \
   --singer-file .local/gmail-pilot/tap-gmail-output.jsonl \
-  --database-url "$FOUR_OK_DATABASE_URL"
+  --database-url "$FOUROK_DATABASE_URL"
 ```
 
 Retry a failed connector job after its backoff window is due:
@@ -205,7 +205,7 @@ Retry a failed connector job after its backoff window is due:
 uv run fourok run-imports \
   --connector gmail-singer \
   --singer-file .local/gmail-pilot/tap-gmail-output.jsonl \
-  --database-url "$FOUR_OK_DATABASE_URL" \
+  --database-url "$FOUROK_DATABASE_URL" \
   --retry-failed \
   --retry-base-delay-seconds 300
 ```
@@ -231,7 +231,7 @@ Fixture-only deterministic regression path:
 uv run fourok run-imports \
   --connector context-fixture \
   --fixture fixtures/context_substrate/source_snapshot_eval.json \
-  --database-url "$FOUR_OK_DATABASE_URL"
+  --database-url "$FOUROK_DATABASE_URL"
 ```
 
 Use this only for narrow local regression checks where deterministic fixture
@@ -250,11 +250,11 @@ The first OpenClaw integration boundary is local and explicit:
 - or call `capture_openclaw_messages` to adapt and ingest in one step
 - package the local OpenClaw plugin from `plugins/openclaw-fourok`
 - implement RAG as a before-prompt hook, not as an instruction for the agent to
-  call the 4OK CLI
+  call the fourok CLI
 - keep optional explicit tools such as `fourok_search_context` for follow-up/debugging
 - do not expose reveal in this stage
 
-The product path is: user message -> OpenClaw plugin hook -> permitted 4OK
+The product path is: user message -> OpenClaw plugin hook -> permitted fourok
 retrieval -> short source summary injected into the agent input. The summary must
 include source refs and limitations, preserve the full evidence pack for
 follow-up inspection, and stay independently disableable from chat capture. It
@@ -329,9 +329,9 @@ as connectors and webhooks.
 Docker-backed local services:
 
 ```bash
-export FOUR_OK_IMAGE_TAG="$(git rev-parse --short HEAD)"
+export FOUROK_IMAGE_TAG="$(git rev-parse --short HEAD)"
 export POSTGRES_PASSWORD="local-dev-password"
-export FOUR_OK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
+export FOUROK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
 docker compose up -d postgres
 ```
 
@@ -344,8 +344,8 @@ uv run fourok-dev pipeline-ps
 
 `app-up` wraps the long direct Compose form (`docker compose up --build
 --force-recreate -d postgres app`) and injects the same project `.env`,
-`FOUR_OK_IMAGE_TAG`, `POSTGRES_PASSWORD`, `DAGSTER_POSTGRES_PASSWORD`, and
-`FOUR_OK_DATABASE_URL` defaults used by the other `fourok-dev` Docker helpers.
+`FOUROK_IMAGE_TAG`, `POSTGRES_PASSWORD`, `DAGSTER_POSTGRES_PASSWORD`, and
+`FOUROK_DATABASE_URL` defaults used by the other `fourok-dev` Docker helpers.
 
 ## Dagster Pipeline
 
@@ -356,7 +356,7 @@ Start the pipeline services through the local dev wrapper. It loads project
 `.env`, maps external secret manager aliases for the Dagster code container, and supplies
 stable local-only Compose defaults so direct `docker compose` interpolation does
 not fail when password variables are absent from the shell. It derives
-`FOUR_OK_IMAGE_TAG` from the current Git commit, rebuilds tagged Dagster images, and
+`FOUROK_IMAGE_TAG` from the current Git commit, rebuilds tagged Dagster images, and
 recreates the pipeline containers so Dagster loads current source rather than a
 stale local image:
 
@@ -367,10 +367,10 @@ uv run fourok-dev pipeline-up
 Equivalent direct Compose form when debugging the wrapper:
 
 ```bash
-export FOUR_OK_IMAGE_TAG="$(git rev-parse --short HEAD)"
+export FOUROK_IMAGE_TAG="$(git rev-parse --short HEAD)"
 export POSTGRES_PASSWORD="local-check"
 export DAGSTER_POSTGRES_PASSWORD="local-check"
-export FOUR_OK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
+export FOUROK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
 
 docker compose --profile pipeline up -d \
   --build \
@@ -388,7 +388,7 @@ Operator access:
 - Dagster webserver: loopback-bound only
 - Dagster code server and daemon: internal Compose network only
 - Dagster metadata database: `dagster-postgres` volume only
-- 4OK runtime database: `postgres` service, loopback-bound on `127.0.0.1:5432`
+- fourok runtime database: `postgres` service, loopback-bound on `127.0.0.1:5432`
 
 Check service health:
 
@@ -409,7 +409,7 @@ uv run fourok operator-status
 
 From the host, the no-arg operator commands use the runtime database URL from
 the running Compose `app` container when available, then fall back through
-`.env`, Compose defaults, and ambient shell `FOUR_OK_DATABASE_URL`; the container
+`.env`, Compose defaults, and ambient shell `FOUROK_DATABASE_URL`; the container
 hostname is rewritten to `127.0.0.1`. Keep `--database-url` for deliberate
 overrides and `--state` for intentional SQLite checks.
 
@@ -436,7 +436,7 @@ The response should include `fourok_hourly_live_backfill_schedule`,
 sensors are missing, restart with `uv run fourok-dev pipeline-up` before debugging
 Dagster code.
 
-Dagster pipeline services default `FOUR_OK_OBSERVABILITY_ENABLED=true` and export
+Dagster pipeline services default `FOUROK_OBSERVABILITY_ENABLED=true` and export
 OTLP to `http://observability:4318` with service names
 `fourok-dagster-code`, `fourok-dagster-webserver`, and `fourok-dagster-daemon`. Start the
 observability profile before running live proofs when Grafana traces/logs are
@@ -467,7 +467,7 @@ uv run fourok-dev operator-live --dry-run
 The command loads project `.env`, passes external secret manager settings through to the
 Dagster live assets, starts and checks the local Dagster Compose services, runs
 the live Slack, Twenty, Linear, and Google Drive landing/import assets, and
-prints JSON with the raw landing path, redacted 4OK database URL, source-record
+prints JSON with the raw landing path, redacted fourok database URL, source-record
 counts by source system, retrieval count, and Dagster status. Output must not
 contain secret values. Live materialization requires configured source
 credentials or external secret manager settings; without them, use the dry-run and connector
@@ -499,8 +499,8 @@ This proves the repository definitions expose the raw extraction,
 source-record import, canonical-object/entity-link, and retrieval-record
 assets plus webhook backlog, operator dashboard, golden retrieval eval, and
 audit metadata assets. The fixture-backed materialization proves only the
-deterministic regression path: local fixture taps can reach 4OK through the
-Dagster materialization path, the resulting 4OK state has retrieval units,
+deterministic regression path: local fixture taps can reach fourok through the
+Dagster materialization path, the resulting fourok state has retrieval units,
 search results, evidence items, and search/source-access audit events, and a
 seeded webhook event is processed through the durable backlog into searchable
 source material.
@@ -509,7 +509,7 @@ The raw Singer landing target preserves the latest Singer `STATE` message as
 `state.json` inside each landing directory when a tap emits state. Dagster raw
 landing materializations expose the checkpoint file path and top-level
 checkpoint keys as metadata. Full connector job checkpoint history remains in
-the 4OK connector state tables for scheduler-safe imports.
+the fourok connector state tables for scheduler-safe imports.
 
 Check the configured Singer tap contract for deterministic adapter regression
 coverage:
@@ -538,7 +538,7 @@ adapts the landed `channels`, `users`, `channel_members`, `messages`, or
 names, record types, and artifact paths only; it must not print Slack message
 text or credential values.
 
-When `TAP_SLACK_CHANNEL_TYPES` is unset, 4OK defaults live Slack extraction to
+When `TAP_SLACK_CHANNEL_TYPES` is unset, fourok defaults live Slack extraction to
 `["im","mpim","private_channel"]` because the current bot token can read those
 conversation histories. Public-channel history still requires inviting the app
 to each public channel, or adding a separately proved auto-join workflow with
@@ -554,7 +554,7 @@ uv run --group pipeline python scripts/check_twenty_live_contract.py
 There is no suitable `tap-twenty` extractor in Meltano Hub, so internal v0 uses
 the narrow repository-owned `tap-fourok-twenty` Singer-compatible extractor for
 Twenty companies and people. The proof runs the extractor through Meltano,
-lands raw JSONL, verifies state, and adapts landed records into 4OK
+lands raw JSONL, verifies state, and adapts landed records into fourok
 `SourceRecord`s. Output reports counts and stream names only; it must not print
 CRM field values or credential values.
 
@@ -569,7 +569,7 @@ runtime. Internal v0 therefore uses the narrow repository-owned
 `tap-fourok-linear` Singer-compatible extractor for Linear users, issues, and
 comments so it runs inside the project Python 3.13 app image. The proof runs
 the extractor through Meltano, lands raw JSONL, verifies state, and adapts
-landed records into 4OK `SourceRecord`s. Output reports counts and stream names
+landed records into fourok `SourceRecord`s. Output reports counts and stream names
 only; it must not print Linear field values or credential values.
 
 Check the live Google Drive connector contract with env/.env-backed OAuth
@@ -582,7 +582,7 @@ uv run --group pipeline python scripts/check_google_drive_live_contract.py
 Internal v0 uses the narrow repository-owned `tap-fourok-google-drive`
 Singer-compatible extractor for Drive files that already have retrievable text.
 It lists Drive files, exports Google Docs as `text/plain`, downloads plain text
-files, lands raw JSONL, verifies state, and adapts landed records into 4OK
+files, lands raw JSONL, verifies state, and adapts landed records into fourok
 `SourceRecord`s. OCR, binary PDFs, images, and layout reconstruction remain
 outside this connector proof. Output reports counts and stream names only; it
 must not print document text or credential values.
@@ -676,9 +676,9 @@ Run the same fixture regression import against the Docker Compose PostgreSQL
 service:
 
 ```bash
-export FOUR_OK_IMAGE_TAG="$(git rev-parse --short HEAD)"
+export FOUROK_IMAGE_TAG="$(git rev-parse --short HEAD)"
 export POSTGRES_PASSWORD="local-dev-password"
-export FOUR_OK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
+export FOUROK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
 docker compose up -d postgres
 
 docker compose build app
@@ -724,7 +724,7 @@ docker compose run --rm app \
     --config /etc/fourok/fourok.toml \
     --fixture /app/.local/seeds/context-substrate.json \
     --query "Robin Scharf" \
-    --backup-database-url "$FOUR_OK_DATABASE_URL" \
+    --backup-database-url "$FOUROK_DATABASE_URL" \
     --backup-output /app/.local/backups/acceptance-proof.dump \
     --observability-endpoint http://observability:4318
 ```
@@ -762,7 +762,7 @@ docker compose run --rm app \
     --config /etc/fourok/fourok.toml \
     --fixture /app/.local/seeds/context-substrate.json \
     --query "Robin Scharf" \
-    --backup-database-url "$FOUR_OK_DATABASE_URL" \
+    --backup-database-url "$FOUROK_DATABASE_URL" \
     --backup-output /app/.local/backups/acceptance-proof.dump \
     --observability-endpoint http://observability:4318
 ```
@@ -796,9 +796,9 @@ Limitations:
 Start the local OpenTelemetry backend:
 
 ```bash
-export FOUR_OK_IMAGE_TAG="$(git rev-parse --short HEAD)"
+export FOUROK_IMAGE_TAG="$(git rev-parse --short HEAD)"
 export POSTGRES_PASSWORD="local-dev-password"
-export FOUR_OK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
+export FOUROK_DATABASE_URL="postgresql+psycopg://fourok:${POSTGRES_PASSWORD}@postgres:5432/fourok"
 
 docker compose --profile observability up -d observability
 ```
@@ -815,7 +815,7 @@ uv run fourok observability-smoke
 Trace CLI runs into the local backend:
 
 ```bash
-FOUR_OK_OBSERVABILITY_ENABLED=true \
+FOUROK_OBSERVABILITY_ENABLED=true \
 OTEL_EXPORTER_OTLP_ENDPOINT=http://localhost:4318 \
 OTEL_SERVICE_NAME=fourok-local \
   uv run fourok health
@@ -846,7 +846,7 @@ or connector payloads.
 Trace the Docker `app` service when the observability profile is running:
 
 ```bash
-FOUR_OK_OBSERVABILITY_ENABLED=true \
+FOUROK_OBSERVABILITY_ENABLED=true \
 docker compose run --rm app \
   observability-smoke \
     --endpoint http://observability:4318 \
@@ -860,9 +860,9 @@ Recorded local proof on 2026-06-07 used app image
 `fourok-app:b75b3b9` and ran:
 
 ```bash
-FOUR_OK_IMAGE_TAG=b75b3b9 \
+FOUROK_IMAGE_TAG=b75b3b9 \
 POSTGRES_PASSWORD=local-check \
-FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:local-check@postgres:5432/fourok \
+FOUROK_DATABASE_URL=postgresql+psycopg://fourok:local-check@postgres:5432/fourok \
   docker compose run --rm app \
     observability-smoke \
       --endpoint http://observability:4318 \
@@ -873,7 +873,7 @@ The command returned `status: ok`, `exporter: otlp-http`, and
 `sensitive_payload_exported: false`.
 
 Commands that accept `--config` use `[telemetry]` when `enabled = true`;
-otherwise they fall back to `FOUR_OK_OBSERVABILITY_ENABLED`,
+otherwise they fall back to `FOUROK_OBSERVABILITY_ENABLED`,
 `OTEL_EXPORTER_OTLP_ENDPOINT`, and `OTEL_SERVICE_NAME`.
 
 Limitations:
@@ -892,7 +892,7 @@ Backup:
 
 ```bash
 uv run fourok postgres-backup \
-  --database-url "$FOUR_OK_DATABASE_URL" \
+  --database-url "$FOUROK_DATABASE_URL" \
   --output .local/backups/fourok.dump
 ```
 
@@ -915,8 +915,8 @@ Restore drill:
 
 ```bash
 uv run fourok postgres-restore-drill \
-  --database-url "$FOUR_OK_DATABASE_URL" \
-  --restore-database-url "$FOUR_OK_RESTORE_DATABASE_URL" \
+  --database-url "$FOUROK_DATABASE_URL" \
+  --restore-database-url "$FOUROK_RESTORE_DATABASE_URL" \
   --backup-output .local/backups/fourok.dump
 ```
 

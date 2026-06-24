@@ -134,7 +134,7 @@ DEPENDENCY_CONTRACTS = (
     DependencyContract(
         name="twenty-live-custom-singer-tap",
         category="connector-boundary",
-        active_surface="4OK tap-fourok-twenty REST extraction, state, raw landing, and adapter",
+        active_surface="fourok tap-fourok-twenty REST extraction, state, raw landing, and adapter",
         status="proved",
         dimensions=REQUIRED_DIMENSIONS,
         proof_commands=(
@@ -151,7 +151,9 @@ DEPENDENCY_CONTRACTS = (
     DependencyContract(
         name="linear-live-custom-singer-tap",
         category="connector-boundary",
-        active_surface="4OK tap-fourok-linear GraphQL extraction, state, raw landing, and adapter",
+        active_surface=(
+            "fourok tap-fourok-linear GraphQL extraction, state, raw landing, and adapter"
+        ),
         status="proved",
         dimensions=REQUIRED_DIMENSIONS,
         proof_commands=(
@@ -167,7 +169,9 @@ DEPENDENCY_CONTRACTS = (
     DependencyContract(
         name="google-drive-live-custom-singer-tap",
         category="connector-boundary",
-        active_surface="4OK tap-fourok-google-drive OAuth extraction, state, raw landing, and adapter",
+        active_surface=(
+            "fourok tap-fourok-google-drive OAuth extraction, state, raw landing, and adapter"
+        ),
         status="proved",
         dimensions=REQUIRED_DIMENSIONS,
         proof_commands=(
@@ -224,7 +228,7 @@ DEPENDENCY_CONTRACTS = (
             "tests/runtime/test_openclaw_plugin_package.py -q",
         ),
         notes=(
-            "This proves the 4OK-side adapter and the local plugin package shape. "
+            "This proves the fourok-side adapter and the local plugin package shape. "
             "OpenClaw runtime loading remains a deployment smoke check."
         ),
     ),

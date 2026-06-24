@@ -13,7 +13,7 @@ from fourok.runtime.operator_live import (
 def test_operator_live_dry_run_reports_plan_without_secrets(tmp_path: Path) -> None:
     env_file = tmp_path / ".env"
     env_file.write_text(
-        "FOUR_OK_DATABASE_URL=postgresql+psycopg://fourok:secret@localhost:5432/fourok\n"
+        "FOUROK_DATABASE_URL=postgresql+psycopg://fourok:secret@localhost:5432/fourok\n"
         "SLACK_BOT_TOKEN=secret-value\n",
         encoding="utf-8",
     )
@@ -76,7 +76,10 @@ def test_operator_live_dry_run_reports_host_database_url_for_compose_postgres(
         start_dagster=True,
     )
 
-    assert report["fourok_database_url"] == "postgresql+psycopg://fourok:[REDACTED]@127.0.0.1:5432/fourok"
+    assert (
+        report["fourok_database_url"]
+        == "postgresql+psycopg://fourok:[REDACTED]@127.0.0.1:5432/fourok"
+    )
 
 
 def test_operator_live_report_counts_source_records_and_retrieval(tmp_path: Path) -> None:

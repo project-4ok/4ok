@@ -6,7 +6,7 @@ After=docker.service
 [Service]
 Type=oneshot
 WorkingDirectory=/opt/fourok
-Environment=FOUR_OK_IMAGE_TAG=replace-with-commit-hash
-Environment=FOUR_OK_CONFIG_PATH=/opt/fourok/.local/fourok.toml
+Environment=FOUROK_IMAGE_TAG=replace-with-commit-hash
+Environment=FOUROK_CONFIG_PATH=/opt/fourok/.local/fourok.toml
 EnvironmentFile=/etc/fourok/fourok.env
-ExecStart=/bin/sh -lc '/usr/bin/docker compose run --rm app postgres-backup --database-url "$FOUR_OK_DATABASE_URL" --output "/var/lib/fourok/backups/fourok-$(date +%%Y%%m%%d-%%H%%M%%S).dump"'
+ExecStart=/bin/sh -lc '/usr/bin/docker compose run --rm app postgres-backup --database-url "$FOUROK_DATABASE_URL" --output "/var/lib/fourok/backups/fourok-$(date +%%Y%%m%%d-%%H%%M%%S).dump"'

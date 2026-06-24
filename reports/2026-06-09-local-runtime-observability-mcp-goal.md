@@ -1,4 +1,4 @@
-# 4OK local runtime, observability, import counts, and MCP retrieval goal
+# fourok local runtime, observability, import counts, and MCP retrieval goal
 
 Use this file as the authoritative implementation prompt for the next Hermes `/goal` run. The goal is **not** complete until the real local system is operator-visible and retrieval is testable through an MCP server/tool path.
 
@@ -14,13 +14,13 @@ Use this file as the authoritative implementation prompt for the next Hermes `/g
   - Grafana: `http://127.0.0.1:3000`
   - Loki API: host `http://127.0.0.1:3100`, inside observability container `http://localhost:3100`
   - Tempo API: host `http://127.0.0.1:3200`, inside observability container `http://localhost:3200`
-  - 4OK local runtime dashboard: `http://127.0.0.1:3000/d/fourok-local-runtime-logs/fourok-local-runtime-logs`
-  - 4OK metrics exporter: `fourok-metrics-exporter:9108/metrics`, scraped by Prometheus job `fourok-dagster-runtime`
+  - fourok local runtime dashboard: `http://127.0.0.1:3000/d/fourok-local-runtime-logs/fourok-local-runtime-logs`
+  - fourok metrics exporter: `fourok-metrics-exporter:9108/metrics`, scraped by Prometheus job `fourok-dagster-runtime`
 - User preference constraints:
   - Use live connector/data evidence where possible. Do not default to fixture/synthetic data except narrow deterministic regression tests.
   - Do not claim completion from commits/tests alone.
   - Do not edit Hermes source or Hermes runtime state for this project goal.
-  - Prefer Codex/worktree orchestration for substantial 4OK coding; direct edits are acceptable for small integration/debug fixes when needed.
+  - Prefer Codex/worktree orchestration for substantial fourok coding; direct edits are acceptable for small integration/debug fixes when needed.
   - Do not preserve or print credentials. Redact passwords/tokens/API keys as `[REDACTED]`.
 
 ## Current state and known gaps
@@ -35,7 +35,7 @@ The previous work found and partially fixed real issues. This file was updated a
 2. The hourly backfill job includes retrieval rebuild and operator dashboard and uses the in-process executor.
 3. Observability is now substantially improved and should be kept green while continuing product implementation:
    - Docker stdout/stderr logs are aggregated by Promtail into Loki with labels including `compose_project`, `compose_service`, and `container_name`.
-   - Grafana dashboard `4OK Local Runtime Logs` is provisioned and has Loki, Prometheus, and Tempo panels.
+   - Grafana dashboard `fourok Local Runtime Logs` is provisioned and has Loki, Prometheus, and Tempo panels.
    - `fourok-metrics-exporter` is running and Prometheus target `fourok-dagster-runtime` is `up`.
    - OTLP metrics export was smoke-tested with `fourok_smoke_requests_total`.
 4. The Dagster lineage still shows red/unmaterialized assets for non-live/legacy/example assets, including the inspected asset nodes with no latest materialization:
@@ -76,7 +76,7 @@ The previous work found and partially fixed real issues. This file was updated a
 
 Required proof:
 
-1. `uv run fourok-dev pipeline-up` succeeds from the 4OK repo.
+1. `uv run fourok-dev pipeline-up` succeeds from the fourok repo.
 2. Dagster GraphQL proves:
    - repository loads successfully,
    - `fourok_hourly_live_backfill_schedule` is `RUNNING`,
@@ -140,8 +140,8 @@ Required proof:
 
 Required proof:
 
-1. Loki has recent logs for 4OK services using a working **range** query, e.g. `{service_name="fourok-dagster-code"}`.
-2. Tempo has recent traces for 4OK services, e.g. `resource.service.name="fourok-dagster-code"`.
+1. Loki has recent logs for fourok services using a working **range** query, e.g. `{service_name="fourok-dagster-code"}`.
+2. Tempo has recent traces for fourok services, e.g. `resource.service.name="fourok-dagster-code"`.
 3. Grafana dashboards or documented Explore links/queries let the user see:
    - recent Dagster/code logs,
    - recent traces,
@@ -153,7 +153,7 @@ Required proof:
 
 Required proof:
 
-1. The 4OK repo contains an MCP server implementation with tools at least:
+1. The fourok repo contains an MCP server implementation with tools at least:
    - `search_fourok`
    - `operator_status`
 2. Tool schemas are discoverable by tests without launching the full server.

@@ -190,7 +190,7 @@ def _database_check(
         return _check(
             "database",
             "skipped",
-            {"reason": "no FOUR_OK_DATABASE_URL and no local state database"},
+            {"reason": "no FOUROK_DATABASE_URL and no local state database"},
             ["uv run fourok health --state .local/context.sqlite"],
         )
     try:
