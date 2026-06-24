@@ -4,7 +4,7 @@ import argparse
 
 from fourok.cli_parts.parser_honcho import add_honcho_commands
 from fourok.cli_parts.parser_imports import add_import_commands
-from fourok.cli_parts.parser_runtime import add_runtime_commands
+from fourok.runtime.parser import add_runtime_commands
 from fourok.cli_parts.shared import _hide_subparser
 from fourok.governance.cli import add_audit_commands, add_retention_commands
 from fourok.retrieval.cli import add_search_commands

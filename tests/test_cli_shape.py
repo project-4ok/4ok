@@ -34,15 +34,15 @@ def test_invalid_public_command_hints_only_public_surface(capsys) -> None:
 def test_onboarding_alias_runs_onboard(capsys, monkeypatch) -> None:
     monkeypatch.setattr("sys.argv", ["fourok", "onboarding"])
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime._safe_client_status_report",
+        "fourok.runtime.cli._safe_client_status_report",
         lambda: {"status": "ok", "checks": []},
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime._connector_secret_report",
+        "fourok.runtime.cli._connector_secret_report",
         lambda: {"status": "ok", "connectors": {}},
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime._dagster_code_secret_presence",
+        "fourok.runtime.cli._dagster_code_secret_presence",
         lambda: {"status": "ok", "missing": []},
     )
 
@@ -76,15 +76,15 @@ def test_retrieve_help_stays_client_facing(capsys) -> None:
 def test_status_prints_client_safe_summary(capsys, monkeypatch) -> None:
     monkeypatch.setattr("sys.argv", ["fourok", "status"])
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.health_database_url",
+        "fourok.runtime.cli.health_database_url",
         lambda **_kwargs: "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.runtime.cli.create_governed_context_state",
         lambda **_kwargs: object(),
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.runtime.cli.check_runtime_health",
         lambda _state: {
             "status": "ok",
             "checks": [
@@ -111,15 +111,15 @@ def test_status_prints_client_safe_summary(capsys, monkeypatch) -> None:
 def test_status_points_to_onboarding_when_only_demo_context_exists(capsys, monkeypatch) -> None:
     monkeypatch.setattr("sys.argv", ["fourok", "status"])
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.health_database_url",
+        "fourok.runtime.cli.health_database_url",
         lambda **_kwargs: "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.runtime.cli.create_governed_context_state",
         lambda **_kwargs: object(),
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.runtime.cli.check_runtime_health",
         lambda _state: {
             "status": "ok",
             "checks": [
@@ -130,7 +130,7 @@ def test_status_points_to_onboarding_when_only_demo_context_exists(capsys, monke
         },
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime._source_system_counts",
+        "fourok.runtime.cli._source_system_counts",
         lambda _state: {"local_email": 14},
     )
 
@@ -149,15 +149,15 @@ def test_status_points_to_onboarding_when_only_demo_context_exists(capsys, monke
 def test_status_points_to_onboarding_when_no_context_exists(capsys, monkeypatch) -> None:
     monkeypatch.setattr("sys.argv", ["fourok", "status"])
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.health_database_url",
+        "fourok.runtime.cli.health_database_url",
         lambda **_kwargs: "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.runtime.cli.create_governed_context_state",
         lambda **_kwargs: object(),
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.runtime.cli.check_runtime_health",
         lambda _state: {
             "status": "failed",
             "checks": [
@@ -168,7 +168,7 @@ def test_status_points_to_onboarding_when_no_context_exists(capsys, monkeypatch)
         },
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime._source_system_counts",
+        "fourok.runtime.cli._source_system_counts",
         lambda _state: {},
     )
 
@@ -185,15 +185,15 @@ def test_status_points_to_onboarding_when_no_context_exists(capsys, monkeypatch)
 def test_status_json_is_available_for_agents(capsys, monkeypatch) -> None:
     monkeypatch.setattr("sys.argv", ["fourok", "status", "--json"])
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.health_database_url",
+        "fourok.runtime.cli.health_database_url",
         lambda **_kwargs: None,
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.runtime.cli.create_governed_context_state",
         lambda **_kwargs: object(),
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.runtime.cli.check_runtime_health",
         lambda _state: {"status": "ok", "checks": []},
     )
 
@@ -204,7 +204,7 @@ def test_status_json_is_available_for_agents(capsys, monkeypatch) -> None:
 def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) -> None:
     monkeypatch.setattr("sys.argv", ["fourok", "onboard"])
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime._safe_client_status_report",
+        "fourok.runtime.cli._safe_client_status_report",
         lambda: {
             "status": "needs_onboarding",
             "checks": [
@@ -217,7 +217,7 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
         },
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime._connector_secret_report",
+        "fourok.runtime.cli._connector_secret_report",
         lambda: {
             "status": "missing",
             "connectors": {
@@ -232,7 +232,7 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
         },
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime._dagster_code_secret_presence",
+        "fourok.runtime.cli._dagster_code_secret_presence",
         lambda: {"status": "missing", "missing": ["SLACK_BOT_TOKEN"]},
     )
 
@@ -271,7 +271,7 @@ def test_onboard_initial_run_recreates_dagster_code_and_triggers_backfill(
         return type("Completed", (), {"returncode": 0, "stdout": stdout, "stderr": ""})()
 
     monkeypatch.setattr("sys.argv", ["fourok", "onboard", "initial-run"])
-    monkeypatch.setattr("fourok.cli_parts.commands_runtime.subprocess.run", fake_run)
+    monkeypatch.setattr("fourok.runtime.cli.subprocess.run", fake_run)
 
     main()
 
@@ -320,7 +320,7 @@ def test_onboard_initial_run_fails_when_backfill_is_partial(monkeypatch) -> None
         return responses.pop(0)
 
     monkeypatch.setattr("sys.argv", ["fourok", "onboard", "initial-run"])
-    monkeypatch.setattr("fourok.cli_parts.commands_runtime.subprocess.run", fake_run)
+    monkeypatch.setattr("fourok.runtime.cli.subprocess.run", fake_run)
 
     with pytest.raises(SystemExit) as exc:
         main()

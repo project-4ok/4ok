@@ -5,7 +5,7 @@ from pathlib import Path
 
 from fourok.cli import main
 from fourok.cli_parts.commands_imports import _database_url_unless_explicit_state
-from fourok.cli_parts.commands_runtime import host_operator_database_url
+from fourok.runtime.cli import host_operator_database_url
 from fourok.cli_parts.shared import DEFAULT_STATE
 from fourok.etl.extract.source_records import SourceRecord
 from fourok.etl.extract.sync_jobs import complete_connector_job, start_connector_job
@@ -19,7 +19,7 @@ def test_operator_status_default_resolves_compose_database_url_from_env_file(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("FOUROK_DATABASE_URL", raising=False)
-    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
+    monkeypatch.setattr("fourok.runtime.cli._running_app_database_url", lambda: "")
     (tmp_path / ".env").write_text(
         "POSTGRES_PASSWORD=secret\n"
         "FOUROK_DATABASE_URL=postgresql+psycopg://fourok:secret@postgres:5432/fourok\n",
@@ -43,9 +43,9 @@ def test_operator_status_default_prefers_compose_env_over_stale_shell_env(
         "postgresql+psycopg://fourok:stale@127.0.0.1:5432/fourok",
     )
     monkeypatch.chdir(tmp_path)
-    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
+    monkeypatch.setattr("fourok.runtime.cli._running_app_database_url", lambda: "")
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.operator_environment",
+        "fourok.runtime.cli.operator_environment",
         lambda _root: {
             "FOUROK_DATABASE_URL": "postgresql+psycopg://fourok:fresh@postgres:5432/fourok",
         },
@@ -73,7 +73,7 @@ def test_operator_status_default_prefers_running_app_database_url(
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime._running_app_database_url",
+        "fourok.runtime.cli._running_app_database_url",
         lambda: "postgresql+psycopg://fourok:running@postgres:5432/fourok",
     )
 
@@ -87,7 +87,7 @@ def test_operator_status_default_prefers_running_app_database_url(
 
 
 def test_running_app_database_url_discovers_compose_app_container(monkeypatch) -> None:
-    from fourok.cli_parts import commands_runtime
+    from fourok.runtime import cli as commands_runtime
 
     calls: list[tuple[str, ...]] = []
 
@@ -127,7 +127,7 @@ def test_running_app_database_url_discovers_compose_app_container(monkeypatch) -
 def test_running_app_database_url_falls_back_to_docker_labels_when_compose_env_drifts(
     monkeypatch,
 ) -> None:
-    from fourok.cli_parts import commands_runtime
+    from fourok.runtime import cli as commands_runtime
 
     calls: list[tuple[str, ...]] = []
 
@@ -229,18 +229,18 @@ def test_cli_health_defaults_to_host_runtime_database(capsys, monkeypatch, tmp_p
         return object()
 
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.operator_environment",
+        "fourok.runtime.cli.operator_environment",
         lambda _root: {
             "FOUROK_DATABASE_URL": "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
         },
     )
-    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
+    monkeypatch.setattr("fourok.runtime.cli._running_app_database_url", lambda: "")
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.runtime.cli.create_governed_context_state",
         fake_create_state,
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.runtime.cli.check_runtime_health",
         lambda _state: {"status": "ok", "checks": []},
     )
     monkeypatch.setattr("sys.argv", ["fourok", "health"])
@@ -264,13 +264,13 @@ def test_cli_health_uses_container_database_env_without_rewrite(capsys, monkeypa
         "FOUROK_DATABASE_URL",
         "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
     )
-    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_in_container", lambda: True)
+    monkeypatch.setattr("fourok.runtime.cli._running_in_container", lambda: True)
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.runtime.cli.create_governed_context_state",
         fake_create_state,
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.runtime.cli.check_runtime_health",
         lambda _state: {"status": "ok", "checks": []},
     )
     monkeypatch.setattr("sys.argv", ["fourok", "health"])
@@ -289,11 +289,11 @@ def test_cli_health_keeps_explicit_database_url_container_valid(capsys, monkeypa
         return object()
 
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.runtime.cli.create_governed_context_state",
         fake_create_state,
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.runtime.cli.check_runtime_health",
         lambda _state: {"status": "ok", "checks": []},
     )
     monkeypatch.setattr(
@@ -323,18 +323,18 @@ def test_cli_health_keeps_explicit_state_on_sqlite_path(
         return object()
 
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.operator_environment",
+        "fourok.runtime.cli.operator_environment",
         lambda _root: {
             "FOUROK_DATABASE_URL": "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
         },
     )
-    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
+    monkeypatch.setattr("fourok.runtime.cli._running_app_database_url", lambda: "")
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.runtime.cli.create_governed_context_state",
         fake_create_state,
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.runtime.cli.check_runtime_health",
         lambda _state: {"status": "ok", "checks": []},
     )
     monkeypatch.setattr("sys.argv", ["fourok", "health", "--state", str(state)])
@@ -357,18 +357,18 @@ def test_cli_operator_status_keeps_explicit_default_state_path(
         return object()
 
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.operator_environment",
+        "fourok.runtime.cli.operator_environment",
         lambda _root: {
             "FOUROK_DATABASE_URL": "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
         },
     )
-    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_app_database_url", lambda: "")
+    monkeypatch.setattr("fourok.runtime.cli._running_app_database_url", lambda: "")
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime._context_state_from_args",
+        "fourok.runtime.cli._context_state_from_args",
         fake_context_state,
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.operator_status",
+        "fourok.runtime.cli.operator_status",
         lambda *_args, **_kwargs: {"status": "ok"},
     )
 

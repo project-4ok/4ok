@@ -3,7 +3,7 @@ from __future__ import annotations
 import argparse
 
 from fourok.cli_parts.commands_imports import dispatch_import_commands
-from fourok.cli_parts.commands_runtime import dispatch_runtime_commands
+from fourok.runtime.cli import dispatch_runtime_commands
 from fourok.cli_parts.runtime_helpers import _configure_observability_for_command
 from fourok.governance.cli import dispatch_audit_retention_commands
 from fourok.retrieval.cli import dispatch_search_commands

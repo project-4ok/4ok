@@ -269,7 +269,7 @@ def test_cli_access_smoke_prints_compose_access_report(capsys, monkeypatch, tmp_
         }
 
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_compose_access_boundary", fake_check
+        "fourok.runtime.cli.check_compose_access_boundary", fake_check
     )
     monkeypatch.setattr(
         "sys.argv",

@@ -5,7 +5,7 @@ import json
 import os
 from pathlib import Path
 
-from fourok.cli_parts.commands_runtime import health_database_url
+from fourok.runtime.cli import health_database_url
 from fourok.cli_parts.runtime_helpers import _database_url_from_args
 from fourok.cli_parts.shared import DEFAULT_STATE, _principal_from_args
 from fourok.etl.extract.email_parser import load_email_dir_with_report

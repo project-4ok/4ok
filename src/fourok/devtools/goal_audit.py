@@ -174,7 +174,12 @@ def _check_active_docs_exclude_reveal_surface(project_root: Path) -> GoalAuditCh
 def _check_cli_active_surface(project_root: Path) -> GoalAuditCheck:
     content = _read_existing(
         project_root / "src/fourok/cli.py",
+        project_root / "src/fourok/governance/cli.py",
         project_root / "src/fourok/retrieval/cli.py",
+        project_root / "src/fourok/runtime/cli.py",
+        project_root / "src/fourok/runtime/parser.py",
+        project_root / "src/fourok/runtime/webhooks_cli.py",
+        project_root / "src/fourok/storage/cli.py",
         *sorted((project_root / "src/fourok/cli_parts").glob("parser*.py")),
     )
     commands = frozenset(ADD_PARSER_PATTERN.findall(content))
@@ -196,7 +201,7 @@ def _check_cli_active_surface(project_root: Path) -> GoalAuditCheck:
     missing = [
         command
         for command in sorted(HIDDEN_EXPERIMENT_COMMANDS)
-        if f'_hide_subparser(subparsers, "{command}")' not in content
+        if command in commands and f'_hide_subparser(subparsers, "{command}")' not in content
     ]
     if missing:
         return GoalAuditCheck(
@@ -362,6 +367,8 @@ def _compose_service_block(content: str, service_name: str) -> str:
 
 
 def _imported_modules(path: Path) -> list[str]:
+    if not path.exists():
+        return []
     tree = ast.parse(_read(path), filename=str(path))
     imported: list[str] = []
     for node in ast.walk(tree):

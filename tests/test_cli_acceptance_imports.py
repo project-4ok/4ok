@@ -167,7 +167,7 @@ def test_cli_acceptance_proof_prints_sanitized_runtime_report(
         encoding="utf-8",
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.emit_observability_smoke",
+        "fourok.runtime.cli.emit_observability_smoke",
         lambda service_name, endpoint: {
             "status": "ok",
             "service_name": service_name,
@@ -176,7 +176,7 @@ def test_cli_acceptance_proof_prints_sanitized_runtime_report(
         },
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_compose_access_boundary",
+        "fourok.runtime.cli.check_compose_access_boundary",
         lambda compose_file: {
             "status": "ok",
             "compose_file": str(compose_file),
@@ -226,7 +226,7 @@ def test_cli_acceptance_proof_exits_nonzero_when_proof_fails(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.internal_v0_acceptance_proof",
+        "fourok.runtime.cli.internal_v0_acceptance_proof",
         lambda **_kwargs: {"status": "failed", "checks": {"search": "failed"}},
     )
     monkeypatch.setattr(

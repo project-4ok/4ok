@@ -157,11 +157,11 @@ def test_cli_runtime_monitor_emits_bounded_health_report(
         return object()
 
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        "fourok.runtime.cli.create_governed_context_state",
         fake_create_state,
     )
     monkeypatch.setattr(
-        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        "fourok.runtime.cli.check_runtime_health",
         lambda _state: {"status": "ok", "checks": []},
     )
     monkeypatch.setattr(
