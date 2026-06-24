@@ -24,8 +24,8 @@
     {
       "id": 39,
       "type": "text",
-      "title": "[Agent] Runtime observability coverage",
-      "description": "Fast top-level coverage check for agents and humans before interpreting the rest of the dashboard.",
+      "title": "[Deployment] Observability data coverage",
+      "description": "Fast top-level coverage check before interpreting the rest of the dashboard.",
       "gridPos": {
         "x": 0,
         "y": 0,
@@ -34,14 +34,14 @@
       },
       "options": {
         "mode": "markdown",
-        "content": "**Start here.** These cards answer whether the dashboard has live Prometheus metrics, Loki logs, retrieval telemetry, and embedding telemetry. Red/missing means the dashboard may still be healthy but lacks the data needed for agent debugging; use the CLI in `src/fourok/agent_experience` for the same API-backed checks."
+        "content": "**Start here.** These cards answer whether Grafana currently has live Prometheus metrics, Loki logs, retrieval telemetry, and embedding telemetry. Red/missing means Grafana may be healthy but lacks the data needed to understand deployment state; drill into Docker/Dagster/runtime checks before trusting lower panels."
       }
     },
     {
       "id": 40,
       "type": "stat",
-      "title": "[Agent] Prometheus fourok metrics present",
-      "description": "At least one core fourok/fourok Prometheus metric is present. Missing means scraping/exporter/runtime data is absent, so lower metric panels may be empty.",
+      "title": "[Deployment] Prometheus metrics present",
+      "description": "At least one core fourok Prometheus metric is present. Missing means scraping/exporter/runtime data is absent, so lower metric panels may be empty.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -144,7 +144,7 @@
     {
       "id": 41,
       "type": "stat",
-      "title": "[Agent] Recent Loki fourok log streams",
+      "title": "[Deployment] Recent fourok log streams",
       "description": "Recent Docker log streams for the selected compose project. This is log activity, not container health; quiet services can be healthy.",
       "datasource": {
         "type": "loki",
@@ -248,7 +248,7 @@
     {
       "id": 42,
       "type": "stat",
-      "title": "[Agent] Retrieval request telemetry present",
+      "title": "[Deployment] Retrieval telemetry present",
       "description": "Privacy-safe live retrieval/search request telemetry. Missing means agent retrieval usage is not observable even if indexed records exist.",
       "datasource": {
         "type": "prometheus",
@@ -352,7 +352,7 @@
     {
       "id": 43,
       "type": "stat",
-      "title": "[Agent] Embedding coverage telemetry present",
+      "title": "[Deployment] Embedding telemetry present",
       "description": "Embedding coverage/indexing telemetry. Missing means the dashboard cannot answer whether retrieval units are embedded.",
       "datasource": {
         "type": "prometheus",

@@ -217,6 +217,7 @@ services:
       - >
         mkdir -p /opt/dagster/dagster_home &&
         cp /tmp/fourok-dagster-home/dagster.yaml /tmp/fourok-dagster-home/workspace.yaml /opt/dagster/dagster_home/ &&
+        dagster schedule start -w /opt/dagster/dagster_home/workspace.yaml fourok_hourly_live_backfill_schedule &&
         exec dagster-daemon run -w /opt/dagster/dagster_home/workspace.yaml
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
@@ -261,21 +262,12 @@ services:
     depends_on:
       postgres:
         condition: service_healthy
-      cerbos:
-        condition: service_healthy
     volumes:
       - fourok-local:/app/.local
       - fourok-data:/var/lib/fourok
       - ${FOUROK_CONFIG_PATH:-./.local/fourok.toml}:/etc/fourok/fourok.toml:ro
     healthcheck:
-      test:
-        [
-          "CMD",
-          "/app/.venv/bin/fourok",
-          "health",
-          "--config",
-          "/etc/fourok/fourok.toml",
-        ]
+      test: ["CMD", "/app/.venv/bin/fourok", "health"]
       interval: 10s
       timeout: 10s
       retries: 12

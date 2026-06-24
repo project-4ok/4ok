@@ -47,7 +47,7 @@ def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkey
     monkeypatch.setattr("fourok.devtools.dev._git_short_head", lambda *, default: "abc1234")
 
     [app_step] = build_plan("app-up", [])
-    [core_step] = build_plan("core-up", [])
+    [cleanup_step, core_step] = build_plan("core-up", [])
     [observability_step] = build_plan("observability-up", [])
 
     assert app_step.command == (
@@ -60,6 +60,7 @@ def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkey
         "postgres",
         "app",
     )
+    assert cleanup_step.name == "cleanup-smoke-projects"
     assert core_step.command == app_step.command
     assert app_step.env["FOUROK_IMAGE_TAG"] == "abc1234"
     assert app_step.env["POSTGRES_PASSWORD"] == "local-check"
@@ -84,15 +85,16 @@ def test_stack_up_starts_runtime_pipeline_and_observability_in_order(tmp_path, m
 
     plan = build_plan("stack-up", [])
 
-    assert [step.name for step in plan] == ["core-up"]
+    assert [step.name for step in plan] == ["cleanup-smoke-projects", "core-up"]
 
 
 def test_compose_env_overrides_stale_smoke_project_name(tmp_path, monkeypatch) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("COMPOSE_PROJECT_NAME", "smoke-fourok")
 
-    [step] = build_plan("core-up", [])
+    [cleanup_step, step] = build_plan("core-up", [])
 
+    assert cleanup_step.env["COMPOSE_PROJECT_NAME"] == "fourok"
     assert step.env["COMPOSE_PROJECT_NAME"] == "fourok"
 
 

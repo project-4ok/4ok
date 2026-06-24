@@ -40,21 +40,24 @@ def build_plan(action: str, extra_args: Sequence[str]) -> list[DevStep]:
         return [_lint()]
     if action == "test":
         return [_pytest(extra_args)]
+    if action == "check":
+        return [_lint(), _format_check(), _pytest(extra_args), _compose_config(), _whitespace()]
     if action == "fast":
-        return [_lint(), _format_check(), _file_lengths(), _pytest(extra_args), _whitespace()]
+        return build_plan("check", extra_args)
     if action == "full":
         return [
             _lint(),
             _format_check(),
             _file_lengths(),
             _pytest(extra_args),
+            _compose_config(),
             _goal_audit(),
             _whitespace(),
         ]
     if action == "compose-config":
         return [_compose_config()]
     if action == "core-up":
-        return [_core_up()]
+        return [_cleanup_smoke_projects(), _core_up()]
     if action == "app-up":
         return [_app_up()]
     if action == "observability-up":
@@ -62,7 +65,7 @@ def build_plan(action: str, extra_args: Sequence[str]) -> list[DevStep]:
     if action == "pipeline-up":
         return [_pipeline_up()]
     if action == "stack-up":
-        return [_core_up()]
+        return build_plan("core-up", extra_args)
     if action == "pipeline-ps":
         return [_pipeline_ps()]
     if action == "operator-live":
@@ -78,7 +81,7 @@ def install_hooks(project_root: Path) -> list[Path]:
         raise FileNotFoundError(f"missing git hooks directory: {hooks_dir}")
 
     hooks = {
-        "pre-commit": "#!/usr/bin/env bash\nset -euo pipefail\n\nuv run fourok-dev fast\n",
+        "pre-commit": "#!/usr/bin/env bash\nset -euo pipefail\n\nuv run fourok-dev check\n",
         "pre-push": "#!/usr/bin/env bash\nset -euo pipefail\n\nuv run fourok-dev full\n",
     }
     written: list[Path] = []
@@ -98,6 +101,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         "format",
         "lint",
         "test",
+        "check",
         "test-tracked",
         "fast",
         "full",
@@ -114,7 +118,7 @@ def main(argv: Sequence[str] | None = None) -> None:
         command_parser = subparsers.add_parser(command)
         if command != "operator-live":
             command_parser.add_argument("--dry-run", action="store_true")
-        if command in {"test", "fast", "full"}:
+        if command in {"test", "check", "fast", "full"}:
             command_parser.add_argument("pytest_args", nargs=argparse.REMAINDER)
         if command == "operator-live":
             command_parser.add_argument("--dry-run", dest="operator_dry_run", action="store_true")
@@ -346,7 +350,7 @@ def _whitespace() -> DevStep:
 def _compose_config() -> DevStep:
     return DevStep(
         "compose-config",
-        ("docker", "compose", "--profile", "pipeline", "config"),
+        ("docker", "compose", "--profile", "pipeline", "config", "--quiet"),
         env=_compose_local_env(),
     )
 
@@ -371,6 +375,29 @@ def _app_up() -> DevStep:
 def _core_up() -> DevStep:
     app_step = _app_up()
     return DevStep("core-up", app_step.command, env=app_step.env)
+
+
+def _cleanup_smoke_projects() -> DevStep:
+    return DevStep(
+        "cleanup-smoke-projects",
+        (
+            "bash",
+            "-lc",
+            """
+set -euo pipefail
+projects=$(
+  docker ps -a --format '{{.Label "com.docker.compose.project"}}' \
+    | sort -u \
+    | grep -E '^smoke-(fourok|fourok)' \
+    || true
+)
+for project in $projects; do
+  docker compose -p "$project" down --remove-orphans
+done
+""".strip(),
+        ),
+        env=_compose_local_env(),
+    )
 
 
 def _observability_up() -> DevStep:
@@ -491,7 +518,7 @@ def compose_env_report(*, redact: bool = True) -> dict[str, object]:
             "app_up": "uv run fourok-dev app-up",
             "observability_up": "uv run fourok-dev observability-up",
             "pipeline_up": "uv run fourok-dev pipeline-up",
-            "stack_up": "uv run fourok-dev stack-up",
+            "stack_up": "uv run fourok-dev stack-up  # core only",
             "pipeline_ps": "uv run fourok-dev pipeline-ps",
         },
     }

@@ -2,26 +2,26 @@ from __future__ import annotations
 
 import argparse
 import json
-from typing import cast
 
 from fourok.cli_parts.runtime_helpers import _database_url_from_args
 from fourok.cli_parts.shared import DEFAULT_STATE, _principal_from_args
 from fourok.etl.extract.email_parser import load_email_dir_with_report
 from fourok.governance import GovernedContext
-from fourok.retrieval.augmentation import RetrieverName
-from fourok.retrieval.live_retrieval_case_set import run_live_retrieval_case_set
+from fourok.retrieval.clients import cli as retrieval_client
 from fourok.runtime.operator_live import host_database_url
-from fourok.workflows import HumanAgentWorkflow
 
 
 def dispatch_search_commands(args: argparse.Namespace) -> bool:
     database_url = _database_url_from_args(args)
     if args.command == "search":
         load_report = load_email_dir_with_report(args.emails)
-        context = GovernedContext(args.state, database_url=database_url)
-        context.ingest(load_report.messages)
-        response = context.search_context(args.query, limit=args.limit)
-        results = response.results
+        response = retrieval_client.search_fixture(
+            messages=load_report.messages,
+            query=args.query,
+            limit=args.limit,
+            state=args.state,
+            database_url=database_url,
+        )
         print(
             json.dumps(
                 {
@@ -31,7 +31,7 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
                         "skipped": len(load_report.skipped),
                         "skipped_files": load_report.skipped,
                     },
-                    "results": [result.__dict__ for result in results],
+                    "results": response["results"],
                 },
                 indent=2,
             )
@@ -39,28 +39,30 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
         return True
 
     if args.command == "search-state":
-        context = GovernedContext(args.state, database_url=database_url)
-        response = context.search_context(
+        response = retrieval_client.search_state(
             args.query,
             limit=args.limit,
             principal=_principal_from_args(args),
+            state=args.state,
+            database_url=database_url,
+            context_factory=GovernedContext,
         )
         print(
             json.dumps(
                 {
                     "query": args.query,
                     "load": {"loaded": 0, "source": "existing_state"},
-                    "results": [result.__dict__ for result in response.results],
-                    "summary": response.summary,
-                    "result_candidates": response.result_candidates,
-                    "evidence_items": response.evidence_items,
-                    "primary_objects": response.primary_objects,
-                    "related_objects": response.related_objects,
-                    "related_object_groups": response.related_object_groups,
-                    "entities": response.entities,
-                    "unresolved_candidates": response.unresolved_candidates,
-                    "limitations": response.limitations,
-                    "audit_ref": response.audit_ref,
+                    "results": response["results"],
+                    "summary": response["summary"],
+                    "result_candidates": response["result_candidates"],
+                    "evidence_items": response["evidence_items"],
+                    "primary_objects": response["primary_objects"],
+                    "related_objects": response["related_objects"],
+                    "related_object_groups": response["related_object_groups"],
+                    "entities": response["entities"],
+                    "unresolved_candidates": response["unresolved_candidates"],
+                    "limitations": response["limitations"],
+                    "audit_ref": response["audit_ref"],
                 },
                 indent=2,
             )
@@ -68,38 +70,44 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
         return True
 
     if args.command == "retrieve":
-        context = GovernedContext(args.state, database_url=database_url)
         retrievers = tuple(item.strip() for item in str(args.retrievers).split(",") if item.strip())
-        invalid = sorted(set(retrievers) - {"keyword", "vector"})
-        if invalid:
-            raise SystemExit(f"Unsupported retriever(s): {', '.join(invalid)}")
-        response = context.retrieve_augmentation(
-            args.query,
-            limit=5,
-            candidate_limit=args.candidate_limit,
-            retrievers=cast(tuple[RetrieverName, ...], retrievers),
-        )
-        if args.format == "json":
-            print(json.dumps(response.to_dict(), indent=2))
-        else:
-            print(response.context_block, end="")
+        try:
+            if args.format == "json":
+                response = retrieval_client.retrieve_augmentation(
+                    args.query,
+                    candidate_limit=args.candidate_limit,
+                    retrievers=retrievers,
+                    state=args.state,
+                    database_url=database_url,
+                )
+                print(json.dumps(response, indent=2))
+            else:
+                block = retrieval_client.retrieve_block(
+                    args.query,
+                    candidate_limit=args.candidate_limit,
+                    retrievers=retrievers,
+                    state=args.state,
+                    database_url=database_url,
+                )
+                print(block, end="")
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
         return True
 
     if args.command == "ask":
         load_report = load_email_dir_with_report(args.emails)
-        context = GovernedContext(args.state, database_url=database_url)
-        context.ingest(load_report.messages)
-        workflow = HumanAgentWorkflow(
-            context,
-            _principal_from_args(args),
+        response = retrieval_client.ask_fixture(
+            messages=load_report.messages,
+            query=args.query,
+            principal=_principal_from_args(args),
+            limit=args.limit,
+            state=args.state,
+            database_url=database_url,
         )
-        response = workflow.ask(args.query, limit=args.limit)
         print(
             json.dumps(
                 {
-                    "query": args.query,
-                    "summary": response.summary,
-                    "evidence": [item.__dict__ for item in response.evidence],
+                    **response,
                     "load": {
                         "loaded": len(load_report.messages),
                         "skipped": len(load_report.skipped),
@@ -115,12 +123,9 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
         live_database_url = _database_url_from_args(args)
         if getattr(args, "state", DEFAULT_STATE) == DEFAULT_STATE and live_database_url:
             live_database_url = host_database_url(live_database_url)
-        context = GovernedContext(
-            args.state,
+        report = retrieval_client.run_live_retrieval_case_set(
+            state=args.state,
             database_url=live_database_url,
-        )
-        report = run_live_retrieval_case_set(
-            context=context,
             cases_path=args.cases,
             seed_fixtures=args.seed_fixtures,
             case_limit=args.case_limit,

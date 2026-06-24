@@ -47,11 +47,11 @@ Prerequisites: Python 3.13 and [uv](https://docs.astral.sh/uv/).
 git clone https://github.com/project-fourok/fourok.git
 cd fourok
 uv sync
-uv run fourok-dev fast
+uv run fourok-dev check
 ```
 
 That installs the project and runs the default local development gate: lint,
-format check, tracked tests, goal audit, and whitespace checks.
+format check, tests, compose rendering validation, and whitespace checks.
 
 Try a fixture-only retrieval path:
 
@@ -104,10 +104,10 @@ Deferred or intentionally out of scope for the active stage:
 ```text
 src/fourok/etl/extract/      source connectors, raw landing, fixture taps, PDF text import
 src/fourok/etl/load/         source changes, source records, context objects, retrieval records
-src/fourok/api/              API-first retrieval boundary used by all clients
-src/fourok/clients/          thin client wrappers for CLI, MCP, and future adapters
 src/fourok/storage/          config, ORM models, health, raw store, PostgreSQL utilities
-src/fourok/retrieval/        search, evidence packs, retrieval evaluation
+src/fourok/retrieval/        API boundary, clients, search, evidence packs, retrieval evaluation
+src/fourok/retrieval/api.py  API-first retrieval boundary used by all clients
+src/fourok/retrieval/clients/ thin client wrappers for CLI, MCP, and future adapters
 src/fourok/governance/       permissions, lifecycle, retention, audit behavior
 src/fourok/runtime/          MCP server, operator runtime, observability, Dagster support
 src/fourok/devtools/         repeatable local development and operator commands
@@ -119,7 +119,8 @@ docs/                     architecture, operations, compliance, and internal-v0 
 
 ```bash
 # default local gate for development
-uv run fourok-dev fast
+uv run fourok-dev check
+uv run fourok-dev fast  # backwards-compatible alias
 
 # full release-style local gate
 uv run fourok-dev full
@@ -144,7 +145,7 @@ uv run fourok-dev compose-config
 
 ## Onboarding path for contributors
 
-1. Run `uv sync` and `uv run fourok-dev fast`.
+1. Run `uv sync` and `uv run fourok-dev check`.
 2. Read [Architecture](docs/architecture.md) for the source-record contract.
 3. Read [Development](docs/development.md) for the local gates.
 4. Pick a small vertical slice and prove it with a fixture, CLI command, or

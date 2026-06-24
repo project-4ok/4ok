@@ -10,21 +10,21 @@ def test_fourok_dashboard_starts_with_agent_runtime_coverage_row() -> None:
     by_title = {panel["title"]: panel for panel in panels}
 
     assert dashboard["title"] == "fourok dashboard"
-    assert by_title["[Agent] Runtime observability coverage"]["gridPos"]["y"] == 0
+    assert by_title["[Deployment] Observability data coverage"]["gridPos"]["y"] == 0
 
     expected_top_stat_panels = {
-        "[Agent] Prometheus fourok metrics present": (
+        "[Deployment] Prometheus metrics present": (
             "fourok_source_records_total or fourok_dagster_schedule_running or "
             "fourok_retrieval_records_total"
         ),
-        "[Agent] Recent Loki fourok log streams": (
+        "[Deployment] Recent fourok log streams": (
             'count(count_over_time({compose_project=~"$compose_project"}[15m]))'
         ),
-        "[Agent] Retrieval request telemetry present": (
+        "[Deployment] Retrieval telemetry present": (
             "fourok_retrieval_requests_total or fourok_search_requests_total or "
             "fourok_retrieval_prepare_total"
         ),
-        "[Agent] Embedding coverage telemetry present": (
+        "[Deployment] Embedding telemetry present": (
             "fourok_embedding_coverage_ratio or fourok_embedding_records_total"
         ),
     }

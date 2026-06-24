@@ -236,6 +236,34 @@ def test_cli_health_defaults_to_host_runtime_database(capsys, monkeypatch) -> No
     assert calls[0]["database_url"] == "postgresql+psycopg://fourok:secret@127.0.0.1:5432/fourok"
 
 
+def test_cli_health_uses_container_database_env_without_rewrite(capsys, monkeypatch) -> None:
+    calls: list[dict[str, object]] = []
+
+    def fake_create_state(**kwargs):
+        calls.append(kwargs)
+        return object()
+
+    monkeypatch.setenv(
+        "FOUROK_DATABASE_URL",
+        "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
+    )
+    monkeypatch.setattr("fourok.cli_parts.commands_runtime._running_in_container", lambda: True)
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        fake_create_state,
+    )
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        lambda _state: {"status": "ok", "checks": []},
+    )
+    monkeypatch.setattr("sys.argv", ["fourok", "health"])
+
+    main()
+
+    assert json.loads(capsys.readouterr().out) == {"status": "ok", "checks": []}
+    assert calls[0]["database_url"] == "postgresql+psycopg://fourok:secret@postgres:5432/fourok"
+
+
 def test_cli_health_keeps_explicit_database_url_container_valid(capsys, monkeypatch) -> None:
     calls: list[dict[str, object]] = []
 

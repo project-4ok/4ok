@@ -11,22 +11,36 @@ from fourok.devtools.dev import (
 )
 
 
-def test_fast_plan_runs_reusable_local_gate_with_optional_pytest_args() -> None:
-    plan = build_plan("fast", ["tests/runtime/test_compose.py", "-q"])
+def test_check_plan_runs_reusable_local_gate_with_optional_pytest_args() -> None:
+    plan = build_plan("check", ["tests/runtime/test_compose.py", "-q"])
 
     assert [step.name for step in plan] == [
         "lint",
         "format-check",
-        "file-lengths",
         "pytest",
+        "compose-config",
         "whitespace",
     ]
-    assert plan[3].command == (
+    assert plan[2].command == (
         "uv",
         "run",
         "pytest",
         "tests/runtime/test_compose.py",
         "-q",
+    )
+    assert plan[3].command == (
+        "docker",
+        "compose",
+        "--profile",
+        "pipeline",
+        "config",
+        "--quiet",
+    )
+
+
+def test_fast_plan_is_backward_compatible_alias_to_check() -> None:
+    assert build_plan("fast", ["tests/runtime/test_compose.py", "-q"]) == build_plan(
+        "check", ["tests/runtime/test_compose.py", "-q"]
     )
 
 
@@ -37,10 +51,10 @@ def test_lint_and_format_check_ignore_untracked_parallel_work() -> None:
     assert plan[1].command == ("uv", "run", "python", "-m", "fourok.devtools.dev", "format")
 
 
-def test_fast_plan_defaults_to_default_pytest_suite() -> None:
-    plan = build_plan("fast", [])
+def test_check_plan_defaults_to_default_pytest_suite() -> None:
+    plan = build_plan("check", [])
 
-    assert plan[3].command == ("uv", "run", "python", "-m", "fourok.devtools.dev", "test-tracked")
+    assert plan[2].command == ("uv", "run", "python", "-m", "fourok.devtools.dev", "test-tracked")
 
 
 def test_full_plan_includes_goal_audit_and_default_pytest() -> None:
@@ -51,11 +65,12 @@ def test_full_plan_includes_goal_audit_and_default_pytest() -> None:
         "format-check",
         "file-lengths",
         "pytest",
+        "compose-config",
         "goal-audit",
         "whitespace",
     ]
     assert plan[3].command == ("uv", "run", "python", "-m", "fourok.devtools.dev", "test-tracked")
-    assert plan[4].command == ("uv", "run", "fourok", "goal-audit")
+    assert plan[5].command == ("uv", "run", "fourok", "goal-audit")
 
 
 def test_operator_live_plan_runs_pipeline_group_module() -> None:
@@ -88,7 +103,14 @@ def test_compose_config_plan_uses_safe_required_env_defaults(monkeypatch, tmp_pa
         "FOUROK_IMAGE_TAG": "local-check",
         "POSTGRES_PASSWORD": "local-check",
     }
-    assert plan[0].command == ("docker", "compose", "--profile", "pipeline", "config")
+    assert plan[0].command == (
+        "docker",
+        "compose",
+        "--profile",
+        "pipeline",
+        "config",
+        "--quiet",
+    )
 
 
 def test_compose_env_report_redacts_runtime_env_and_keeps_non_secret_values(
@@ -112,7 +134,7 @@ def test_compose_env_report_redacts_runtime_env_and_keeps_non_secret_values(
     assert report["usage"]["app_up"] == "uv run fourok-dev app-up"
     assert report["usage"]["core_up"] == "uv run fourok-dev core-up"
     assert report["usage"]["observability_up"] == "uv run fourok-dev observability-up"
-    assert report["usage"]["stack_up"] == "uv run fourok-dev stack-up"
+    assert report["usage"]["stack_up"] == "uv run fourok-dev stack-up  # core only"
 
 
 def test_connector_secret_report_flags_missing_required_live_connector_keys() -> None:
@@ -158,7 +180,7 @@ def test_install_hooks_writes_versioned_hook_entrypoints(tmp_path: Path) -> None
         hooks_dir / "pre-push",
     ]
     assert (hooks_dir / "pre-commit").read_text(encoding="utf-8") == (
-        "#!/usr/bin/env bash\nset -euo pipefail\n\nuv run fourok-dev fast\n"
+        "#!/usr/bin/env bash\nset -euo pipefail\n\nuv run fourok-dev check\n"
     )
     assert (hooks_dir / "pre-push").read_text(encoding="utf-8") == (
         "#!/usr/bin/env bash\nset -euo pipefail\n\nuv run fourok-dev full\n"
@@ -415,7 +437,7 @@ def test_dagster_status_entrypoint_discovers_fourok_repository_from_multiple_nod
 
 def test_module_entrypoint_executes_dev_cli() -> None:
     result = subprocess.run(
-        ["python", "-m", "fourok.devtools.dev", "fast", "--dry-run"],
+        ["python", "-m", "fourok.devtools.dev", "check", "--dry-run"],
         check=True,
         capture_output=True,
         text=True,

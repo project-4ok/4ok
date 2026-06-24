@@ -133,11 +133,12 @@ def dispatch_runtime_commands(args: argparse.Namespace) -> bool:
         return True
 
     if args.command == "health":
-        args.database_url = host_operator_database_url(
-            state=args.state,
-            state_explicit=args.state_explicit,
-            explicit_database_url=args.database_url,
-        )
+        if args.database_url is None:
+            args.database_url = health_database_url(
+                state=args.state,
+                state_explicit=args.state_explicit,
+                explicit_database_url=None,
+            )
         state = create_governed_context_state(
             state_path=args.state,
             database_url=args.database_url,
@@ -226,6 +227,29 @@ def host_operator_database_url(
     if env_database_url := os.environ.get("FOUROK_DATABASE_URL"):
         return host_database_url(env_database_url)
     return None
+
+
+def health_database_url(
+    *,
+    state,
+    state_explicit: bool = False,
+    explicit_database_url: str | None,
+) -> str | None:
+    if explicit_database_url:
+        return explicit_database_url
+    if state_explicit or state != DEFAULT_STATE:
+        return None
+    if _running_in_container() and (env_database_url := os.environ.get("FOUROK_DATABASE_URL")):
+        return env_database_url
+    return host_operator_database_url(
+        state=state,
+        state_explicit=state_explicit,
+        explicit_database_url=None,
+    )
+
+
+def _running_in_container() -> bool:
+    return Path("/.dockerenv").exists() or bool(os.environ.get("KUBERNETES_SERVICE_HOST"))
 
 
 def _running_app_database_url() -> str:

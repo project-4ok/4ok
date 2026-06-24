@@ -19,9 +19,10 @@ def test_compose_declares_app_context_cli_runtime() -> None:
     assert "HONCHO_URL" not in app_service
     assert "HONCHO_SYNC_SOURCES" not in app_service
     assert "honcho:" not in app_service
+    assert "cerbos:" not in app_service
     assert '"honcho-sync"' not in app_service
     assert '"runtime-monitor"' in app_service
-    assert '"health"' in app_service
+    assert '"/app/.venv/bin/fourok", "health"' in app_service
     assert "FOUROK_OBSERVABILITY_ENABLED" in app_service
     assert "OTEL_EXPORTER_OTLP_ENDPOINT" in app_service
     assert "http://observability:4318" in app_service
@@ -51,10 +52,9 @@ def test_compose_active_services_have_health_checks() -> None:
 
     app_service = _compose_service_block(compose, "app")
     healthcheck = _compose_healthcheck_block(app_service)
-    assert '"/app/.venv/bin/fourok"' in healthcheck
-    assert '"health"' in healthcheck
-    assert '"--config"' in healthcheck
-    assert '"/etc/fourok/fourok.toml"' in healthcheck
+    assert '["CMD", "/app/.venv/bin/fourok", "health"]' in healthcheck
+    assert '"--config"' not in healthcheck
+    assert '"--database-url"' not in healthcheck
 
 
 def test_compose_app_command_is_long_running_when_restart_policy_is_enabled() -> None:
@@ -199,6 +199,12 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     assert "fourok dashboard" in dashboard_provider
     assert "fourok-local-runtime-logs.json" in dashboard_provider
     assert dashboard_data["title"] == "fourok dashboard"
+    dashboard_titles = {panel["title"] for panel in dashboard_data["panels"]}
+    assert "[Deployment] Observability data coverage" in dashboard_titles
+    assert "[Deployment] Prometheus metrics present" in dashboard_titles
+    assert "[Deployment] Recent fourok log streams" in dashboard_titles
+    assert "[Deployment] Retrieval telemetry present" in dashboard_titles
+    assert "[Deployment] Embedding telemetry present" in dashboard_titles
     assert '{compose_project=~"$compose_project"}' in expressions
     assert '{compose_service=~"$compose_service"}' in expressions
     assert '{compose_service=~"$compose_service"} |= "STEP_FAILURE"' in expressions
@@ -261,7 +267,6 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     assert "[Logs] Last 5 fourok Docker logs" in {
         panel["title"] for panel in dashboard_data["panels"]
     }
-    dashboard_titles = {panel["title"] for panel in dashboard_data["panels"]}
     assert "[Logs] Last 5 Dagster code logs" in dashboard_titles
     assert "[Logs] Last 5 Dagster failures" in dashboard_titles
     assert "[Logs] Latest 5 runtime errors by service" in {
@@ -473,6 +478,22 @@ def test_compose_declares_dagster_pipeline_profile() -> None:
         assert f"OTEL_SERVICE_NAME: ${{OTEL_SERVICE_NAME:-{service_name_env}}}" in service
     assert "dagster-postgres-data:/var/lib/postgresql/data" in compose
     assert "dagster-local:/var/lib/dagster" in compose
+
+
+def test_dagster_daemon_starts_backfill_schedule_before_running() -> None:
+    compose_files = [
+        Path("docker-compose.yml"),
+        Path("deploy/runtime/docker-compose.pinned.yml"),
+    ]
+
+    for compose_file in compose_files:
+        compose = compose_file.read_text(encoding="utf-8")
+        daemon = _compose_service_block(compose, "dagster-daemon")
+
+        assert "dagster schedule start" in daemon
+        assert "fourok_hourly_live_backfill_schedule" in daemon
+        assert "exec dagster-daemon run -w" in daemon
+        assert daemon.index("dagster schedule start") < daemon.index("exec dagster-daemon run")
 
 
 def test_dagster_definitions_configure_observability_from_env() -> None:

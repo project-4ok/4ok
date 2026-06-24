@@ -174,7 +174,8 @@ services:
       - >
         mkdir -p "$$DAGSTER_HOME" &&
         cp /tmp/fourok-dagster-home/dagster.yaml /tmp/fourok-dagster-home/workspace.yaml "$$DAGSTER_HOME"/ &&
-        exec dagster-daemon run
+        dagster schedule start -w "$$DAGSTER_HOME/workspace.yaml" fourok_hourly_live_backfill_schedule &&
+        exec dagster-daemon run -w "$$DAGSTER_HOME/workspace.yaml"
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
       DAGSTER_POSTGRES_USER: dagster
@@ -221,7 +222,6 @@ services:
       - ${FOUROK_CONFIG_PATH:-../../.local/fourok.toml}:/etc/fourok/fourok.toml:ro
     healthcheck:
       test: ["CMD", "/app/.venv/bin/fourok", "health"]
-      interval: 10s
       timeout: 10s
       retries: 12
       start_period: 10s

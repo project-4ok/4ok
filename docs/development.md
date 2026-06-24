@@ -3,9 +3,15 @@
 Use `fourok-dev` for repeatable local checks. It wraps the commands that agents and
 humans should run during normal development without adding another task runner.
 
-## Fast Loop
+## Check Gate
 
 Run the default local gate:
+
+```bash
+uv run fourok-dev check
+```
+
+`fast` is a backwards-compatible alias:
 
 ```bash
 uv run fourok-dev fast
@@ -14,13 +20,13 @@ uv run fourok-dev fast
 Run the same gate against a narrow pytest target:
 
 ```bash
-uv run fourok-dev fast -- tests/runtime/test_compose.py -q
+uv run fourok-dev check -- tests/runtime/test_compose.py -q
 ```
 
 Inspect what a command will run:
 
 ```bash
-uv run fourok-dev fast --dry-run
+uv run fourok-dev check --dry-run
 ```
 
 The command uses `.scratch/uv-cache` for uv cache state.
@@ -33,8 +39,8 @@ Run the release-style local gate before claiming a broad slice done:
 uv run fourok-dev full
 ```
 
-This runs lint, formatting checks, file-length guard, the default pytest suite,
-goal audit, and `git diff --check`.
+This runs lint, formatting checks, the default tracked pytest suite, compose-config
+validation, file-length guard, goal audit, and `git diff --check`.
 
 ## Test Targets
 
@@ -58,7 +64,7 @@ Install versioned local hooks:
 uv run fourok-dev install-hooks
 ```
 
-The pre-commit hook runs `uv run fourok-dev fast`. The pre-push hook runs
+The pre-commit hook runs `uv run fourok-dev check`. The pre-push hook runs
 `uv run fourok-dev full`.
 
 ## Docker
