@@ -197,7 +197,22 @@ def render_augmentation_block(response: RetrievalAugmentationResponse) -> str:
         "",
     ]
     if not response.results:
-        lines.extend(["No relevant source excerpts found.", ""])
+        lines.extend(
+            [
+                "No relevant source excerpts found.",
+                "",
+                (
+                    "This usually means fourok has no imported context yet, the local "
+                    "runtime is not ready, or connectors have not imported data."
+                ),
+                "",
+                "Next:",
+                "  fourok status",
+                "  fourok onboard",
+                "  fourok onboard connectors",
+                "",
+            ]
+        )
     else:
         for index, result in enumerate(response.results, start=1):
             permission_refs = (

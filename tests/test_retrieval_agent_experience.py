@@ -40,6 +40,26 @@ def test_default_retrieval_block_is_agent_facing_and_citation_ready() -> None:
     assert "evidence: dev-jules-codex-auth-e2e-20260610-1059" in block
 
 
+def test_empty_retrieval_block_guides_user_to_onboard_and_status() -> None:
+    response = RetrievalAugmentationResponse(
+        status="ok",
+        results=[],
+        limitations=[
+            "Searched keyword and vector candidates.",
+            "No relevant source excerpts found for the selected retrievers.",
+            "Results are source excerpts, not a final answer.",
+        ],
+    )
+
+    block = render_augmentation_block(response)
+
+    assert "No relevant source excerpts found." in block
+    assert "This usually means fourok has no imported context yet" in block
+    assert "fourok status" in block
+    assert "fourok onboard" in block
+    assert "fourok onboard connectors" in block
+
+
 def test_default_reranker_demotes_tool_noise_and_boosts_current_work_items() -> None:
     rows = [
         {
