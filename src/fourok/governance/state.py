@@ -90,7 +90,10 @@ def _raw_store(
 def _sqlite_url(state_path: Path | str) -> str:
     if str(state_path) == ":memory:":
         return "sqlite:///:memory:"
-    return f"sqlite:///{Path(state_path)}"
+    path = Path(state_path)
+    if path.parent != Path("."):
+        path.parent.mkdir(parents=True, exist_ok=True)
+    return f"sqlite:///{path}"
 
 
 def _database_url(*, state_path: Path | str, database_url: str | None) -> str:

@@ -6,6 +6,7 @@ import os
 from datetime import datetime
 from pathlib import Path
 
+from fourok.cli_parts.shared import DEFAULT_STATE
 from fourok.governance import GovernedContext
 from fourok.governance.state import create_governed_context_state
 from fourok.observability import configure_observability, configure_observability_from_env
@@ -168,12 +169,9 @@ def _context_state_from_args(args: argparse.Namespace, *, raw_store_path: Path |
 def _database_url_from_args(args: argparse.Namespace) -> str | None:
     database_url = getattr(args, "database_url", None)
     if (
-        (
-            getattr(args, "state_explicit", False)
-            or getattr(args, "state", None) != Path(".fourok-state.sqlite")
-        )
+        (getattr(args, "state_explicit", False) or getattr(args, "state", None) != DEFAULT_STATE)
         and database_url is not None
-        and database_url == os.environ.get("FOUR_OK_DATABASE_URL")
+        and database_url == os.environ.get("FOUROK_DATABASE_URL")
     ):
         return None
     return database_url

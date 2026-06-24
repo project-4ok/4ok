@@ -43,6 +43,18 @@ def test_check_runtime_health_reports_database_without_records_as_failed(tmp_pat
     }
 
 
+def test_create_governed_context_state_creates_parent_directory(tmp_path: Path) -> None:
+    state_path = tmp_path / ".local" / "fourok-state.sqlite"
+
+    create_governed_context_state(
+        state_path=state_path,
+        database_url=None,
+        raw_store_path=None,
+    )
+
+    assert state_path.exists()
+
+
 def test_check_runtime_health_reports_online_when_source_and_retrieval_records_exist(
     tmp_path: Path,
 ) -> None:
@@ -56,7 +68,7 @@ def test_check_runtime_health_reports_online_when_source_and_retrieval_records_e
                 source_id="health",
                 record_type="message",
                 title="Health smoke",
-                body="4OK health command should see records.",
+                body="fourok health command should see records.",
                 occurred_at="2026-06-15T12:00:00+00:00",
             )
         ]

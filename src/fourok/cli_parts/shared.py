@@ -6,7 +6,7 @@ from pathlib import Path
 
 from fourok.governance.policy import PrincipalContext
 
-DEFAULT_STATE = Path(".fourok-state.sqlite")
+DEFAULT_STATE = Path(".local/fourok-state.sqlite")
 
 
 class StoreExplicitState(argparse.Action):

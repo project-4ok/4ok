@@ -7,8 +7,6 @@ from pathlib import Path
 
 from fourok.secrets.env import effective_env
 
-DEFAULT_STATE = Path(".fourok-state.sqlite")
-
 HonchoHttpClient = None
 build_honcho_sync_plan = None
 load_honcho_fixture = None
