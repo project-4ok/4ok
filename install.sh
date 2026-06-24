@@ -147,6 +147,31 @@ enabled = []
 EOF
 }
 
+install_cli_shims() {
+  local bin_dir="$HOME/.local/bin"
+  local project_dir
+  project_dir="$(pwd -P)"
+
+  log "Installing fourok CLI shims into $bin_dir"
+  mkdir -p "$bin_dir"
+
+  for command in fourok fourok-dev fourok-mcp; do
+    cat >"$bin_dir/$command" <<EOF
+#!/usr/bin/env bash
+exec uv --project "$project_dir" run $command "\$@"
+EOF
+    chmod +x "$bin_dir/$command"
+  done
+
+  case ":$PATH:" in
+    *":$bin_dir:"*) ;;
+    *)
+      printf 'Add ~/.local/bin to PATH to use fourok directly from a new shell:\n'
+      printf '  export PATH="$HOME/.local/bin:$PATH"\n'
+      ;;
+  esac
+}
+
 start_local_stack() {
   export POSTGRES_PASSWORD="${POSTGRES_PASSWORD:-local-check}"
   export DAGSTER_POSTGRES_PASSWORD="${DAGSTER_POSTGRES_PASSWORD:-local-check}"
@@ -172,19 +197,6 @@ start_local_stack() {
     dagster-daemon
 }
 
-seed_fixture_data() {
-  log "Seeding fixture retrieval data"
-  for attempt in $(seq 1 12); do
-    if docker compose exec -T app /app/.venv/bin/fourok search "refund cancellation payment" >/dev/null; then
-      return 0
-    fi
-    log "Fixture seed not ready yet; retrying ($attempt/12)"
-    sleep 5
-  done
-  printf 'Could not seed fixture retrieval data. Check docker compose logs app and retry.\n' >&2
-  exit 1
-}
-
 main() {
   log "fourok local onboarding"
   require_runtime
@@ -193,6 +205,8 @@ main() {
 
   log "Installing Python dependencies"
   uv sync
+
+  install_cli_shims
 
   write_local_config
 
@@ -204,14 +218,12 @@ main() {
   else
     log "Starting local runtime, observability, and pipeline containers"
     start_local_stack
-    seed_fixture_data
   fi
 
   log "fourok is ready"
   printf 'Project: %s\n' "$(pwd)"
-  printf 'Next:    uv run fourok onboard\n'
-  printf 'Status:  uv run fourok status\n'
-  printf 'Try:     uv run fourok retrieve "refund cancellation payment"\n'
+  printf 'Next:    fourok onboard\n'
+  printf 'Status:  fourok status\n'
   printf '\nSecrets and connector credentials are not configured by this installer.\n'
 }
 
