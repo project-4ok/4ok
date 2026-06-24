@@ -24,7 +24,22 @@ real work:
 - derived indexes can be rebuilt from source records
 - audits show what was searched or surfaced
 
-## Quick start
+## One-command local onboarding
+
+Start from a fresh machine with Docker installed:
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/project-4ok/4ok/main/install.sh | bash
+```
+
+The installer clones or updates 4ok, installs `uv` if needed, runs `uv sync`,
+validates Docker Compose, and starts the local runtime, observability, and
+pipeline containers with safe local defaults.
+
+It does not configure secrets, API keys, Infisical, or live connectors. Add
+credentials later when you are ready to connect real sources.
+
+## Manual quick start
 
 Prerequisites: Python 3.13 and [uv](https://docs.astral.sh/uv/).
 
