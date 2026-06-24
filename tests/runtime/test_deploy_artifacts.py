@@ -65,7 +65,7 @@ def test_pinned_runtime_compose_uses_public_dagster_runtime_image_without_builds
         "${FOUROK_DAGSTER_CODE_IMAGE:?set FOUROK_DAGSTER_CODE_IMAGE to a digest image ref}"
     )
     assert "FOUROK_DATABASE_URL" in services["app"]["environment"]
-    assert services["dagster-webserver"]["ports"] == ["127.0.0.1:3001:3001"]
+    assert services["dagster-webserver"]["ports"] == ["127.0.0.1:${FOUROK_DAGSTER_PORT:-3001}:3001"]
 
 
 def test_standalone_cli_install_script_builds_clean_python313_wheel() -> None:
@@ -87,3 +87,6 @@ def test_runtime_env_example_exposes_pinned_artifact_contract() -> None:
     assert "FOUROK_APP_IMAGE=ghcr.io/project-fourok/fourok-app@sha256:" in example
     assert "FOUROK_DAGSTER_CODE_IMAGE=ghcr.io/project-fourok/fourok-dagster-code@sha256:" in example
     assert f"FOUROK_DAGSTER_RUNTIME_IMAGE={PUBLIC_DAGSTER_RUNTIME_IMAGE}" in example
+    assert "POSTGRES_PASSWORD=" in example
+    assert "DAGSTER_POSTGRES_PASSWORD=" in example
+    assert "FOUROK_DATABASE_URL=postgresql+psycopg://fourok:" in example

@@ -8,6 +8,7 @@ def test_compose_declares_app_context_cli_runtime() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
     app_service = _compose_service_block(compose, "app")
 
+    assert compose.startswith("name: fourok\n")
     assert "  app:" in compose
     assert "fourok-app:${FOUROK_IMAGE_TAG:-local-check}" in compose
     assert "deploy/docker/app.Dockerfile" in compose
@@ -91,12 +92,24 @@ def test_compose_active_services_bind_host_ports_to_loopback_only() -> None:
 
     assert '"127.0.0.1:5432:5432"' in _compose_service_block(compose, "postgres")
     observability_service = _compose_service_block(compose, "observability")
-    assert '"127.0.0.1:3000:3000"' in observability_service
-    assert '"127.0.0.1:3100:3100"' in observability_service
-    assert '"127.0.0.1:3200:3200"' in observability_service
-    assert '"127.0.0.1:4317:4317"' in observability_service
-    assert '"127.0.0.1:4318:4318"' in observability_service
+    assert '"127.0.0.1:${FOUROK_GRAFANA_PORT:-3000}:3000"' in observability_service
+    assert '"127.0.0.1:${FOUROK_LOKI_PORT:-3100}:3100"' in observability_service
+    assert '"127.0.0.1:${FOUROK_TEMPO_PORT:-3200}:3200"' in observability_service
+    assert '"127.0.0.1:${FOUROK_OTLP_GRPC_PORT:-4317}:4317"' in observability_service
+    assert '"127.0.0.1:${FOUROK_OTLP_HTTP_PORT:-4318}:4318"' in observability_service
+    assert '"127.0.0.1:${FOUROK_DAGSTER_PORT:-3001}:3001"' in _compose_service_block(
+        compose, "dagster-webserver"
+    )
     assert '"127.0.0.1:${FOUROK_MCP_PORT:-8010}:8010"' in _compose_service_block(compose, "mcp")
+
+
+def test_installer_chooses_free_local_ports_for_onboarding() -> None:
+    installer = Path("install.sh").read_text(encoding="utf-8")
+
+    assert "choose_host_port FOUROK_GRAFANA_PORT 3000" in installer
+    assert "choose_host_port FOUROK_DAGSTER_PORT 3001" in installer
+    assert "choose_host_port FOUROK_MCP_PORT 8010" in installer
+    assert "Port $preferred_port is busy" in installer
 
 
 def test_compose_starts_streamable_http_mcp_service_by_default() -> None:
@@ -166,18 +179,18 @@ def test_compose_excludes_deferred_experiment_runtimes() -> None:
     assert 'profiles: ["experiments"]' not in compose
 
 
-def test_compose_declares_local_observability_profile() -> None:
+def test_compose_declares_local_observability_as_default_runtime_surface() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
     observability_service = _compose_service_block(compose, "observability")
 
     assert "  observability:" in compose
-    assert 'profiles: ["observability"]' in observability_service
+    assert "profiles:" not in observability_service
     assert "image: grafana/otel-lgtm:0.28.0" in observability_service
-    assert '"127.0.0.1:3000:3000"' in observability_service
-    assert '"127.0.0.1:3100:3100"' in observability_service
-    assert '"127.0.0.1:3200:3200"' in observability_service
-    assert '"127.0.0.1:4317:4317"' in observability_service
-    assert '"127.0.0.1:4318:4318"' in observability_service
+    assert '"127.0.0.1:${FOUROK_GRAFANA_PORT:-3000}:3000"' in observability_service
+    assert '"127.0.0.1:${FOUROK_LOKI_PORT:-3100}:3100"' in observability_service
+    assert '"127.0.0.1:${FOUROK_TEMPO_PORT:-3200}:3200"' in observability_service
+    assert '"127.0.0.1:${FOUROK_OTLP_GRPC_PORT:-4317}:4317"' in observability_service
+    assert '"127.0.0.1:${FOUROK_OTLP_HTTP_PORT:-4318}:4318"' in observability_service
     assert "observability-data:/data" in observability_service
     assert "./deploy/observability/grafana-dashboards.yaml" in observability_service
     assert "./deploy/observability/fourok-local-runtime-logs.json" in observability_service
@@ -193,7 +206,7 @@ def test_compose_declares_promtail_docker_log_aggregation() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
     promtail_service = _compose_service_block(compose, "promtail")
 
-    assert 'profiles: ["observability"]' in promtail_service
+    assert "profiles:" not in promtail_service
     assert "image: grafana/promtail:3.5.3" in promtail_service
     assert (
         "./deploy/observability/promtail-config.yml:/etc/promtail/config.yml:ro" in promtail_service
@@ -454,7 +467,7 @@ def test_compose_declares_fourok_metrics_exporter_for_prometheus() -> None:
     service = _compose_service_block(compose, "fourok-metrics-exporter")
     prometheus = Path("deploy/observability/prometheus.yaml").read_text(encoding="utf-8")
 
-    assert 'profiles: ["observability"]' in service
+    assert "profiles:" not in service
     assert "image: fourok-app:${FOUROK_IMAGE_TAG:-local-check}" in service
     assert 'entrypoint: ["/app/.venv/bin/python"]' in service
     assert '"-m"' in service
@@ -465,6 +478,19 @@ def test_compose_declares_fourok_metrics_exporter_for_prometheus() -> None:
     assert "fourok-local:/app/.local" in service
     assert "fourok-metrics-exporter:9108" in prometheus
     assert "fourok-dagster-runtime" in prometheus
+
+
+def test_installer_starts_full_observability_surface_by_default() -> None:
+    installer = Path("install.sh").read_text(encoding="utf-8")
+    start_stack = installer.split("start_local_stack() {", maxsplit=1)[1].split("}\\n", maxsplit=1)[
+        0
+    ]
+
+    assert "--profile observability" not in start_stack
+    assert "observability" in start_stack
+    assert "promtail" in start_stack
+    assert "fourok-metrics-exporter" in start_stack
+    assert "Starting local runtime, observability, and pipeline containers" in installer
 
 
 def test_compose_starts_dagster_pipeline_by_default() -> None:
@@ -493,7 +519,9 @@ def test_compose_starts_dagster_pipeline_by_default() -> None:
     assert "target: dagster-runtime" not in _compose_service_block(compose, "dagster-daemon")
     assert "./deploy/dagster/dagster.yaml:/tmp/fourok-dagster-home/dagster.yaml:ro" in compose
     assert "./deploy/dagster/workspace.yaml:/tmp/fourok-dagster-home/workspace.yaml:ro" in compose
-    assert '"127.0.0.1:3001:3001"' in _compose_service_block(compose, "dagster-webserver")
+    assert '"127.0.0.1:${FOUROK_DAGSTER_PORT:-3001}:3001"' in _compose_service_block(
+        compose, "dagster-webserver"
+    )
     for service_name, service_name_env in [
         ("dagster-code", "fourok-dagster-code"),
         ("dagster-webserver", "fourok-dagster-webserver"),
@@ -524,6 +552,22 @@ def test_dagster_daemon_starts_backfill_schedule_before_running() -> None:
         assert "fourok_hourly_live_backfill_schedule" in daemon
         assert "exec dagster-daemon run -w" in daemon
         assert daemon.index("dagster schedule start") < daemon.index("exec dagster-daemon run")
+
+
+def test_pinned_runtime_dagster_defaults_match_plain_compose() -> None:
+    compose = Path("deploy/runtime/docker-compose.pinned.yml").read_text(encoding="utf-8")
+
+    for service_name in ["observability", "promtail", "fourok-metrics-exporter"]:
+        service = _compose_service_block(compose, service_name)
+        assert "profiles:" not in service
+
+    for service_name in ["dagster-code", "dagster-webserver", "dagster-daemon"]:
+        service = _compose_service_block(compose, service_name)
+        assert "profiles:" not in service
+        assert "FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}" in service
+
+    webserver = _compose_service_block(compose, "dagster-webserver")
+    assert 'dagster-webserver -h 0.0.0.0 -p 3001 -w "$$DAGSTER_HOME/workspace.yaml"' in webserver
 
 
 def test_dagster_definitions_configure_observability_from_env() -> None:

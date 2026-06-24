@@ -18,7 +18,7 @@ def test_retrieval_agent_skill_is_valid_and_cli_first() -> None:
     assert frontmatter["name"] == "fourok-retrieval"
     assert frontmatter["description"].startswith("Use when")
     assert len(frontmatter["description"]) <= 1024
-    assert "uv run fourok retrieve \"<query>\" --format json" in body
+    assert 'uv run fourok retrieve "<query>" --format json' in body
     assert "uv run fourok operator-status --format json" in body
     assert "search_fourok" in body
     assert "source_ref" in body

@@ -17,17 +17,16 @@ services:
       retries: 12
 
   observability:
-    profiles: ["observability"]
     image: grafana/otel-lgtm:0.28.0
     restart: unless-stopped
     environment:
       ENABLE_LOGS_ALL: "true"
     ports:
-      - "127.0.0.1:3000:3000"
-      - "127.0.0.1:3100:3100"
-      - "127.0.0.1:3200:3200"
-      - "127.0.0.1:4317:4317"
-      - "127.0.0.1:4318:4318"
+      - "127.0.0.1:${FOUROK_GRAFANA_PORT:-3000}:3000"
+      - "127.0.0.1:${FOUROK_LOKI_PORT:-3100}:3100"
+      - "127.0.0.1:${FOUROK_TEMPO_PORT:-3200}:3200"
+      - "127.0.0.1:${FOUROK_OTLP_GRPC_PORT:-4317}:4317"
+      - "127.0.0.1:${FOUROK_OTLP_HTTP_PORT:-4318}:4318"
     volumes:
       - observability-data:/data
       - ../../deploy/observability/grafana-dashboards.yaml:/otel-lgtm/grafana/conf/provisioning/dashboards/fourok-dashboards.yaml:ro
@@ -41,7 +40,6 @@ services:
       start_period: 15s
 
   promtail:
-    profiles: ["observability"]
     image: grafana/promtail:3.5.3
     restart: unless-stopped
     command: ["-config.file=/etc/promtail/config.yml"]
@@ -54,7 +52,6 @@ services:
         condition: service_healthy
 
   fourok-metrics-exporter:
-    profiles: ["observability"]
     image: ${FOUROK_APP_IMAGE:?set FOUROK_APP_IMAGE to a digest image ref}
     restart: unless-stopped
     entrypoint: ["/app/.venv/bin/python"]
@@ -103,7 +100,7 @@ services:
       FOUROK_OPENAI_EMBEDDING_MODEL: ${FOUROK_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       FOUROK_EMBEDDING_DIMENSIONS: ${FOUROK_EMBEDDING_DIMENSIONS:-256}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
-      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-code}
     depends_on:
@@ -129,18 +126,18 @@ services:
       - >
         mkdir -p "$$DAGSTER_HOME" &&
         cp /tmp/fourok-dagster-home/dagster.yaml /tmp/fourok-dagster-home/workspace.yaml "$$DAGSTER_HOME"/ &&
-        exec dagster-webserver -h 0.0.0.0 -p 3001 -w workspace.yaml
+        exec dagster-webserver -h 0.0.0.0 -p 3001 -w "$$DAGSTER_HOME/workspace.yaml"
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
       DAGSTER_POSTGRES_USER: dagster
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-webserver}
     ports:
-      - "127.0.0.1:3001:3001"
+      - "127.0.0.1:${FOUROK_DAGSTER_PORT:-3001}:3001"
     volumes:
       - dagster-local:/var/lib/dagster
       - ../dagster/dagster.yaml:/tmp/fourok-dagster-home/dagster.yaml:ro
@@ -178,7 +175,7 @@ services:
       DAGSTER_POSTGRES_PASSWORD: ${DAGSTER_POSTGRES_PASSWORD:?set DAGSTER_POSTGRES_PASSWORD}
       DAGSTER_POSTGRES_DB: dagster
       DAGSTER_POSTGRES_HOST: dagster-postgres
-      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-true}
+      FOUROK_OBSERVABILITY_ENABLED: ${FOUROK_OBSERVABILITY_ENABLED:-false}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-fourok-dagster-daemon}
     volumes:
