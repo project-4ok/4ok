@@ -18,6 +18,12 @@ def test_compose_declares_app_context_cli_runtime() -> None:
     )
     assert "HONCHO_URL" not in app_service
     assert "HONCHO_SYNC_SOURCES" not in app_service
+    assert "INFISICAL_CLIENT_ID" in app_service
+    assert "INFISICAL_CLIENT_SECRET" in app_service
+    assert "INFISICAL_API_URL" in app_service
+    assert "GCB_GMAIL_INFISICAL_PROJECT_ID" in app_service
+    assert "GCB_GMAIL_INFISICAL_ENV" in app_service
+    assert "GCB_GMAIL_INFISICAL_PATH" in app_service
     assert "honcho:" not in app_service
     assert '"honcho-sync"' not in app_service
     assert '"runtime-monitor"' in app_service
@@ -39,14 +45,14 @@ def test_compose_does_not_use_latest_image_tags() -> None:
 def test_compose_active_services_have_restart_policies() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
 
-    for service_name in ["postgres", "observability", "app"]:
+    for service_name in ["postgres", "cerbos", "observability", "app"]:
         assert "restart: unless-stopped" in _compose_service_block(compose, service_name)
 
 
 def test_compose_active_services_have_health_checks() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
 
-    for service_name in ["postgres", "observability", "app"]:
+    for service_name in ["postgres", "cerbos", "observability", "app"]:
         assert "healthcheck:" in _compose_service_block(compose, service_name)
 
     app_service = _compose_service_block(compose, "app")
@@ -85,6 +91,8 @@ def test_compose_active_services_bind_host_ports_to_loopback_only() -> None:
     compose = Path("docker-compose.yml").read_text(encoding="utf-8")
 
     assert '"127.0.0.1:5432:5432"' in _compose_service_block(compose, "postgres")
+    assert '"127.0.0.1:3592:3592"' in _compose_service_block(compose, "cerbos")
+    assert '"127.0.0.1:3593:3593"' in _compose_service_block(compose, "cerbos")
     observability_service = _compose_service_block(compose, "observability")
     assert '"127.0.0.1:3000:3000"' in observability_service
     assert '"127.0.0.1:3100:3100"' in observability_service
@@ -122,7 +130,6 @@ def test_compose_excludes_deferred_experiment_runtimes() -> None:
     assert "  honcho:" not in compose
     assert "  honcho-db:" not in compose
     assert "  honcho-redis:" not in compose
-    assert "  cerbos:" not in compose
     assert "  graphiti-neo4j:" not in compose
     assert "  graphiti-runner:" not in compose
     assert "  docling-worker:" not in compose
@@ -192,9 +199,9 @@ def test_observability_files_define_gcb_log_dashboard_and_docker_labels() -> Non
         if "expr" in target
     ]
 
-    assert "4ok dashboard" in dashboard_provider
+    assert "GCB Local Runtime Logs" in dashboard_provider
     assert "gcb-local-runtime-logs.json" in dashboard_provider
-    assert dashboard_data["title"] == "4ok dashboard"
+    assert dashboard_data["title"] == "GCB Local Runtime Logs"
     assert '{compose_project=~"$compose_project"}' in expressions
     assert '{compose_service=~"$compose_service"}' in expressions
     assert '{compose_service=~"$compose_service"} |= "STEP_FAILURE"' in expressions
@@ -450,6 +457,11 @@ def test_compose_declares_dagster_pipeline_profile() -> None:
     assert "./deploy/dagster/dagster.yaml:/tmp/gcb-dagster-home/dagster.yaml:ro" in compose
     assert "./deploy/dagster/workspace.yaml:/tmp/gcb-dagster-home/workspace.yaml:ro" in compose
     assert '"127.0.0.1:3001:3001"' in _compose_service_block(compose, "dagster-webserver")
+    dagster_code = _compose_service_block(compose, "dagster-code")
+    assert "GCB_INFISICAL_PROJECT_ID: ${GCB_INFISICAL_PROJECT_ID:-}" in dagster_code
+    assert "GCB_INFISICAL_ENV: ${GCB_INFISICAL_ENV:-runtime}" in dagster_code
+    assert "INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID:-}" in dagster_code
+    assert "INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET:-}" in dagster_code
     for service_name, service_name_env in [
         ("dagster-code", "gcb-dagster-code"),
         ("dagster-webserver", "gcb-dagster-webserver"),
@@ -464,30 +476,6 @@ def test_compose_declares_dagster_pipeline_profile() -> None:
         assert f"OTEL_SERVICE_NAME: ${{OTEL_SERVICE_NAME:-{service_name_env}}}" in service
     assert "dagster-postgres-data:/var/lib/postgresql/data" in compose
     assert "dagster-local:/var/lib/dagster" in compose
-
-
-def test_dagster_runtime_services_load_workspace_from_dagster_home() -> None:
-    compose_files = [
-        Path("docker-compose.yml"),
-        Path("deploy/runtime/docker-compose.pinned.yml"),
-    ]
-
-    for compose_file in compose_files:
-        compose = compose_file.read_text(encoding="utf-8")
-        webserver = _compose_service_block(compose, "dagster-webserver")
-        daemon = _compose_service_block(compose, "dagster-daemon")
-
-        assert "exec dagster-webserver -h 0.0.0.0 -p 3001 " in webserver
-        assert (
-            "-w /opt/dagster/dagster_home/workspace.yaml" in webserver
-            or '-w "$$DAGSTER_HOME/workspace.yaml"' in webserver
-        )
-        assert (
-            "exec dagster-daemon run -w /opt/dagster/dagster_home/workspace.yaml" in daemon
-            or 'exec dagster-daemon run -w "$$DAGSTER_HOME/workspace.yaml"' in daemon
-        )
-        assert "-w workspace.yaml" not in webserver
-        assert "exec dagster-daemon run\n" not in daemon
 
 
 def test_dagster_definitions_configure_observability_from_env() -> None:

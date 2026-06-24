@@ -8,8 +8,12 @@ def test_pipeline_up_loads_project_dotenv_and_sets_stable_local_defaults(
 ) -> None:
     monkeypatch.chdir(tmp_path)
     (tmp_path / ".env").write_text(
-        "LINEAR_API_KEY=linear-token\n"
-        "SLACK_BOT_TOKEN=secret-value\n",
+        "INFISICAL_PROJECT_ID=project-123\n"
+        "INFISICAL_ENV=dev\n"
+        "INFISICAL_PATH=/customer/runtime\n"
+        "INFISICAL_DOMAIN=https://infisical.example\n"
+        "INFISICAL_CLIENT_ID=client-id\n"
+        "INFISICAL_CLIENT_SECRET=secret-value\n",
         encoding="utf-8",
     )
 
@@ -33,7 +37,11 @@ def test_pipeline_up_loads_project_dotenv_and_sets_stable_local_defaults(
     assert step.env["POSTGRES_PASSWORD"] == "local-check"
     assert step.env["DAGSTER_POSTGRES_PASSWORD"] == "local-check"
     assert step.env["GCB_DATABASE_URL"] == "postgresql+psycopg://gcb:local-check@postgres:5432/gcb"
-    assert step.env["LINEAR_API_KEY"] == "linear-token"
+    assert step.env["GCB_INFISICAL_PROJECT_ID"] == "project-123"
+    assert step.env["GCB_INFISICAL_ENV"] == "dev"
+    assert step.env["GCB_INFISICAL_PATH"] == "/customer/runtime"
+    assert step.env["GCB_INFISICAL_DOMAIN"] == "https://infisical.example"
+    assert step.env["INFISICAL_CLIENT_SECRET"] == "secret-value"
 
 
 def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkeypatch) -> None:
@@ -51,6 +59,7 @@ def test_app_up_and_observability_up_wrap_long_compose_commands(tmp_path, monkey
         "--force-recreate",
         "-d",
         "postgres",
+        "cerbos",
         "app",
     )
     assert app_step.env["GCB_IMAGE_TAG"] == "abc1234"
@@ -83,8 +92,8 @@ def test_dev_step_dry_run_redacts_secret_env_values() -> None:
         "example",
         ("example",),
         env={
-            "LINEAR_API_KEY": "[REDACTED]",
-            "SLACK_BOT_TOKEN": "secret-value",
+            "INFISICAL_CLIENT_ID": "client-id",
+            "INFISICAL_CLIENT_SECRET": "secret-value",
             "POSTGRES_PASSWORD": "local-check",
             "GCB_DATABASE_URL": "postgresql+psycopg://gcb:local-check@postgres:5432/gcb",
         },
@@ -94,7 +103,7 @@ def test_dev_step_dry_run_redacts_secret_env_values() -> None:
 
     assert data["env"] == {
         "GCB_DATABASE_URL": "[REDACTED]",
-        "LINEAR_API_KEY": "[REDACTED]",
-        "SLACK_BOT_TOKEN": "[REDACTED]",
+        "INFISICAL_CLIENT_ID": "client-id",
+        "INFISICAL_CLIENT_SECRET": "[REDACTED]",
         "POSTGRES_PASSWORD": "[REDACTED]",
     }

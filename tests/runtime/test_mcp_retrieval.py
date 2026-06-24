@@ -96,9 +96,9 @@ class FakeContext:
 def test_mcp_tool_schemas_are_discoverable_without_stdio_server() -> None:
     tools = {tool["name"]: tool for tool in mcp_retrieval.tool_schemas()}
 
-    assert set(tools) == {"search_4ok", "operator_status"}
-    assert tools["search_4ok"]["input_schema"]["required"] == ["query"]
-    assert set(tools["search_4ok"]["input_schema"]["properties"]) >= {
+    assert set(tools) == {"search_gcb", "operator_status"}
+    assert tools["search_gcb"]["input_schema"]["required"] == ["query"]
+    assert set(tools["search_gcb"]["input_schema"]["properties"]) >= {
         "query",
         "limit",
         "roles",
@@ -118,13 +118,13 @@ async def test_fastmcp_server_registers_public_tool_names() -> None:
 
     tools = await server.list_tools()
 
-    assert [tool.name for tool in tools] == ["search_4ok", "operator_status"]
+    assert [tool.name for tool in tools] == ["search_gcb", "operator_status"]
 
 
 def test_search_handler_returns_agent_ready_evidence_contract() -> None:
     FakeContext.created.clear()
 
-    response = mcp_retrieval.search_4ok(
+    response = mcp_retrieval.search_gcb(
         query="refund escalation",
         limit=2,
         roles=["support", "operator"],
@@ -175,7 +175,7 @@ def test_search_handler_loads_optional_runtime_config(tmp_path: Path) -> None:
     config_path = tmp_path / "gcb.toml"
     config_path.write_text("[retrieval]\nmax_words = 12\noverlap_words = 3\n", encoding="utf-8")
 
-    mcp_retrieval.search_4ok(
+    mcp_retrieval.search_gcb(
         query="refund escalation",
         limit=2,
         roles=["support", "operator"],
@@ -210,7 +210,7 @@ def test_status_handler_uses_config_env_fallback(
 
 def test_search_handler_rejects_empty_query_before_opening_state() -> None:
     with pytest.raises(ValueError, match="query is required"):
-        mcp_retrieval.search_4ok(query=" ", context_factory=FakeContext)
+        mcp_retrieval.search_gcb(query=" ", context_factory=FakeContext)
 
 
 @pytest.mark.anyio
@@ -233,7 +233,7 @@ async def test_mcp_search_tool_enforces_slack_channel_permission_refs(tmp_path: 
     server = mcp_retrieval.build_mcp_server()
 
     _, denied = await server.call_tool(
-        "search_4ok",
+        "search_gcb",
         {
             "query": "mcppermissionmarker",
             "state": str(state_path),
@@ -241,7 +241,7 @@ async def test_mcp_search_tool_enforces_slack_channel_permission_refs(tmp_path: 
         },
     )
     _, allowed = await server.call_tool(
-        "search_4ok",
+        "search_gcb",
         {
             "query": "mcppermissionmarker",
             "state": str(state_path),

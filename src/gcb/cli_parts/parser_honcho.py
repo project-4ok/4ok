@@ -30,7 +30,7 @@ def add_honcho_commands(subparsers) -> None:
     honcho_sync_source.add_argument(
         "--live-sources",
         action="store_true",
-        help="Collect a bounded live source snapshot using env/.env credentials.",
+        help="Collect a bounded live source snapshot using Infisical-backed credentials.",
     )
     honcho_sync_parser.add_argument(
         "--source-limit",
@@ -53,6 +53,19 @@ def add_honcho_commands(subparsers) -> None:
         type=int,
         default=_int_env("HONCHO_CHECKPOINT_OVERLAP_MINUTES", 5),
         help="Minutes to subtract from live-source checkpoints before querying deltas.",
+    )
+    honcho_sync_parser.add_argument(
+        "--infisical-project-id",
+        default=os.environ.get("INFISICAL_PROJECT_ID"),
+    )
+    honcho_sync_parser.add_argument(
+        "--infisical-env", default=os.environ.get("INFISICAL_ENV", "runtime")
+    )
+    honcho_sync_parser.add_argument(
+        "--infisical-path", default=os.environ.get("INFISICAL_PATH", "/")
+    )
+    honcho_sync_parser.add_argument(
+        "--infisical-domain", default=os.environ.get("INFISICAL_DOMAIN", "")
     )
     honcho_sync_parser.add_argument(
         "--state",
@@ -137,7 +150,7 @@ def add_honcho_commands(subparsers) -> None:
     retrieval_eval_parser.add_argument(
         "--live-sources",
         action="store_true",
-        help="Collect a bounded live source snapshot using env/.env credentials.",
+        help="Collect a bounded live source snapshot using Infisical-backed credentials.",
     )
     _add_source_snapshot_args(retrieval_eval_parser)
     retrieval_eval_parser.add_argument("--limit", type=int, default=5)
@@ -159,7 +172,7 @@ def add_honcho_commands(subparsers) -> None:
     evidence_baseline_source.add_argument(
         "--live-sources",
         action="store_true",
-        help="Collect a bounded live source snapshot using env/.env credentials.",
+        help="Collect a bounded live source snapshot using Infisical-backed credentials.",
     )
     _add_source_snapshot_args(evidence_baseline_eval_parser)
     evidence_baseline_eval_parser.add_argument("--limit", type=int, default=5)
@@ -178,7 +191,7 @@ def add_honcho_commands(subparsers) -> None:
     graphiti_episode_source.add_argument(
         "--live-sources",
         action="store_true",
-        help="Collect a bounded live source snapshot using env/.env credentials.",
+        help="Collect a bounded live source snapshot using Infisical-backed credentials.",
     )
     graphiti_episodes_parser.add_argument("--group-id", default="gcb-internal")
     graphiti_episodes_parser.add_argument(
@@ -200,12 +213,37 @@ def add_honcho_commands(subparsers) -> None:
         type=int,
         default=_int_env("HONCHO_CHECKPOINT_OVERLAP_MINUTES", 5),
     )
+    graphiti_episodes_parser.add_argument(
+        "--infisical-project-id",
+        default=os.environ.get("INFISICAL_PROJECT_ID"),
+    )
+    graphiti_episodes_parser.add_argument(
+        "--infisical-env", default=os.environ.get("INFISICAL_ENV", "runtime")
+    )
+    graphiti_episodes_parser.add_argument(
+        "--infisical-path", default=os.environ.get("INFISICAL_PATH", "/")
+    )
+    graphiti_episodes_parser.add_argument(
+        "--infisical-domain", default=os.environ.get("INFISICAL_DOMAIN", "")
+    )
 
     honcho_preflight_parser = subparsers.add_parser(
         "honcho-preflight",
         help=argparse.SUPPRESS,
     )
     _hide_subparser(subparsers, "honcho-preflight")
+    honcho_preflight_parser.add_argument(
+        "--infisical-project-id", default=os.environ.get("INFISICAL_PROJECT_ID"), required=False
+    )
+    honcho_preflight_parser.add_argument(
+        "--infisical-env", default=os.environ.get("INFISICAL_ENV", "runtime")
+    )
+    honcho_preflight_parser.add_argument(
+        "--infisical-path", default=os.environ.get("INFISICAL_PATH", "/")
+    )
+    honcho_preflight_parser.add_argument(
+        "--infisical-domain", default=os.environ.get("INFISICAL_DOMAIN", "")
+    )
     honcho_preflight_parser.add_argument(
         "--check-sources",
         action="store_true",

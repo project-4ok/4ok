@@ -37,7 +37,7 @@ b7016cf Add operator live ingestion command
 362d53e Preserve prod Slack DM routing on promotion
 f48d5b2 Restore 4ok Jules model fallback
 d0b7c57 Keep prod Slack DMs out of assistant threads
-ce40e13 Retry external secret manager CLI download in dev deploy workflow
+ce40e13 Retry Infisical CLI download in dev deploy workflow
 77e5f3a Mount Codex auth bootstrap helper in gateway runtime
 094af3c Allow prod gateway runtime secret read actions
 c542a2a Stage Codex bootstrap helper in runtime bundle
@@ -315,29 +315,11 @@ slack:user:U0ASC2HAV7A	Jesper Morgenstern	["slack:team:T0APCSCJZC2"]	Jesper Morg
 slack:channel_member:C0APCSD1118:U0APCSGCM98	U0APCSGCM98 in C0APCSD1118	["slack:channel:C0APCSD1118"]	Slack user U0APCSGCM98 is a member of channel C0APCSD1118
 slack:channel_member:C0APCSD1118:U0APRPJ2UGZ	U0APRPJ2UGZ in C0APCSD1118	["slack:channel:C0APCSD1118"]	Slack user U0APRPJ2UGZ is a member of channel C0APCSD1118
 -- google_drive samples
-google_drive:file:1OrzMfZDwv-R_7LKUZLgfETq5FzbDCt0EShsujPMJAyw	Quick Chat (Jiayu Zhou) - 2026/05/04 16:30 CEST - Notes by Gemini	["operator"]	﻿📝 Notes
- May 4, 2026
- Quick Chat (Jiayu Zhou)
- Invited jiayu.zhou@imago-images.de Simon van Laak
- Attachments Quick Chat (Jiayu Zhou)
- Meeting records Transcri
+google_drive:file:1OrzMfZDwv-R_7LKUZLgfETq5FzbDCt0EShsujPMJAyw	Quick Chat (Jiayu Zhou) - 2026/05/04 16:30 CEST - Notes by Gemini	["operator"]	﻿📝 Notes May 4, 2026 Quick Chat (Jiayu Zhou) Invited jiayu.zhou@imago-images.de Simon van Laak Attachments Quick Chat (Jiayu Zhou) Meeting records Transcri
 google_drive:file:1daVuh0zTiRW5KsfUpjkba177OKleM76v	buena Enterprise Architecture for Property Management Document Intelligence.md	["operator"]	# Enterprise Architecture for Property Management Document Intelligence  ## Executive recommendation  The strongest architecture for this problem is **not** an
-google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM	4ok - Sales Resource	["operator"]	﻿4ok - Sales Resource for First Customer Meetings
- What this document is for
- This document helps internal salespeople explain the Governed C
-google_drive:file:12ZG0MgjYgx3qPiCSJ3ffo0bGYywmHQhiyLEWs-d0TPE	2026-05-23 Buena scalable multi-source memory and retrieval platform	["operator"]	﻿Buena scalable multi-source memory and retrieval platform
- Why this follow-up exists
- The first memo defined the privacy-safe foundation: early PII extraction,
-google_drive:file:1npxJYLu8q_lzONlgyKG5GAzCbKQdglDGmpxrqU4iR9M	00 Drive Guide	["operator"]	﻿v
- 00 Start Here
- 00 Drive Guide
- 01 Team Context
- 01 Teams Ops
- 00 Shared Contact Register
- 01 Team Handbooks and SOPs
- 02 Decision Log
- 03 Meeting Notes
- 04
+google_drive:file:12tYJYI8VTkf2UL5knHUHpsVNkOOGlvl6Af85HNSjzLM	4ok - Sales Resource	["operator"]	﻿4ok - Sales Resource for First Customer Meetings What this document is for This document helps internal salespeople explain the Governed C
+google_drive:file:12ZG0MgjYgx3qPiCSJ3ffo0bGYywmHQhiyLEWs-d0TPE	2026-05-23 Buena scalable multi-source memory and retrieval platform	["operator"]	﻿Buena scalable multi-source memory and retrieval platform Why this follow-up exists The first memo defined the privacy-safe foundation: early PII extraction,
+google_drive:file:1npxJYLu8q_lzONlgyKG5GAzCbKQdglDGmpxrqU4iR9M	00 Drive Guide	["operator"]	﻿v 00 Start Here 00 Drive Guide 01 Team Context 01 Teams Ops 00 Shared Contact Register 01 Team Handbooks and SOPs 02 Decision Log 03 Meeting Notes 04
 ```
 
 ### Retrieval/search commands and outputs
@@ -1671,7 +1653,7 @@ recent infra commits:
 362d53e Preserve prod Slack DM routing on promotion
 f48d5b2 Restore 4ok Jules model fallback
 d0b7c57 Keep prod Slack DMs out of assistant threads
-ce40e13 Retry external secret manager CLI download in dev deploy workflow
+ce40e13 Retry Infisical CLI download in dev deploy workflow
 77e5f3a Mount Codex auth bootstrap helper in gateway runtime
 094af3c Allow prod gateway runtime secret read actions
 c542a2a Stage Codex bootstrap helper in runtime bundle

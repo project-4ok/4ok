@@ -19,6 +19,7 @@ sys.modules[SPEC.name] = gmail_pilot
 SPEC.loader.exec_module(gmail_pilot)
 
 GmailPilotConfig = gmail_pilot.GmailPilotConfig
+fetch_infisical_env = gmail_pilot.fetch_infisical_env
 load_env_file = gmail_pilot.load_env_file
 load_pilot_env = gmail_pilot.load_pilot_env
 load_pilot_env_with_secrets = gmail_pilot.load_pilot_env_with_secrets
@@ -42,8 +43,76 @@ class FakeRunner:
         raise AssertionError(f"Unexpected command: {command}")
 
 
+class FakeUniversalAuth:
+    def __init__(self) -> None:
+        self.login_calls: list[dict[str, str]] = []
+
+    def login(self, *, client_id: str, client_secret: str) -> None:
+        self.login_calls.append({"client_id": client_id, "client_secret": client_secret})
 
 
+class FakeSecrets:
+    def __init__(self) -> None:
+        self.list_calls: list[dict[str, str]] = []
+
+    def list_secrets(self, **kwargs):
+        self.list_calls.append(kwargs)
+        return type(
+            "SecretList",
+            (),
+            {
+                "secrets": [
+                    type(
+                        "Secret",
+                        (),
+                        {
+                            "secretKey": "TAP_GMAIL_USER_ID",
+                            "secretValue": "pilot@example.com",
+                        },
+                    )(),
+                    type(
+                        "Secret",
+                        (),
+                        {
+                            "secretKey": "TAP_GMAIL_OAUTH_CREDENTIALS_CLIENT_ID",
+                            "secretValue": "client-id",
+                        },
+                    )(),
+                    type(
+                        "Secret",
+                        (),
+                        {
+                            "secretKey": "TAP_GMAIL_OAUTH_CREDENTIALS_CLIENT_SECRET",
+                            "secretValue": "client-secret",
+                        },
+                    )(),
+                    type(
+                        "Secret",
+                        (),
+                        {
+                            "secretKey": "TAP_GMAIL_OAUTH_CREDENTIALS_REFRESH_TOKEN",
+                            "secretValue": "refresh-token",
+                        },
+                    )(),
+                ]
+            },
+        )()
+
+
+class FakeInfisicalClient:
+    instances: list[FakeInfisicalClient] = []
+
+    def __init__(self, *, host: str, token: str | None = None, cache_ttl: int = 60) -> None:
+        self.host = host
+        self.token = token
+        self.cache_ttl = cache_ttl
+        self.auth = type("FakeAuth", (), {"universal_auth": FakeUniversalAuth()})()
+        self.secrets = FakeSecrets()
+        self.closed = False
+        self.instances.append(self)
+
+    def close(self) -> None:
+        self.closed = True
 
 
 def _required_env_text() -> str:
@@ -165,12 +234,105 @@ def test_gmail_pilot_preflight_reports_missing_required_values(
     assert "TAP_GMAIL_OAUTH_CREDENTIALS_REFRESH_TOKEN" in captured.out
 
 
+def test_gmail_pilot_fetches_infisical_env_with_universal_auth(monkeypatch) -> None:
+    FakeInfisicalClient.instances.clear()
+    monkeypatch.setenv("INFISICAL_UNIVERSAL_AUTH_CLIENT_ID", "machine-client-id")
+    monkeypatch.setenv("INFISICAL_UNIVERSAL_AUTH_CLIENT_SECRET", "machine-client-secret")
+
+    values = fetch_infisical_env(
+        project_id="project-123",
+        environment="dev",
+        path="/gmail-pilot",
+        domain="https://eu.infisical.com",
+        client_factory=FakeInfisicalClient,
+    )
+    client = FakeInfisicalClient.instances[0]
+
+    assert values["TAP_GMAIL_USER_ID"] == "pilot@example.com"
+    assert client.host == "https://eu.infisical.com"
+    assert client.auth.universal_auth.login_calls == [
+        {"client_id": "machine-client-id", "client_secret": "machine-client-secret"}
+    ]
+    assert client.secrets.list_calls == [
+        {
+            "environment_slug": "dev",
+            "secret_path": "/gmail-pilot",
+            "project_id": "project-123",
+        }
+    ]
 
 
+def test_gmail_pilot_reports_infisical_sdk_errors(tmp_path: Path, capsys, monkeypatch) -> None:
+    monkeypatch.setenv("INFISICAL_TOKEN", "existing-token")
+
+    def failing_client(**kwargs):
+        raise RuntimeError("sdk unavailable")
+
+    status = preflight_gmail_pilot(
+        GmailPilotConfig(
+            env_file=tmp_path / "missing.env",
+            output=tmp_path / "out.jsonl",
+            command=("should-not-run",),
+            infisical_project_id="project-123",
+        ),
+        secret_client_factory=failing_client,
+    )
+    captured = capsys.readouterr()
+
+    assert status == 2
+    assert '"status": "credential_source_error"' in captured.out
+    assert "Infisical SDK request failed" in captured.out
 
 
+def test_gmail_pilot_cli_defaults_infisical_metadata_from_env(monkeypatch, tmp_path: Path) -> None:
+    captured = {}
+
+    def fake_preflight(config, *, runner=gmail_pilot.subprocess.run):
+        captured["config"] = config
+        return 0
+
+    monkeypatch.setenv("GCB_GMAIL_INFISICAL_PROJECT_ID", "project-from-env")
+    monkeypatch.setenv("GCB_GMAIL_INFISICAL_ENV", "staging")
+    monkeypatch.setenv("GCB_GMAIL_INFISICAL_PATH", "/custom-gmail")
+    monkeypatch.setenv("GCB_GMAIL_INFISICAL_DOMAIN", "https://eu.infisical.com")
+    monkeypatch.setattr(gmail_pilot, "preflight_gmail_pilot", fake_preflight)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        [
+            "run_gmail_pilot.py",
+            "--preflight",
+            "--env-file",
+            str(tmp_path / "missing.env"),
+        ],
+    )
+
+    status = gmail_pilot.main()
+
+    assert status == 0
+    assert captured["config"].infisical_project_id == "project-from-env"
+    assert captured["config"].infisical_env == "staging"
+    assert captured["config"].infisical_path == "/custom-gmail"
+    assert captured["config"].infisical_domain == "https://eu.infisical.com"
 
 
+def test_gmail_pilot_env_file_overrides_infisical_values(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setenv("INFISICAL_TOKEN", "existing-token")
+    env_file = tmp_path / "tap-gmail.env"
+    env_file.write_text('export TAP_GMAIL_USER_ID="override@example.com"\n', encoding="utf-8")
+
+    values = load_pilot_env_with_secrets(
+        GmailPilotConfig(
+            env_file=env_file,
+            output=tmp_path / "out.jsonl",
+            command=("tap-gmail",),
+            infisical_project_id="project-123",
+        ),
+        client_factory=FakeInfisicalClient,
+    )
+
+    assert values["TAP_GMAIL_USER_ID"] == "override@example.com"
+    assert values["TAP_GMAIL_OAUTH_CREDENTIALS_REFRESH_TOKEN"] == "refresh-token"
 
 
 def test_gmail_pilot_runner_writes_tap_stdout_without_printing_secrets(
@@ -263,6 +425,34 @@ def test_gmail_pilot_runner_can_inspect_successful_tap_output(
     assert f'"inspection_output": "{inspection_output.as_posix()}"' in captured.out
 
 
+def test_gmail_pilot_runner_can_use_infisical_without_env_file(
+    tmp_path: Path,
+    capsys,
+    monkeypatch,
+) -> None:
+    monkeypatch.setenv("INFISICAL_TOKEN", "existing-token")
+    output = tmp_path / "gmail-output.jsonl"
+
+    status = run_gmail_pilot(
+        GmailPilotConfig(
+            env_file=tmp_path / "missing.env",
+            output=output,
+            command=(
+                sys.executable,
+                "-c",
+                'print(\'{"type":"STATE","value":{"bookmark":"msg-1"}}\')',
+            ),
+            infisical_project_id="project-123",
+        ),
+        runner=FakeRunner(),
+        secret_client_factory=FakeInfisicalClient,
+    )
+    captured = capsys.readouterr()
+
+    assert status == 0
+    assert output.read_text(encoding="utf-8") == ('{"type":"STATE","value":{"bookmark":"msg-1"}}\n')
+    assert "client-secret" not in captured.out
+    assert "refresh-token" not in captured.out
 
 
 def test_gmail_pilot_runner_records_successful_job_checkpoint(

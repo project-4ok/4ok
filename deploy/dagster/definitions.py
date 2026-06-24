@@ -9,7 +9,6 @@ from typing import Any
 
 from dagster import (
     AssetSelection,
-    DefaultScheduleStatus,
     Definitions,
     MaterializeResult,
     MetadataValue,
@@ -36,8 +35,8 @@ from gcb.observability import (
     set_safe_span_attributes,
 )
 from gcb.orchestration.dagster_resources import (
-    ConnectorEnvResource,
     GcbRuntimeResource,
+    InfisicalSecretsResource,
     MeltanoProjectResource,
     RawLandingResource,
     build_default_resources,
@@ -55,13 +54,13 @@ configure_observability_from_env()
 def meltano_slack_live_raw_landing(
     raw_landing: RawLandingResource,
     meltano_project: MeltanoProjectResource,
-    connector_env: ConnectorEnvResource,
+    infisical_secrets: InfisicalSecretsResource,
 ) -> MaterializeResult:
     return _run_meltano_raw_landing(
         job_name="slack-live-to-raw",
         landing_dir=raw_landing.root / "slack_live",
         project_root=meltano_project.root,
-        secret_env=connector_env.secret_env(),
+        secret_env=infisical_secrets.secret_env(),
     )
 
 
@@ -69,13 +68,13 @@ def meltano_slack_live_raw_landing(
 def meltano_twenty_live_raw_landing(
     raw_landing: RawLandingResource,
     meltano_project: MeltanoProjectResource,
-    connector_env: ConnectorEnvResource,
+    infisical_secrets: InfisicalSecretsResource,
 ) -> MaterializeResult:
     return _run_meltano_raw_landing(
         job_name="twenty-live-to-raw",
         landing_dir=raw_landing.root / "twenty_live",
         project_root=meltano_project.root,
-        secret_env=connector_env.secret_env(),
+        secret_env=infisical_secrets.secret_env(),
     )
 
 
@@ -83,13 +82,13 @@ def meltano_twenty_live_raw_landing(
 def meltano_linear_live_raw_landing(
     raw_landing: RawLandingResource,
     meltano_project: MeltanoProjectResource,
-    connector_env: ConnectorEnvResource,
+    infisical_secrets: InfisicalSecretsResource,
 ) -> MaterializeResult:
     return _run_meltano_raw_landing(
         job_name="linear-live-to-raw",
         landing_dir=raw_landing.root / "linear_live",
         project_root=meltano_project.root,
-        secret_env=connector_env.secret_env(),
+        secret_env=infisical_secrets.secret_env(),
     )
 
 
@@ -97,13 +96,13 @@ def meltano_linear_live_raw_landing(
 def meltano_google_drive_live_raw_landing(
     raw_landing: RawLandingResource,
     meltano_project: MeltanoProjectResource,
-    connector_env: ConnectorEnvResource,
+    infisical_secrets: InfisicalSecretsResource,
 ) -> MaterializeResult:
     return _run_meltano_raw_landing(
         job_name="google-drive-live-to-raw",
         landing_dir=raw_landing.root / "google_drive_live",
         project_root=meltano_project.root,
-        secret_env=connector_env.secret_env(),
+        secret_env=infisical_secrets.secret_env(),
     )
 
 
@@ -602,7 +601,6 @@ gcb_process_webhook_backlog = define_asset_job(
 gcb_hourly_live_backfill_schedule = ScheduleDefinition(
     job=gcb_hourly_live_backfill,
     cron_schedule="0 * * * *",
-    default_status=DefaultScheduleStatus.RUNNING,
 )
 
 

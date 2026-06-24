@@ -5,7 +5,7 @@ import importlib
 import json
 from pathlib import Path
 
-from gcb.secrets.env import effective_env
+from gcb.secrets.infisical import InfisicalConfig, SecretProviderError, fetch_infisical_secrets
 
 DEFAULT_STATE = Path(".gcb-state.sqlite")
 
@@ -99,6 +99,8 @@ def _honcho_sync_data_from_args(args: argparse.Namespace) -> dict[str, object]:
             raise SystemExit(str(exc)) from exc
 
     _ensure_honcho_source_symbols()
+    if not args.infisical_project_id:
+        raise SystemExit("--live-sources requires --infisical-project-id")
     if args.source_limit < 1:
         raise SystemExit("--source-limit must be a positive integer")
     if args.catalog_limit < 1:
@@ -107,8 +109,20 @@ def _honcho_sync_data_from_args(args: argparse.Namespace) -> dict[str, object]:
         raise SystemExit("--checkpoint-overlap-minutes must be a non-negative integer")
 
     try:
+        secrets = fetch_infisical_secrets(
+            InfisicalConfig(
+                project_id=args.infisical_project_id,
+                environment=args.infisical_env,
+                path=args.infisical_path,
+                domain=args.infisical_domain,
+            ),
+            allow_cli_fallback=True,
+        )
+    except (RuntimeError, SecretProviderError, SourceClientError) as exc:
+        raise SystemExit(str(exc)) from exc
+    try:
         return collect_source_snapshot(
-            effective_env(),
+            secrets,
             limit=args.source_limit,
             catalog_limit=args.catalog_limit,
             sources=_parse_honcho_sources(args.sources),

@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import argparse
 import json
+from typing import cast
 
-from gcb.clients.cli.retrieval import retrieval_api_from_args
 from gcb.cli_parts.runtime_helpers import _database_url_from_args
 from gcb.cli_parts.shared import DEFAULT_STATE, _principal_from_args
 from gcb.etl.extract.email_parser import load_email_dir_with_report
 from gcb.governance import GovernedContext
+from gcb.retrieval.augmentation import RetrieverName
 from gcb.retrieval.live_retrieval_case_set import run_live_retrieval_case_set
 from gcb.runtime.operator_live import host_database_url
 from gcb.workflows import HumanAgentWorkflow
@@ -38,30 +39,28 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
         return True
 
     if args.command == "search-state":
-        principal = _principal_from_args(args)
-        response = retrieval_api_from_args(args).search_evidence(
+        context = GovernedContext(args.state, database_url=database_url)
+        response = context.search_context(
             args.query,
             limit=args.limit,
-            roles=principal.roles,
-            human_id=principal.human_id,
-            agent_id=principal.agent_id,
+            principal=_principal_from_args(args),
         )
         print(
             json.dumps(
                 {
                     "query": args.query,
                     "load": {"loaded": 0, "source": "existing_state"},
-                    "results": response["results"],
-                    "summary": response["summary"],
-                    "result_candidates": response["result_candidates"],
-                    "evidence_items": response["evidence_items"],
-                    "primary_objects": response["primary_objects"],
-                    "related_objects": response["related_objects"],
-                    "related_object_groups": response["related_object_groups"],
-                    "entities": response["entities"],
-                    "unresolved_candidates": response["unresolved_candidates"],
-                    "limitations": response["limitations"],
-                    "audit_ref": response["audit_ref"],
+                    "results": [result.__dict__ for result in response.results],
+                    "summary": response.summary,
+                    "result_candidates": response.result_candidates,
+                    "evidence_items": response.evidence_items,
+                    "primary_objects": response.primary_objects,
+                    "related_objects": response.related_objects,
+                    "related_object_groups": response.related_object_groups,
+                    "entities": response.entities,
+                    "unresolved_candidates": response.unresolved_candidates,
+                    "limitations": response.limitations,
+                    "audit_ref": response.audit_ref,
                 },
                 indent=2,
             )
@@ -69,15 +68,17 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
         return True
 
     if args.command == "retrieve":
+        context = GovernedContext(args.state, database_url=database_url)
         retrievers = tuple(item.strip() for item in str(args.retrievers).split(",") if item.strip())
-        try:
-            response = retrieval_api_from_args(args).retrieve_for_agent(
-                args.query,
-                candidate_limit=args.candidate_limit,
-                retrievers=retrievers,
-            )
-        except ValueError as exc:
-            raise SystemExit(str(exc)) from exc
+        invalid = sorted(set(retrievers) - {"keyword", "vector"})
+        if invalid:
+            raise SystemExit(f"Unsupported retriever(s): {', '.join(invalid)}")
+        response = context.retrieve_augmentation(
+            args.query,
+            limit=5,
+            candidate_limit=args.candidate_limit,
+            retrievers=cast(tuple[RetrieverName, ...], retrievers),
+        )
         if args.format == "json":
             print(json.dumps(response.to_dict(), indent=2))
         else:

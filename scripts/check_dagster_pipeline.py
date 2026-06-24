@@ -48,7 +48,7 @@ def main() -> None:
     parser.add_argument(
         "--materialize-live-connectors",
         action="store_true",
-        help="Run the live connector asset path through Dagster with env/.env credentials.",
+        help="Run the live connector asset path through Dagster with Infisical-backed credentials.",
     )
     parser.add_argument(
         "--verify-live-db",
@@ -98,7 +98,7 @@ def main() -> None:
             args.artifact_dir,
             seed_webhook=args.verify_webhook,
             asset_names=FIXTURE_ASSETS,
-            load_dotenv=False,
+            infisical_enabled=False,
         )
         print("materialize_status=ok")
     if args.materialize_live_connectors:
@@ -108,7 +108,7 @@ def main() -> None:
             args.artifact_dir,
             seed_webhook=False,
             asset_names=_live_connector_asset_names(args.live_connector),
-            load_dotenv=True,
+            infisical_enabled=True,
             database_url=os.environ.get("GCB_DATABASE_URL", "") if args.verify_live_db else "",
         )
         print("live_connector_materialize_status=ok")
@@ -136,7 +136,7 @@ def _materialize_assets(
     *,
     seed_webhook: bool,
     asset_names: set[str],
-    load_dotenv: bool,
+    infisical_enabled: bool,
     database_url: str = "",
 ) -> None:
     shutil.rmtree(artifact_dir, ignore_errors=True)
@@ -154,9 +154,12 @@ def _materialize_assets(
         resources={
             "raw_landing": module.RawLandingResource(path=str(raw_landing)),
             "meltano_project": module.MeltanoProjectResource(project_root="."),
-            "connector_env": module.ConnectorEnvResource(
-                dotenv_path=os.environ.get("GCB_DOTENV_PATH", ".env"),
-                load_dotenv=load_dotenv,
+            "infisical_secrets": module.InfisicalSecretsResource(
+                enabled=infisical_enabled,
+                project_id=_env_first("GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID"),
+                environment=_env_first("GCB_INFISICAL_ENV", "INFISICAL_ENV", default="runtime"),
+                path=_env_first("GCB_INFISICAL_PATH", "INFISICAL_PATH", default="/"),
+                domain=_env_first("GCB_INFISICAL_DOMAIN", "INFISICAL_DOMAIN", "INFISICAL_API_URL"),
             ),
             "gcb_runtime": module.GcbRuntimeResource(
                 state_path=str(state_path),

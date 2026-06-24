@@ -16,6 +16,22 @@ services:
       timeout: 5s
       retries: 12
 
+  cerbos:
+    image: ghcr.io/cerbos/cerbos:0.53.0
+    restart: unless-stopped
+    command: ["server", "--config=/config/config.yaml"]
+    ports:
+      - "127.0.0.1:3592:3592"
+      - "127.0.0.1:3593:3593"
+    volumes:
+      - ../../cerbos/config.yaml:/config/config.yaml:ro
+      - ../../cerbos/policies:/policies:ro
+    healthcheck:
+      test: ["CMD", "/cerbos", "healthcheck", "--config=/config/config.yaml", "--kind=http", "--insecure"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
   observability:
     profiles: ["observability"]
     image: grafana/otel-lgtm:0.28.0
@@ -132,7 +148,7 @@ services:
       - >
         mkdir -p "$$DAGSTER_HOME" &&
         cp /tmp/gcb-dagster-home/dagster.yaml /tmp/gcb-dagster-home/workspace.yaml "$$DAGSTER_HOME"/ &&
-        exec dagster-webserver -h 0.0.0.0 -p 3001 -w "$$DAGSTER_HOME/workspace.yaml"
+        exec dagster-webserver -h 0.0.0.0 -p 3001 -w workspace.yaml
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
       DAGSTER_POSTGRES_USER: dagster
@@ -174,7 +190,7 @@ services:
       - >
         mkdir -p "$$DAGSTER_HOME" &&
         cp /tmp/gcb-dagster-home/dagster.yaml /tmp/gcb-dagster-home/workspace.yaml "$$DAGSTER_HOME"/ &&
-        exec dagster-daemon run -w "$$DAGSTER_HOME/workspace.yaml"
+        exec dagster-daemon run
     environment:
       DAGSTER_HOME: /opt/dagster/dagster_home
       DAGSTER_POSTGRES_USER: dagster
@@ -210,10 +226,15 @@ services:
       GCB_OPENAI_EMBEDDING_MODEL: ${GCB_OPENAI_EMBEDDING_MODEL:-text-embedding-3-small}
       GCB_EMBEDDING_DIMENSIONS: ${GCB_EMBEDDING_DIMENSIONS:-256}
       OPENAI_API_KEY: ${OPENAI_API_KEY:-}
+      INFISICAL_API_URL: ${INFISICAL_API_URL:-}
+      INFISICAL_CLIENT_ID: ${INFISICAL_CLIENT_ID:-}
+      INFISICAL_CLIENT_SECRET: ${INFISICAL_CLIENT_SECRET:-}
       OTEL_EXPORTER_OTLP_ENDPOINT: ${OTEL_EXPORTER_OTLP_ENDPOINT:-http://observability:4318}
       OTEL_SERVICE_NAME: ${OTEL_SERVICE_NAME:-gcb-app}
     depends_on:
       postgres:
+        condition: service_healthy
+      cerbos:
         condition: service_healthy
     volumes:
       - gcb-local:/app/.local

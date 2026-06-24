@@ -385,9 +385,9 @@ identity only.
 
 Credential source:
 
-- load `LINEAR_API_KEY` from external secret manager
-- load `TWENTY_API_KEY` from external secret manager
-- load `SLACK_BOT_TOKEN` from external secret manager for identity lookup only
+- load `LINEAR_API_KEY` from Infisical
+- load `TWENTY_API_KEY` from Infisical
+- load `SLACK_BOT_TOKEN` from Infisical for identity lookup only
 - never print token values
 
 Twenty preflight:

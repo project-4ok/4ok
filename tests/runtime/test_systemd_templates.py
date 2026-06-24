@@ -52,4 +52,4 @@ def test_internal_prod_systemd_templates_run_compose_app_commands() -> None:
         in env_example
     )
     assert "POSTGRES_PASSWORD=replace-with-postgres-password" in env_example
-    assert "GCB_DATABASE_URL=" in env_example
+    assert "INFISICAL_CLIENT_SECRET=replace-with-machine-client-secret" in env_example

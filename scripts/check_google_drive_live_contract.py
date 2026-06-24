@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import os
 import shutil
 import subprocess
 import sys
@@ -9,7 +10,7 @@ from pathlib import Path
 from typing import Any
 
 from gcb.etl.extract.connectors import load_landed_source_records
-from gcb.secrets.env import effective_env
+from gcb.secrets.infisical import InfisicalConfig, fetch_infisical_secrets
 
 
 def main() -> int:
@@ -33,8 +34,11 @@ def check_google_drive_live_contract(artifact_dir: Path) -> dict[str, Any]:
     landing_dir.mkdir(parents=True, exist_ok=True)
     stderr_path = artifact_dir / "meltano.stderr.log"
 
-    env = effective_env()
-    env["TARGET_GCB_RAW_JSONL_LANDING_DIR"] = str(landing_dir)
+    env = {
+        **os.environ,
+        **_infisical_secrets(),
+        "TARGET_GCB_RAW_JSONL_LANDING_DIR": str(landing_dir),
+    }
     env.setdefault("GOOGLE_WORKSPACE_LIMIT", "25")
 
     with stderr_path.open("w", encoding="utf-8") as stderr:
@@ -77,6 +81,25 @@ def check_google_drive_live_contract(artifact_dir: Path) -> dict[str, Any]:
         "state_keys": sorted(state.keys()) if isinstance(state, dict) else [],
         "streams": sorted(path.stem for path in landing_dir.glob("*.jsonl")),
     }
+
+
+def _infisical_secrets() -> dict[str, str]:
+    return fetch_infisical_secrets(
+        InfisicalConfig(
+            project_id=_env_first("GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID"),
+            environment=_env_first("GCB_INFISICAL_ENV", "INFISICAL_ENV") or "runtime",
+            path=_env_first("GCB_INFISICAL_PATH", "INFISICAL_PATH") or "/",
+            domain=_env_first("GCB_INFISICAL_DOMAIN", "INFISICAL_DOMAIN"),
+        )
+    )
+
+
+def _env_first(*names: str) -> str:
+    for name in names:
+        value = os.environ.get(name)
+        if value:
+            return value
+    return ""
 
 
 if __name__ == "__main__":

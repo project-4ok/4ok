@@ -36,7 +36,7 @@ The installer clones or updates 4ok, installs `uv` if needed, runs `uv sync`,
 validates Docker Compose, and starts the local runtime, observability, and
 pipeline containers with safe local defaults.
 
-It does not configure secrets, API keys, or live connectors. Add
+It does not configure secrets, API keys, Infisical, or live connectors. Add
 credentials later when you are ready to connect real sources.
 
 ## Manual quick start
@@ -47,7 +47,7 @@ Prerequisites: Python 3.13 and [uv](https://docs.astral.sh/uv/).
 git clone https://github.com/project-4ok/4ok.git
 cd 4ok
 uv sync
-uv run 4ok-dev fast
+uv run gcb-dev fast
 ```
 
 That installs the project and runs the default local development gate: lint,
@@ -56,17 +56,17 @@ format check, tracked tests, goal audit, and whitespace checks.
 Try a fixture-only retrieval path:
 
 ```bash
-uv run 4ok search "refund cancellation payment"
+uv run gcb search "refund cancellation payment"
 ```
 
 Try the source-record flow with a deterministic context snapshot:
 
 ```bash
-uv run 4ok import-context-fixture \
+uv run gcb import-context-fixture \
   --fixture fixtures/context_substrate/source_snapshot_eval.json \
   --state .local/context-substrate.sqlite
 
-uv run 4ok search-state \
+uv run gcb search-state \
   "renewal meeting Thursday" \
   --state .local/context-substrate.sqlite \
   --role linear:team:sales
@@ -75,7 +75,7 @@ uv run 4ok search-state \
 Run the local MCP retrieval server for stdio clients:
 
 ```bash
-uv run 4ok-mcp
+uv run gcb-mcp
 ```
 
 ## What is implemented now
@@ -90,7 +90,7 @@ The current internal v0 is a source-record-first retrieval runtime:
 - derived retrieval units with source refs
 - permission/lifecycle-filtered search and retrieval augmentation
 - audit, dashboard, health, retention, backup/restore, and local runtime checks
-- stdio MCP tool surface: `search_4ok(query, limit?)`
+- stdio MCP tool surface: `search_context(query, limit?)`
 
 Deferred or intentionally out of scope for the active stage:
 
@@ -117,32 +117,32 @@ docs/                     architecture, operations, compliance, and internal-v0 
 
 ```bash
 # default local gate for development
-uv run 4ok-dev fast
+uv run gcb-dev fast
 
 # full release-style local gate
-uv run 4ok-dev full
+uv run gcb-dev full
 
 # run a narrow test target
-uv run 4ok-dev test tests/retrieval -q
+uv run gcb-dev test tests/retrieval -q
 
 # inspect CLI surfaces
-uv run 4ok --help
-uv run 4ok-dev --help
+uv run gcb --help
+uv run gcb-dev --help
 
 # local golden-query retrieval/evidence evaluation
-uv run 4ok eval-retrieval
+uv run gcb eval-retrieval
 
 # operator health and dashboard checks
-uv run 4ok health
-uv run 4ok dashboard
+uv run gcb health
+uv run gcb dashboard
 
 # Docker Compose config check with safe local placeholders
-uv run 4ok-dev compose-config
+uv run gcb-dev compose-config
 ```
 
 ## Onboarding path for contributors
 
-1. Run `uv sync` and `uv run 4ok-dev fast`.
+1. Run `uv sync` and `uv run gcb-dev fast`.
 2. Read [Architecture](docs/architecture.md) for the source-record contract.
 3. Read [Development](docs/development.md) for the local gates.
 4. Pick a small vertical slice and prove it with a fixture, CLI command, or
@@ -160,7 +160,7 @@ mixed with behavior changes.
 - [Development](docs/development.md)
 - [Operations](docs/operations.md)
 - [Internal production v0](docs/internal-prod.md)
-- [4OK MCP retrieval server](docs/mcp-retrieval.md)
+- [GCB MCP retrieval server](docs/mcp-retrieval.md)
 - [Contracts](docs/contracts.md)
 - [Compliance](docs/compliance.md)
 - [K3s deployment readiness](docs/k3s-deployment-readiness.md)

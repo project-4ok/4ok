@@ -9,9 +9,12 @@ from gcb.devtools.goal_audit import audit_goal_alignment
 from gcb.runtime.access import check_compose_access_boundary
 from gcb.runtime.dependency_contracts import dependency_contract_report
 
-ACTIVE_COMPOSE_SERVICES = ("postgres", "observability", "app")
+ACTIVE_COMPOSE_SERVICES = ("postgres", "cerbos", "observability", "app")
 REQUIRED_APP_ENV = (
     "GCB_DATABASE_URL",
+    "INFISICAL_API_URL",
+    "INFISICAL_CLIENT_ID",
+    "INFISICAL_CLIENT_SECRET",
     "OTEL_EXPORTER_OTLP_ENDPOINT",
     "OTEL_SERVICE_NAME",
 )

@@ -1,15 +1,13 @@
-from gcb.secrets.env import (
-    effective_env,
-    load_dotenv,
+from gcb.secrets.infisical import (
+    InfisicalConfig,
+    SecretProviderError,
+    fetch_infisical_secrets,
     parse_dotenv_export_lines,
-    parse_json_export,
-    redacted_env_report,
 )
 
 __all__ = [
-    "effective_env",
-    "load_dotenv",
+    "InfisicalConfig",
+    "SecretProviderError",
+    "fetch_infisical_secrets",
     "parse_dotenv_export_lines",
-    "parse_json_export",
-    "redacted_env_report",
 ]

@@ -14,7 +14,7 @@ def test_operator_live_dry_run_reports_plan_without_secrets(tmp_path: Path) -> N
     env_file = tmp_path / ".env"
     env_file.write_text(
         "GCB_DATABASE_URL=postgresql+psycopg://gcb:secret@localhost:5432/gcb\n"
-        "SLACK_BOT_TOKEN=secret-value\n",
+        "INFISICAL_CLIENT_SECRET=secret-value\n",
         encoding="utf-8",
     )
 

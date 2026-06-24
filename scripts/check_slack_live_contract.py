@@ -15,7 +15,7 @@ from gcb.etl.extract.connectors import land_singer_records
 from gcb.etl.extract.slack_adapter import load_slack_landed_source_records
 from gcb.etl.extract.slack_tap_env import apply_slack_tap_defaults
 from gcb.runtime import mcp_retrieval
-from gcb.secrets.env import effective_env
+from gcb.secrets.infisical import InfisicalConfig, SecretProviderError, fetch_infisical_secrets
 
 
 def main() -> int:
@@ -43,7 +43,7 @@ def check_slack_live_contract(artifact_dir: Path, *, database_url: str = "") -> 
     artifact_dir.mkdir(parents=True, exist_ok=True)
     try:
         env = _slack_env()
-    except ValueError as error:
+    except SecretProviderError as error:
         return {
             "status": "blocked",
             "stage": "credentials",
@@ -52,7 +52,9 @@ def check_slack_live_contract(artifact_dir: Path, *, database_url: str = "") -> 
                 "has_slack_token": bool(
                     os.environ.get("SLACK_BOT_TOKEN") or os.environ.get("TAP_SLACK_API_KEY")
                 ),
-                "has_dotenv": Path(".env").exists(),
+                "has_infisical_project_id": bool(
+                    _env_first("GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID")
+                ),
             },
             "artifact_dir": str(artifact_dir),
             "runtime_database": _runtime_database_probe(database_url),
@@ -138,12 +140,26 @@ def check_slack_live_contract(artifact_dir: Path, *, database_url: str = "") -> 
 
 
 def _slack_env() -> dict[str, str]:
-    env = effective_env()
-    if not (env.get("SLACK_BOT_TOKEN") or env.get("TAP_SLACK_API_KEY")):
-        raise ValueError("Slack auth requires SLACK_BOT_TOKEN or TAP_SLACK_API_KEY in env/.env")
+    config = InfisicalConfig(
+        project_id=_env_first("GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID"),
+        environment=_env_first("GCB_INFISICAL_ENV", "INFISICAL_ENV") or "runtime",
+        path=_env_first("GCB_INFISICAL_PATH", "INFISICAL_PATH") or "/",
+        domain=_env_first("GCB_INFISICAL_DOMAIN", "INFISICAL_DOMAIN"),
+    )
+    env = dict(os.environ)
+    if config.project_id or not (env.get("SLACK_BOT_TOKEN") or env.get("TAP_SLACK_API_KEY")):
+        env.update(fetch_infisical_secrets(config))
     if env.get("SLACK_BOT_TOKEN") and not env.get("TAP_SLACK_API_KEY"):
         env["TAP_SLACK_API_KEY"] = env["SLACK_BOT_TOKEN"]
     return apply_slack_tap_defaults(env)
+
+
+def _env_first(*names: str) -> str:
+    for name in names:
+        value = os.environ.get(name)
+        if value:
+            return value
+    return ""
 
 
 def _run(command: list[str], *, env: dict[str, str]) -> subprocess.CompletedProcess[str]:

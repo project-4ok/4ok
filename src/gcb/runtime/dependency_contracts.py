@@ -42,7 +42,7 @@ DEPENDENCY_CONTRACTS = (
     DependencyContract(
         name="docker-compose-runtime",
         category="runtime",
-        active_surface="internal v0 app/postgres/observability services",
+        active_surface="internal v0 app/postgres/cerbos/observability services",
         status="proved",
         dimensions=REQUIRED_DIMENSIONS,
         proof_commands=(
@@ -67,21 +67,18 @@ DEPENDENCY_CONTRACTS = (
         notes="SQLite remains the fast local fallback; PostgreSQL is the internal-prod target.",
     ),
     DependencyContract(
-        name="env-secret-loading",
+        name="infisical-sdk",
         category="secrets",
-        active_surface="connector/runtime credential loading from process env and .env",
-        status="proved-with-fixtures",
+        active_surface="connector/runtime credential retrieval",
+        status="proved-with-fake-client",
         dimensions=REQUIRED_DIMENSIONS,
         proof_commands=(
-            "uv run pytest tests/secrets/test_env.py -q",
-            "uv run pytest tests/runtime/test_dagster_pipeline.py::"
-            "test_dagster_connector_env_resource_loads_dotenv_without_overriding_process_env -q",
+            "uv run pytest tests/secrets/test_infisical.py -q",
+            "uv run pytest tests/etl/extract/test_gmail_pilot_config.py "
+            "tests/etl/extract/test_gmail_pilot_retry.py -q",
         ),
-        notes=(
-            "Default OSS/self-hosted secret source is provider-neutral env/.env. "
-            "External secret managers may inject env vars before startup; no secret "
-            "manager SDK is a default runtime dependency."
-        ),
+        notes="Live credentials are intentionally not required for normal tests; SDK auth, "
+        "shape mapping, fallback behavior, and error handling are covered with fakes.",
     ),
     DependencyContract(
         name="singer-meltano-style-connectors",
@@ -128,7 +125,7 @@ DEPENDENCY_CONTRACTS = (
             "uv run pytest tests/etl/extract/test_slack_connectors.py -q",
         ),
         notes=(
-            "Uses env/.env-provided SLACK_BOT_TOKEN as TAP_SLACK_API_KEY, runs "
+            "Uses Infisical-provided SLACK_BOT_TOKEN as TAP_SLACK_API_KEY, runs "
             "tap-slack config validation, discovery, SDK test-record extraction, raw "
             "landing, and Slack-specific SourceRecord adaptation without printing "
             "record content or credentials."
@@ -178,7 +175,7 @@ DEPENDENCY_CONTRACTS = (
             "uv run pytest tests/etl/extract/test_google_drive_tap.py -q",
         ),
         notes=(
-            "Uses env/.env-provided Google Workspace OAuth credentials, lists Drive files, "
+            "Uses Infisical-provided Google Workspace OAuth credentials, lists Drive files, "
             "exports Google Docs/text files only, lands raw JSONL, preserves state, and adapts "
             "records without printing document text or credentials."
         ),
@@ -230,6 +227,15 @@ DEPENDENCY_CONTRACTS = (
             "This proves the GCB-side adapter and the local plugin package shape. "
             "OpenClaw runtime loading remains a deployment smoke check."
         ),
+    ),
+    DependencyContract(
+        name="cerbos",
+        category="policy-experiment",
+        active_surface="deferred reveal-policy experiment only",
+        status="deferred",
+        dimensions=REQUIRED_DIMENSIONS,
+        proof_commands=("uv run pytest tests/governance/test_policy.py -q",),
+        notes="Cerbos is not part of the active reveal surface while reveal is deferred.",
     ),
 )
 

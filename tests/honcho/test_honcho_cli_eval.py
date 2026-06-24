@@ -464,12 +464,144 @@ def test_cli_honcho_eval_can_scope_to_peer_search(capsys, monkeypatch, tmp_path:
     assert output["summary"]["passed"] == 1
 
 
+def test_cli_honcho_preflight_uses_infisical_and_redacts_values(capsys, monkeypatch) -> None:
+    def fake_fetch(config, **kwargs):
+        assert config.project_id == "project-123"
+        assert config.environment == "runtime"
+        assert config.path == "/customer-consumable/customers/4ok/runtime"
+        return {
+            "LINEAR_API_KEY": "linear-secret",
+            "TWENTY_API_KEY": "twenty-secret",
+            "SLACK_BOT_TOKEN": "slack-secret",
+        }
+
+    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.fetch_infisical_secrets", fake_fetch)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "gcb",
+            "honcho-preflight",
+            "--infisical-project-id",
+            "project-123",
+            "--infisical-env",
+            "runtime",
+            "--infisical-path",
+            "/customer-consumable/customers/4ok/runtime",
+        ],
+    )
+
+    main()
+
+    output_text = capsys.readouterr().out
+    output = json.loads(output_text)
+    assert output["status"] == "ok"
+    assert output["available"] == {
+        "LINEAR_API_KEY": True,
+        "TWENTY_API_KEY": True,
+        "SLACK_BOT_TOKEN": True,
+    }
+    assert "linear-secret" not in output_text
+    assert "twenty-secret" not in output_text
+    assert "slack-secret" not in output_text
 
 
+def test_cli_honcho_preflight_reports_secret_provider_errors_without_traceback(
+    capsys, monkeypatch
+) -> None:
+    def fake_fetch(config, **kwargs):
+        raise RuntimeError("provider unavailable")
+
+    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.fetch_infisical_secrets", fake_fetch)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "gcb",
+            "honcho-preflight",
+            "--infisical-project-id",
+            "project-123",
+        ],
+    )
+
+    try:
+        main()
+    except SystemExit as exc:
+        assert exc.code == "provider unavailable"
+    else:
+        raise AssertionError("expected SystemExit")
 
 
+def test_cli_honcho_preflight_can_check_selected_source_connections(capsys, monkeypatch) -> None:
+    def fake_fetch(config, **kwargs):
+        return {
+            "LINEAR_API_KEY": "linear-secret",
+            "TWENTY_API_KEY": "twenty-secret",
+            "SLACK_BOT_TOKEN": "slack-secret",
+        }
+
+    def fake_source_preflight(secrets, *, sources):
+        assert sources == {"linear", "slack"}
+        assert secrets["LINEAR_API_KEY"] == "linear-secret"
+        return {
+            "status": "ok",
+            "sources": {
+                "linear": {"status": "ok"},
+                "slack": {"status": "ok"},
+            },
+        }
+
+    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.fetch_infisical_secrets", fake_fetch)
+    monkeypatch.setattr(
+        "gcb.cli_parts.honcho_helpers.source_connection_preflight",
+        fake_source_preflight,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "gcb",
+            "honcho-preflight",
+            "--check-sources",
+            "--sources",
+            "linear,slack",
+            "--infisical-project-id",
+            "project-123",
+        ],
+    )
+
+    main()
+
+    output_text = capsys.readouterr().out
+    output = json.loads(output_text)
+    assert output["status"] == "ok"
+    assert output["sources"] == {
+        "linear": {"status": "ok"},
+        "slack": {"status": "ok"},
+    }
+    assert "linear-secret" not in output_text
 
 
+def test_cli_honcho_preflight_uses_infisical_env_defaults(capsys, monkeypatch) -> None:
+    def fake_fetch(config, **kwargs):
+        assert config.project_id == "project-from-env"
+        assert config.environment == "dev"
+        assert config.path == "/customer-consumable/customers/4ok/runtime"
+        assert config.domain == "https://infisical.example"
+        return {
+            "LINEAR_API_KEY": "linear-secret",
+            "TWENTY_API_KEY": "twenty-secret",
+            "SLACK_BOT_TOKEN": "slack-secret",
+        }
+
+    monkeypatch.setenv("INFISICAL_PROJECT_ID", "project-from-env")
+    monkeypatch.setenv("INFISICAL_ENV", "dev")
+    monkeypatch.setenv("INFISICAL_PATH", "/customer-consumable/customers/4ok/runtime")
+    monkeypatch.setenv("INFISICAL_DOMAIN", "https://infisical.example")
+    monkeypatch.setattr("gcb.cli_parts.honcho_helpers.fetch_infisical_secrets", fake_fetch)
+    monkeypatch.setattr("sys.argv", ["gcb", "honcho-preflight"])
+
+    main()
+
+    output = json.loads(capsys.readouterr().out)
+    assert output["status"] == "ok"
 
 
 def test_cli_honcho_sync_dry_run_classifies_already_imported_source_refs(

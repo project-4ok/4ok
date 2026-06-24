@@ -18,7 +18,7 @@ def test_dependency_contracts_cover_required_spike_dimensions() -> None:
         "docker-compose-runtime",
         "google-drive-live-custom-singer-tap",
         "postgresql",
-        "env-secret-loading",
+        "infisical-sdk",
         "singer-meltano-style-connectors",
         "configured-singer-taps",
         "linear-live-custom-singer-tap",
@@ -27,6 +27,7 @@ def test_dependency_contracts_cover_required_spike_dimensions() -> None:
         "pypdf",
         "opentelemetry-lgtm",
         "openclaw-plugin-boundary",
+        "cerbos",
     } <= set(contracts)
 
     for contract in contracts.values():

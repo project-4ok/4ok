@@ -158,9 +158,14 @@ def main(argv: Sequence[str] | None = None) -> None:
         help="Print raw values. Avoid in logs and agent transcripts.",
     )
 
-    subparsers.add_parser(
+    connector_secrets_parser = subparsers.add_parser(
         "connector-secrets",
         help="Check whether live connector secret env vars are present without printing values.",
+    )
+    connector_secrets_parser.add_argument(
+        "--from-infisical",
+        action="store_true",
+        help="Fetch Infisical secrets using .env/default config before checking.",
     )
 
     dagster_status_parser = subparsers.add_parser(
@@ -227,7 +232,7 @@ def main(argv: Sequence[str] | None = None) -> None:
     if args.command == "connector-secrets":
         print(
             json.dumps(
-                connector_secret_report(_connector_secret_env()),
+                connector_secret_report(_connector_secret_env(fetch_infisical=args.from_infisical)),
                 indent=2,
                 sort_keys=True,
             )
@@ -360,6 +365,7 @@ def _app_up() -> DevStep:
             "--force-recreate",
             "-d",
             "postgres",
+            "cerbos",
             "app",
         ),
         env=_compose_local_env(),
@@ -465,6 +471,10 @@ def _compose_local_env() -> dict[str, str]:
         "GCB_DATABASE_URL",
         f"postgresql+psycopg://gcb:{env['POSTGRES_PASSWORD']}@postgres:5432/gcb",
     )
+    _copy_if_missing(env, "GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID")
+    _copy_if_missing(env, "GCB_INFISICAL_ENV", "INFISICAL_ENV")
+    _copy_if_missing(env, "GCB_INFISICAL_PATH", "INFISICAL_PATH")
+    _copy_if_missing(env, "GCB_INFISICAL_DOMAIN", "INFISICAL_DOMAIN")
     return env
 
 
@@ -572,9 +582,33 @@ def _loki_get(base_url: str, path: str, params: dict[str, str] | None = None) ->
         return json.loads(response.read().decode("utf-8"))
 
 
-def _connector_secret_env() -> dict[str, str]:
-    env = _dotenv_values(Path(".env"))
-    env.update(os.environ)
+def _connector_secret_env(*, fetch_infisical: bool) -> dict[str, str]:
+    env = dict(os.environ)
+    env.update(_dotenv_values(Path(".env")))
+    if not fetch_infisical:
+        return env
+    from gcb.secrets.infisical import InfisicalConfig, fetch_infisical_secrets
+
+    _copy_if_missing(env, "GCB_INFISICAL_PROJECT_ID", "INFISICAL_PROJECT_ID")
+    _copy_if_missing(env, "GCB_INFISICAL_ENV", "INFISICAL_ENV")
+    _copy_if_missing(env, "GCB_INFISICAL_PATH", "INFISICAL_PATH")
+    _copy_if_missing(env, "GCB_INFISICAL_DOMAIN", "INFISICAL_DOMAIN")
+    previous = os.environ.copy()
+    try:
+        os.environ.update(env)
+        env.update(
+            fetch_infisical_secrets(
+                InfisicalConfig(
+                    project_id=env.get("GCB_INFISICAL_PROJECT_ID", ""),
+                    environment=env.get("GCB_INFISICAL_ENV", "runtime"),
+                    path=env.get("GCB_INFISICAL_PATH", "/"),
+                    domain=env.get("GCB_INFISICAL_DOMAIN", ""),
+                )
+            )
+        )
+    finally:
+        os.environ.clear()
+        os.environ.update(previous)
     return env
 
 

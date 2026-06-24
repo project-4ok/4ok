@@ -10,6 +10,8 @@ import yaml
 ALLOWED_EXPOSURES = frozenset(
     {
         ("postgres", "127.0.0.1", "5432", "5432", "tcp"),
+        ("cerbos", "127.0.0.1", "3592", "3592", "tcp"),
+        ("cerbos", "127.0.0.1", "3593", "3593", "tcp"),
         ("observability", "127.0.0.1", "3000", "3000", "tcp"),
         ("observability", "127.0.0.1", "3100", "3100", "tcp"),
         ("observability", "127.0.0.1", "3200", "3200", "tcp"),

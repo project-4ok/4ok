@@ -5,6 +5,7 @@ description = "Spike prototypes for governed company context retrieval."
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
 dependencies = [
+    "infisicalsdk>=1.0.16",
     "mcp>=1.21.0",
     "opentelemetry-exporter-otlp-proto-http>=1.39.0",
     "opentelemetry-instrumentation-logging>=0.60b0",
@@ -23,9 +24,6 @@ requires = ["hatchling"]
 build-backend = "hatchling.build"
 
 [project.scripts]
-4ok = "gcb.cli:main"
-4ok-dev = "gcb.devtools.dev:main"
-4ok-mcp = "gcb.runtime.mcp_retrieval:main"
 gcb = "gcb.cli:main"
 gcb-dev = "gcb.devtools.dev:main"
 gcb-mcp = "gcb.runtime.mcp_retrieval:main"

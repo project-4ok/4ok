@@ -208,13 +208,25 @@ def dispatch_honcho(args: argparse.Namespace) -> bool:
 
     if args.command == "honcho-preflight":
         helpers._ensure_honcho_preflight_symbols()
+        try:
+            secrets = helpers.fetch_infisical_secrets(
+                helpers.InfisicalConfig(
+                    project_id=args.infisical_project_id,
+                    environment=args.infisical_env,
+                    path=args.infisical_path,
+                    domain=args.infisical_domain,
+                ),
+                allow_cli_fallback=True,
+            )
+        except (RuntimeError, helpers.SecretProviderError) as exc:
+            raise SystemExit(str(exc)) from exc
         report = (
             helpers.source_connection_preflight(
-                helpers.effective_env(),
+                secrets,
                 sources=helpers._parse_honcho_sources(args.sources),
             )
             if args.check_sources
-            else helpers.source_secret_preflight(helpers.effective_env())
+            else helpers.source_secret_preflight(secrets)
         )
         print(json.dumps(report, indent=2))
         return True
