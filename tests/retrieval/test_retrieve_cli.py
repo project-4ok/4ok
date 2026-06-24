@@ -2,13 +2,15 @@ from __future__ import annotations
 
 import json
 import sqlite3
+from datetime import UTC, datetime
 from pathlib import Path
 
 import pytest
 
 from fourok.cli import main
-from fourok.etl.extract.source_records import SourceRecord
+from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
 from fourok.governance import GovernedContext
+from fourok.retrieval.augmentation import _source_date_label
 
 
 def _seed_state(state: Path) -> None:
@@ -120,6 +122,18 @@ def test_retrieve_respects_explicit_token_budget(capsys, monkeypatch, tmp_path: 
     output = capsys.readouterr().out
     assert output.count("source_ref: slack:message:budget-stop:") == 1
     assert "Budget: " in output
+
+
+def test_retrieve_formats_source_dates_for_agent_time_reasoning() -> None:
+    now = datetime(2026, 6, 24, 14, 10, tzinfo=UTC)
+
+    assert _source_date_label("2026-06-01T14:08:35.162Z", now=now) == (
+        "23 days ago (2026-06-01)"
+    )
+    assert _source_date_label("2026-06-24T08:00:00+00:00", now=now) == (
+        "today (2026-06-24)"
+    )
+    assert _source_date_label("", now=now) == "unknown"
 
 
 def test_retrieve_prints_llm_ready_augmentation_block(capsys, monkeypatch, tmp_path: Path) -> None:
@@ -358,6 +372,77 @@ def test_retrieve_centers_evidence_snippet_on_query_terms(
     output = capsys.readouterr().out
     assert "evidence: Developer Advocate." not in output
     assert "runtime deployment decision belongs with the fourok OpenClaw rollout notes" in output
+
+
+def test_retrieve_expands_high_ranked_hits_with_direct_context(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:issue:alpha-plan",
+                source_system="linear",
+                source_id="alpha-plan",
+                record_type="work_item",
+                title="Alpha launch plan",
+                body="alpha launch plan zephyr decision and rollout checklist",
+                occurred_at="2026-06-20T12:00:00+00:00",
+                thread_ref="linear:issue:alpha-plan",
+                metadata={"assignee_id": "person-1"},
+            ),
+            SourceRecord(
+                source_ref="linear:comment:alpha-budget",
+                source_system="linear",
+                source_id="alpha-budget",
+                record_type="message",
+                title="Comment on rollout budget",
+                body="Budget follow-up says the rollout needs Finance approval.",
+                occurred_at="2026-06-21T12:00:00+00:00",
+                thread_ref="linear:issue:alpha-plan",
+            ),
+            SourceRecord(
+                source_ref="linear:user:person-1",
+                source_system="linear",
+                source_id="person-1",
+                record_type="person",
+                title="Casey Holder",
+                body="Casey Holder is accountable for approval routing.",
+                occurred_at="2026-06-19T12:00:00+00:00",
+                source_identities=(
+                    SourceIdentity(
+                        source_system="linear",
+                        identity_ref="linear:email:alex@example.com",
+                        identity_type="email",
+                        value="alex@example.com",
+                        display_name="Casey Holder",
+                    ),
+                ),
+            ),
+        ]
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "alpha launch plan zephyr decision",
+            "--state",
+            str(state),
+            "--retrievers",
+            "keyword",
+        ],
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "source_ref: linear:issue:alpha-plan" in output
+    assert "source_ref: linear:comment:alpha-budget" in output
+    assert "Budget follow-up says the rollout needs Finance approval." in output
+    assert "source_ref: linear:user:person-1" in output
+    assert "is accountable for approval routing." in output
 
 
 def test_retrieve_no_results_is_successful_augmentation_block(

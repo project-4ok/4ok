@@ -183,6 +183,8 @@ class GovernedContext:
             self._source_records,
             self._retrieval_records,
             query,
+            canonical_objects=self._canonical_objects,
+            entity_links=self._entity_links,
             token_budget=token_budget,
             candidate_limit=candidate_limit,
             retrievers=retrievers,

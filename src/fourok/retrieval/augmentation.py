@@ -78,6 +78,8 @@ def retrieve_augmentation(
     retrieval_records,
     query: str,
     *,
+    canonical_objects=None,
+    entity_links=None,
     token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET,
     candidate_limit: int = 40,
     retrievers: tuple[RetrieverName, ...] = ("keyword", "vector"),
@@ -154,10 +156,24 @@ def retrieve_augmentation(
         pre_rerank_count = len(candidates_by_key)
         distinct_sources = len({source_ref for source_ref, _unit_index in candidates_by_key})
         ranked_results = _rank_and_diversify(candidates_by_key, query=query)
+        ranked_count = len(ranked_results)
+        ranked_results = _expand_ranked_results(
+            engine,
+            source_records,
+            retrieval_records,
+            ranked_results,
+            query=query,
+            canonical_objects=canonical_objects,
+            entity_links=entity_links,
+        )
         results = _select_results_for_token_budget(ranked_results, token_budget=token_budget)
         searched = " and ".join(name for name in retrievers)
         if results:
             limitations.append(f"Searched {searched} candidates.")
+            if len(ranked_results) > ranked_count:
+                limitations.append(
+                    "Expanded high-ranked hits with direct canonical/thread context."
+                )
         else:
             limitations.append(f"Searched {searched} candidates.")
             limitations.append("No relevant source excerpts found for the selected retrievers.")
@@ -313,6 +329,186 @@ def _rank_and_diversify(
     return results
 
 
+def _expand_ranked_results(
+    engine: Engine,
+    source_records,
+    retrieval_records,
+    results: list[RetrievalCandidate],
+    *,
+    query: str,
+    canonical_objects=None,
+    entity_links=None,
+) -> list[RetrievalCandidate]:
+    if not results:
+        return results
+    original_refs = {result.source_ref for result in results}
+    emitted_refs: set[str] = set()
+    expanded: list[RetrievalCandidate] = []
+    for result in results:
+        expanded.append(result)
+        emitted_refs.add(result.source_ref)
+        for source_ref in _direct_context_source_refs(
+            engine,
+            source_records,
+            result.source_ref,
+            canonical_objects=canonical_objects,
+            entity_links=entity_links,
+        ):
+            if source_ref in emitted_refs or source_ref in original_refs:
+                continue
+            candidate = _candidate_for_source_ref(
+                engine,
+                source_records,
+                retrieval_records,
+                source_ref,
+                query=query,
+                linked_from=result,
+            )
+            if candidate is None:
+                continue
+            expanded.append(candidate)
+            emitted_refs.add(source_ref)
+    return expanded
+
+
+def _direct_context_source_refs(
+    engine: Engine,
+    source_records,
+    source_ref: str,
+    *,
+    canonical_objects=None,
+    entity_links=None,
+) -> list[str]:
+    refs: list[str] = []
+    refs.extend(_thread_context_source_refs(engine, source_records, source_ref))
+    refs.extend(
+        _canonical_link_source_refs(
+            engine,
+            source_ref,
+            canonical_objects=canonical_objects,
+            entity_links=entity_links,
+        )
+    )
+    deduped: list[str] = []
+    seen = {source_ref}
+    for ref in refs:
+        if not ref or ref in seen:
+            continue
+        deduped.append(ref)
+        seen.add(ref)
+    return deduped[:4]
+
+
+def _canonical_link_source_refs(
+    engine: Engine,
+    source_ref: str,
+    *,
+    canonical_objects=None,
+    entity_links=None,
+) -> list[str]:
+    if canonical_objects is None or entity_links is None:
+        return []
+    link_statement = (
+        select(entity_links.c.object_ref)
+        .where(entity_links.c.source_ref == source_ref)
+        .where(entity_links.c.status.in_(["linked", "accepted"]))
+    )
+    with engine.connect() as connection:
+        object_refs = [
+            str(row["object_ref"])
+            for row in connection.execute(link_statement).mappings()
+            if row["object_ref"]
+        ]
+        if not object_refs:
+            return []
+        object_statement = select(
+            canonical_objects.c.object_ref,
+            canonical_objects.c.source_refs,
+        ).where(canonical_objects.c.object_ref.in_(bindparam("object_refs", expanding=True)))
+        refs: list[str] = []
+        for row in connection.execute(
+            object_statement, {"object_refs": sorted(set(object_refs))}
+        ).mappings():
+            source_refs = _json_string_tuple(str(row["source_refs"]))
+            refs.extend(source_refs or (str(row["object_ref"]),))
+        return refs
+
+
+def _thread_context_source_refs(engine: Engine, source_records, source_ref: str) -> list[str]:
+    with engine.connect() as connection:
+        seed = connection.execute(
+            select(source_records.c.thread_ref).where(source_records.c.source_ref == source_ref)
+        ).mappings().first()
+        if seed is None or not seed["thread_ref"]:
+            return []
+        statement = (
+            select(source_records.c.source_ref)
+            .where(source_records.c.thread_ref == str(seed["thread_ref"]))
+            .where(source_records.c.source_ref != source_ref)
+            .where(source_records.c.lifecycle_state == "active")
+            .order_by(source_records.c.occurred_at.desc(), source_records.c.source_ref)
+            .limit(3)
+        )
+        return [
+            str(row["source_ref"])
+            for row in connection.execute(statement).mappings()
+            if row["source_ref"]
+        ]
+
+
+def _candidate_for_source_ref(
+    engine: Engine,
+    source_records,
+    retrieval_records,
+    source_ref: str,
+    *,
+    query: str,
+    linked_from: RetrievalCandidate,
+) -> RetrievalCandidate | None:
+    statement = (
+        select(
+            source_records.c.source_ref,
+            source_records.c.source_system,
+            source_records.c.record_type,
+            source_records.c.title,
+            source_records.c.occurred_at,
+            source_records.c.permission_refs,
+            source_records.c.retrieval_text,
+            retrieval_records.c.prepared_text,
+            retrieval_records.c.unit_index,
+        )
+        .select_from(
+            source_records.outerjoin(
+                retrieval_records,
+                (source_records.c.source_ref == retrieval_records.c.source_ref)
+                & (retrieval_records.c.status == "current")
+                & (retrieval_records.c.unit_index == 0),
+            )
+        )
+        .where(source_records.c.source_ref == source_ref)
+        .where(source_records.c.lifecycle_state == "active")
+    )
+    with engine.connect() as connection:
+        row = connection.execute(statement).mappings().first()
+    if row is None:
+        return None
+    title = str(row["title"])
+    text_value = str(row["prepared_text"] or row["retrieval_text"] or "")
+    return RetrievalCandidate(
+        source_ref=str(row["source_ref"]),
+        source_system=str(row["source_system"]),
+        record_type=str(row["record_type"]),
+        title=title,
+        occurred_at=str(row["occurred_at"]),
+        snippet=_evidence_snippet(text_value, title, query),
+        score=round(max(linked_from.score * 0.5, 0.000001), 6),
+        retrievers=("direct-context",),
+        permission_refs=_json_string_tuple(str(row["permission_refs"])),
+        rerank_reasons=(f"direct context for {linked_from.source_ref}",),
+        unit_index=int(row["unit_index"] or 0),
+    )
+
+
 def _select_results_for_token_budget(
     results: list[RetrievalCandidate], *, token_budget: int
 ) -> list[RetrievalCandidate]:
@@ -343,10 +539,46 @@ def _result_card_lines(index: int, result: RetrievalCandidate) -> list[str]:
         f"[{index}] {_agent_result_label(result)} — {result.title or '(untitled)'}",
         f"source_ref: {result.source_ref}",
         f"why_relevant: {why_relevant}",
-        f"date: {result.occurred_at or 'unknown'}",
+        f"date: {_source_date_label(result.occurred_at)}",
         f"evidence: {result.snippet}",
         "",
     ]
+
+
+def _source_date_label(value: str, *, now: datetime | None = None) -> str:
+    if not value:
+        return "unknown"
+    parsed = _parse_source_datetime(value)
+    if parsed is None:
+        return value
+    now_utc = now or datetime.now(UTC)
+    if now_utc.tzinfo is None:
+        now_utc = now_utc.replace(tzinfo=UTC)
+    now_utc = now_utc.astimezone(UTC)
+    source_time = parsed.astimezone(UTC)
+    day_delta = (now_utc.date() - source_time.date()).days
+    source_day = source_time.date().isoformat()
+    if day_delta == 0:
+        relative = "today"
+    elif day_delta == 1:
+        relative = "yesterday"
+    elif day_delta > 1:
+        relative = f"{day_delta} days ago"
+    elif day_delta == -1:
+        relative = "tomorrow"
+    else:
+        relative = f"in {abs(day_delta)} days"
+    return f"{relative} ({source_day})"
+
+
+def _parse_source_datetime(value: str) -> datetime | None:
+    try:
+        parsed = datetime.fromisoformat(value.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+    if parsed.tzinfo is None:
+        return parsed.replace(tzinfo=UTC)
+    return parsed
 
 
 def _estimate_tokens(text_value: str) -> int:
