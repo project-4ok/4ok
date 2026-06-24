@@ -75,6 +75,44 @@ def test_status_prints_client_safe_summary(capsys, monkeypatch) -> None:
     assert "secret" not in output
 
 
+def test_status_points_to_onboarding_when_only_demo_context_exists(capsys, monkeypatch) -> None:
+    monkeypatch.setattr("sys.argv", ["fourok", "status"])
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime.health_database_url",
+        lambda **_kwargs: "postgresql+psycopg://fourok:secret@postgres:5432/fourok",
+    )
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime.create_governed_context_state",
+        lambda **_kwargs: object(),
+    )
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime.check_runtime_health",
+        lambda _state: {
+            "status": "ok",
+            "checks": [
+                {"name": "database", "status": "ok"},
+                {"name": "source_records", "status": "ok", "count": 14},
+                {"name": "retrieval_records", "status": "ok", "count": 14},
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        "fourok.cli_parts.commands_runtime._source_system_counts",
+        lambda _state: {"local_email": 14},
+    )
+
+    with pytest.raises(SystemExit) as exc:
+        main()
+
+    output = capsys.readouterr().out
+    assert exc.value.code == 1
+    assert "fourok needs onboarding" in output
+    assert "Only demo context is present" in output
+    assert "fourok onboard" in output
+    assert "fourok onboard connectors" in output
+    assert 'fourok retrieve "What changed this week?"' not in output
+
+
 def test_status_json_is_available_for_agents(capsys, monkeypatch) -> None:
     monkeypatch.setattr("sys.argv", ["fourok", "status", "--json"])
     monkeypatch.setattr(

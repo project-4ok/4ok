@@ -8,6 +8,8 @@ import time
 from datetime import UTC, datetime
 from pathlib import Path
 
+from sqlalchemy import text
+
 from fourok.cli_parts.runtime_helpers import _config_from_args, _context_state_from_args
 from fourok.cli_parts.shared import DEFAULT_STATE
 from fourok.devtools.goal_audit import audit_goal_alignment
@@ -42,6 +44,7 @@ def dispatch_runtime_commands(args: argparse.Namespace) -> bool:
             raw_store_path=None,
         )
         report = check_runtime_health(state)
+        report = _client_status_report(state, report)
         if args.json:
             print(json.dumps(report, indent=2, sort_keys=True))
         else:
@@ -226,11 +229,57 @@ def dispatch_runtime_commands(args: argparse.Namespace) -> bool:
     return False
 
 
+_DEMO_SOURCE_SYSTEMS = frozenset({"local_email", "context-fixture", "fixture"})
+
+
+def _client_status_report(state, report: dict) -> dict:
+    source_counts = _source_system_counts(state)
+    live_source_count = sum(
+        count
+        for source_system, count in source_counts.items()
+        if source_system not in _DEMO_SOURCE_SYSTEMS
+    )
+    client_status = dict(report)
+    client_status["source_system_counts"] = source_counts
+    client_status["live_source_records"] = live_source_count
+    if source_counts and live_source_count == 0:
+        client_status["status"] = "needs_onboarding"
+        client_status["detail"] = "only demo context is present"
+    return client_status
+
+
+def _source_system_counts(state) -> dict[str, int]:
+    try:
+        with state.engine.connect() as connection:
+            rows = connection.execute(
+                text(
+                    "SELECT source_system, count(*) FROM source_records "
+                    "WHERE lifecycle_state = 'active' GROUP BY source_system"
+                )
+            )
+            return {str(source_system): int(count) for source_system, count in rows}
+    except Exception:
+        return {}
+
+
 def _format_client_status(report: dict) -> str:
     checks = report.get("checks", [])
     counts = {check.get("name"): check.get("count") for check in checks if isinstance(check, dict)}
     source_count = counts.get("source_records") or 0
     retrieval_count = counts.get("retrieval_records") or 0
+    if report.get("status") == "needs_onboarding":
+        return "\n".join(
+            [
+                "fourok needs onboarding",
+                "",
+                f"Context: {source_count} source records, {retrieval_count} retrieval units",
+                "Only demo context is present; no connector data has been imported yet.",
+                "",
+                "Next:",
+                "  fourok onboard",
+                "  fourok onboard connectors",
+            ]
+        )
     ready_line = "fourok is ready" if report.get("status") == "ok" else "fourok needs attention"
     return "\n".join(
         [
