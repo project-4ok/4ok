@@ -265,14 +265,10 @@ def test_onboard_initial_run_recreates_dagster_code_and_triggers_backfill(
 ) -> None:
     commands = []
 
-    class Completed:
-        returncode = 0
-        stdout = "ok\n"
-        stderr = ""
-
     def fake_run(command, **_kwargs):
         commands.append(command)
-        return Completed()
+        stdout = "ok\n" if command[0] == "docker" else '{"status": "ok"}\n'
+        return type("Completed", (), {"returncode": 0, "stdout": stdout, "stderr": ""})()
 
     monkeypatch.setattr("sys.argv", ["fourok", "onboard", "initial-run"])
     monkeypatch.setattr("fourok.cli_parts.commands_runtime.subprocess.run", fake_run)
@@ -304,3 +300,29 @@ def test_onboard_initial_run_recreates_dagster_code_and_triggers_backfill(
     assert "Recreating dagster-code" in output
     assert "Running initial live backfill" in output
     assert "fourok status" in output
+
+
+def test_onboard_initial_run_fails_when_backfill_is_partial(monkeypatch) -> None:
+    responses = [
+        type("Completed", (), {"returncode": 0, "stdout": "ok\n", "stderr": ""})(),
+        type(
+            "Completed",
+            (),
+            {
+                "returncode": 0,
+                "stdout": '{"status": "partial", "sources": []}\n',
+                "stderr": "",
+            },
+        )(),
+    ]
+
+    def fake_run(_command, **_kwargs):
+        return responses.pop(0)
+
+    monkeypatch.setattr("sys.argv", ["fourok", "onboard", "initial-run"])
+    monkeypatch.setattr("fourok.cli_parts.commands_runtime.subprocess.run", fake_run)
+
+    with pytest.raises(SystemExit) as exc:
+        main()
+
+    assert "Initial live backfill did not complete: partial" in str(exc.value)

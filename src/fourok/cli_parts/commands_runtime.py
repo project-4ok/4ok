@@ -408,6 +408,8 @@ def _run_onboard_initial_run() -> str:
         if completed.returncode != 0:
             lines.append(f"Failed: {label}")
             raise SystemExit("\n".join(lines))
+        if label == "Running initial live backfill":
+            _ensure_initial_backfill_completed(completed.stdout, lines)
     lines.extend(
         [
             "",
@@ -419,6 +421,17 @@ def _run_onboard_initial_run() -> str:
         ]
     )
     return "\n".join(lines)
+
+
+def _ensure_initial_backfill_completed(stdout: str, lines: list[str]) -> None:
+    try:
+        report = json.loads(stdout)
+    except json.JSONDecodeError:
+        return
+    status = report.get("status")
+    if status != "ok":
+        lines.append(f"Initial live backfill did not complete: {status}")
+        raise SystemExit("\n".join(lines))
 
 
 def _safe_client_status_report() -> dict:
