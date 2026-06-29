@@ -259,9 +259,10 @@ def test_google_drive_tap_default_limit_stays_bounded_because_files_are_download
 
 
 def test_committed_meltano_config_wires_google_drive_fixture_job() -> None:
-    config = (Path(__file__).parents[3] / "meltano.yml").read_text(encoding="utf-8")
+    meltano_config = Path(__file__).parents[3] / "deploy" / "meltano" / "meltano.yml"
+    config = meltano_config.read_text(encoding="utf-8")
 
     assert "tap-fourok-google-drive-fixture" in config
-    assert "tests/fixtures/connectors/singer_google_drive_docs.jsonl" in config
+    assert "../../tests/fixtures/connectors/singer_google_drive_docs.jsonl" in config
     assert "singer-google-drive-fixture-to-raw" in config
     assert "tap-fourok-google-drive-fixture target-fourok-raw-jsonl" in config

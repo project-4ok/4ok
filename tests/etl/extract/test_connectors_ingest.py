@@ -506,14 +506,15 @@ def test_raw_jsonl_target_lands_stdin_records(
 
 
 def test_committed_meltano_config_wires_fixture_tap_to_raw_target() -> None:
-    config = (Path(__file__).parents[3] / "meltano.yml").read_text(encoding="utf-8")
+    meltano_config = Path(__file__).parents[3] / "deploy" / "meltano" / "meltano.yml"
+    config = meltano_config.read_text(encoding="utf-8")
 
     assert "tap-fourok-fixture" in config
     assert "tap-fourok-slack-fixture" in config
     assert "target-fourok-raw-jsonl" in config
-    assert "tests/fixtures/connectors/singer_email_messages.jsonl" in config
-    assert "tests/fixtures/connectors/singer_slack_messages.jsonl" in config
-    assert ".local/raw/singer" in config
+    assert "../../tests/fixtures/connectors/singer_email_messages.jsonl" in config
+    assert "../../tests/fixtures/connectors/singer_slack_messages.jsonl" in config
+    assert "../../.local/raw/singer" in config
     assert "tap-fourok-fixture target-fourok-raw-jsonl" in config
     assert "tap-fourok-slack-fixture target-fourok-raw-jsonl" in config
 

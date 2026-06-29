@@ -113,7 +113,7 @@ if connector_smoke.lower() == "true":
         "twenty-live-to-raw",
     ]
     for job in jobs:
-        cmd = f"cd /app && TARGET_FOUROK_RAW_JSONL_LANDING_DIR=/app/.local/diagnostics-{job} /app/.venv/bin/meltano run {job}"
+        cmd = f"cd /app && TARGET_FOUROK_RAW_JSONL_LANDING_DIR=/app/.local/diagnostics-{job} /app/.venv/bin/meltano --cwd /app/deploy/meltano run {job}"
         p = docker_exec(code, cmd, 120)
         combined = "\n".join([p.stdout, p.stderr])
         interesting = [

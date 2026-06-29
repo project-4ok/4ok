@@ -248,7 +248,6 @@ The first OpenClaw integration boundary is local and explicit:
 
 - adapt captured OpenClaw turns with `openclaw_messages_to_source_records`
 - or call `capture_openclaw_messages` to adapt and ingest in one step
-- package the local OpenClaw plugin from `plugins/openclaw-fourok`
 - implement RAG as a before-prompt hook, not as an instruction for the agent to
   call the fourok CLI
 - keep optional explicit tools such as `fourok_search_context` for follow-up/debugging

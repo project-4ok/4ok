@@ -118,11 +118,10 @@ Optional explicit tool surface:
 
 Local plugin package:
 
-- `plugins/openclaw-fourok/openclaw.plugin.json` declares the RAG hook capability
-  plus optional `fourok_search_context` and `fourok_health` tools
-- `plugins/openclaw-fourok/src/index.ts` registers the hook and optional tools
-- the plugin must not use the fourok CLI as the production product path; CLI checks
-  are operator/dev smoke equivalents only
+- A future OpenClaw plugin package should declare the RAG hook capability plus
+  optional `fourok_search_context` and `fourok_health` tools. The plugin must
+  not use the fourok CLI as the production product path; CLI checks are
+  operator/dev smoke equivalents only.
 
 ## Source Record
 

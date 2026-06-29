@@ -70,10 +70,11 @@ def test_twenty_person_adapter_rejects_missing_id_before_source_records() -> Non
 
 
 def test_committed_meltano_config_wires_twenty_fixture_job() -> None:
-    config = (Path(__file__).parents[3] / "meltano.yml").read_text(encoding="utf-8")
+    meltano_config = Path(__file__).parents[3] / "deploy" / "meltano" / "meltano.yml"
+    config = meltano_config.read_text(encoding="utf-8")
 
     assert "tap-fourok-twenty-fixture" in config
-    assert "tests/fixtures/connectors/singer_twenty_crm.jsonl" in config
+    assert "../../tests/fixtures/connectors/singer_twenty_crm.jsonl" in config
     assert "singer-twenty-fixture-to-raw" in config
     assert "tap-fourok-twenty-fixture target-fourok-raw-jsonl" in config
 

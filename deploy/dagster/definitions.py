@@ -128,7 +128,7 @@ def _run_meltano_raw_landing(
 
         landing_dir.mkdir(parents=True, exist_ok=True)
         result = subprocess.run(
-            [meltano, "run", job_name],
+            [meltano, "--cwd", str(project_root / "deploy" / "meltano"), "run", job_name],
             check=False,
             cwd=project_root,
             env=_meltano_environment(landing_dir=landing_dir, secret_env=secret_env),

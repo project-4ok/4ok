@@ -9,7 +9,7 @@ ENV PYTHONDONTWRITEBYTECODE=1
 ENV PYTHONUNBUFFERED=1
 ENV PATH="/app/.venv/bin:${PATH}"
 
-COPY pyproject.toml uv.lock README.md docker-compose.yml meltano.yml ./
+COPY pyproject.toml uv.lock README.md docker-compose.yml ./
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-group dev --group pipeline --no-install-project
@@ -19,6 +19,7 @@ FROM dagster-deps AS dagster-code
 
 COPY src ./src
 COPY tests/fixtures ./tests/fixtures
+COPY deploy/meltano ./deploy/meltano
 COPY deploy/dagster ./deploy/dagster
 
 RUN --mount=type=cache,target=/root/.cache/uv \

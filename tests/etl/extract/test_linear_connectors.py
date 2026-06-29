@@ -82,10 +82,11 @@ def test_linear_issue_adapter_rejects_missing_identifier_before_source_records()
 
 
 def test_committed_meltano_config_wires_linear_fixture_job() -> None:
-    config = (Path(__file__).parents[3] / "meltano.yml").read_text(encoding="utf-8")
+    meltano_config = Path(__file__).parents[3] / "deploy" / "meltano" / "meltano.yml"
+    config = meltano_config.read_text(encoding="utf-8")
 
     assert "tap-fourok-linear-fixture" in config
-    assert "tests/fixtures/connectors/singer_linear_work_items.jsonl" in config
+    assert "../../tests/fixtures/connectors/singer_linear_work_items.jsonl" in config
     assert "singer-linear-fixture-to-raw" in config
     assert "tap-fourok-linear-fixture target-fourok-raw-jsonl" in config
 

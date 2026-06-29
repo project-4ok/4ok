@@ -8,7 +8,7 @@ plugins:
   extractors:
     - name: tap-fourok-fixture
       namespace: tap_fourok_fixture
-      pip_url: -e .
+      pip_url: -e ../..
       executable: tap-fourok-fixture
       capabilities:
         - state
@@ -16,10 +16,10 @@ plugins:
         - name: fixture_path
           kind: file
       config:
-        fixture_path: tests/fixtures/connectors/singer_email_messages.jsonl
+        fixture_path: ../../tests/fixtures/connectors/singer_email_messages.jsonl
     - name: tap-fourok-slack-fixture
       namespace: tap_fourok_slack_fixture
-      pip_url: -e .
+      pip_url: -e ../..
       executable: tap-fourok-fixture
       capabilities:
         - state
@@ -27,10 +27,10 @@ plugins:
         - name: fixture_path
           kind: file
       config:
-        fixture_path: tests/fixtures/connectors/singer_slack_messages.jsonl
+        fixture_path: ../../tests/fixtures/connectors/singer_slack_messages.jsonl
     - name: tap-fourok-twenty-fixture
       namespace: tap_fourok_twenty_fixture
-      pip_url: -e .
+      pip_url: -e ../..
       executable: tap-fourok-fixture
       capabilities:
         - state
@@ -38,10 +38,10 @@ plugins:
         - name: fixture_path
           kind: file
       config:
-        fixture_path: tests/fixtures/connectors/singer_twenty_crm.jsonl
+        fixture_path: ../../tests/fixtures/connectors/singer_twenty_crm.jsonl
     - name: tap-fourok-twenty
       namespace: tap_fourok_twenty
-      pip_url: -e .
+      pip_url: -e ../..
       executable: tap-fourok-twenty
       capabilities:
         - state
@@ -55,7 +55,7 @@ plugins:
           env: TWENTY_LIMIT
     - name: tap-fourok-linear-fixture
       namespace: tap_fourok_linear_fixture
-      pip_url: -e .
+      pip_url: -e ../..
       executable: tap-fourok-fixture
       capabilities:
         - state
@@ -63,10 +63,10 @@ plugins:
         - name: fixture_path
           kind: file
       config:
-        fixture_path: tests/fixtures/connectors/singer_linear_work_items.jsonl
+        fixture_path: ../../tests/fixtures/connectors/singer_linear_work_items.jsonl
     - name: tap-fourok-linear
       namespace: tap_fourok_linear
-      pip_url: -e .
+      pip_url: -e ../..
       executable: tap-fourok-linear
       capabilities:
         - state
@@ -80,7 +80,7 @@ plugins:
           env: LINEAR_LIMIT
     - name: tap-fourok-google-drive-fixture
       namespace: tap_fourok_google_drive_fixture
-      pip_url: -e .
+      pip_url: -e ../..
       executable: tap-fourok-fixture
       capabilities:
         - state
@@ -88,10 +88,10 @@ plugins:
         - name: fixture_path
           kind: file
       config:
-        fixture_path: tests/fixtures/connectors/singer_google_drive_docs.jsonl
+        fixture_path: ../../tests/fixtures/connectors/singer_google_drive_docs.jsonl
     - name: tap-fourok-google-drive
       namespace: tap_fourok_google_drive
-      pip_url: -e .
+      pip_url: -e ../..
       executable: tap-fourok-google-drive
       capabilities:
         - state
@@ -113,12 +113,12 @@ plugins:
   loaders:
     - name: target-fourok-raw-jsonl
       namespace: target_fourok_raw_jsonl
-      pip_url: -e .
+      pip_url: -e ../..
       executable: target-fourok-raw-jsonl
       settings:
         - name: landing_dir
       config:
-        landing_dir: .local/raw/singer
+        landing_dir: ../../.local/raw/singer
 
 jobs:
   - name: singer-fixture-to-raw

@@ -120,7 +120,7 @@ src/fourok/orchestration/     Dagster resource wiring
 src/fourok/devtools/          local development gates, diagnostics, Grafana status, and goal audits
 src/fourok/secrets/           environment/secret loading helpers
 tests/fixtures/              synthetic data for deterministic onboarding and tests
-deploy/                      Docker, Compose, systemd, and runtime deployment artifacts
+deploy/                      Docker, Compose, Meltano, systemd, and runtime deployment artifacts
 docs/                        architecture, operations, compliance, and internal-v0 runbooks
 ```
 
