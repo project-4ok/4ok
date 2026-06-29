@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import math
 import re
 import time
 import uuid
@@ -154,24 +155,24 @@ def retrieve_augmentation(
 
         pre_rerank_count = len(candidates_by_key)
         distinct_sources = len({source_ref for source_ref, _unit_index in candidates_by_key})
-        ranked_results = _rank_and_diversify(candidates_by_key, query=query)
-        ranked_count = len(ranked_results)
-        ranked_results = _expand_ranked_results(
+        _expand_candidates_with_direct_links(
             engine,
             source_records,
             retrieval_records,
-            ranked_results,
+            candidates_by_key,
             query=query,
             canonical_objects=canonical_objects,
             entity_links=entity_links,
         )
+        _apply_graph_link_metrics(engine, candidates_by_key, entity_links=entity_links)
+        ranked_results = _rank_and_diversify(candidates_by_key, query=query)
         results = _select_results_for_token_budget(ranked_results, token_budget=token_budget)
         searched = " and ".join(name for name in retrievers)
         if results:
             limitations.append(f"Searched {searched} candidates.")
-            if len(ranked_results) > ranked_count:
+            if len(candidates_by_key) > pre_rerank_count:
                 limitations.append(
-                    "Expanded high-ranked hits with direct canonical/thread context."
+                    "Expanded candidates with one-hop direct links before reranking."
                 )
         else:
             limitations.append(f"Searched {searched} candidates.")
@@ -297,6 +298,178 @@ def _merge_ranked_rows(
         candidate_retrievers.add(retriever)
 
 
+def _expand_candidates_with_direct_links(
+    engine: Engine,
+    source_records,
+    retrieval_records,
+    candidates_by_key: dict[tuple[str, int], dict[str, object]],
+    *,
+    query: str,
+    canonical_objects=None,
+    entity_links=None,
+) -> None:
+    if not candidates_by_key:
+        return
+    seed_rows = list(candidates_by_key.values())
+    for seed in seed_rows:
+        seed_ref = str(seed["source_ref"])
+        for linked_ref in _direct_context_source_refs(
+            engine,
+            source_records,
+            seed_ref,
+            canonical_objects=canonical_objects,
+            entity_links=entity_links,
+        ):
+            if linked_ref == seed_ref:
+                continue
+            row = _candidate_row_for_source_ref(
+                engine,
+                source_records,
+                retrieval_records,
+                linked_ref,
+                query=query,
+                score=max(float(seed.get("score", 0.0) or 0.0) * 0.5, 0.000001),
+                retriever="direct-link",
+                reason=f"direct link from {seed_ref}",
+            )
+            if row is None:
+                continue
+            key = (str(row["source_ref"]), int(row["unit_index"]))
+            existing = candidates_by_key.get(key)
+            if existing is None and not _has_substantive_snippet(row):
+                continue
+            if existing is None:
+                candidates_by_key[key] = row
+                continue
+            existing["score"] = max(
+                float(existing.get("score", 0.0) or 0.0), float(row["score"])
+            )
+            existing_retrievers = existing["retrievers"]
+            assert isinstance(existing_retrievers, set)
+            existing_retrievers.add("direct-link")
+            _append_rerank_reason(existing, str(row["rerank_reasons"][0]))
+
+
+def _apply_graph_link_metrics(
+    engine: Engine,
+    candidates_by_key: dict[tuple[str, int], dict[str, object]],
+    *,
+    entity_links=None,
+) -> None:
+    if entity_links is None or not candidates_by_key:
+        return
+    counts = _graph_link_counts(
+        engine,
+        entity_links,
+        sorted({str(source_ref) for source_ref, _unit_index in candidates_by_key}),
+    )
+    for (source_ref, _unit_index), candidate in candidates_by_key.items():
+        link_count = counts.get(source_ref, 0)
+        if link_count <= 0 or not _has_substantive_snippet(candidate):
+            continue
+        candidate["graph_link_count"] = link_count
+        candidate["score"] = (
+            float(candidate.get("score", 0.0) or 0.0) + _graph_link_boost(link_count)
+        )
+        _append_rerank_reason(candidate, f"graph_link_count={link_count}")
+
+
+def _append_rerank_reason(candidate: dict[str, object], reason: str) -> None:
+    reasons = tuple(str(item) for item in candidate.get("rerank_reasons", ()))
+    if reason in reasons:
+        return
+    candidate["rerank_reasons"] = (*reasons, reason)
+
+
+def _has_substantive_snippet(candidate: dict[str, object]) -> bool:
+    snippet = str(candidate.get("snippet", "")).strip().casefold()
+    if not snippet:
+        return False
+    without_emails = re.sub(r"\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b", "", snippet).strip()
+    return without_emails != "employee"
+
+
+def _graph_link_boost(link_count: int) -> float:
+    return min(0.04, math.log1p(link_count) * 0.01)
+
+
+def _graph_link_counts(engine: Engine, entity_links, source_refs: list[str]) -> dict[str, int]:
+    if not source_refs:
+        return {}
+    counts = {source_ref: 0 for source_ref in source_refs}
+    outgoing = (
+        select(entity_links.c.source_ref, entity_links.c.link_ref)
+        .where(entity_links.c.source_ref.in_(bindparam("source_refs", expanding=True)))
+        .where(entity_links.c.status.in_(["linked", "accepted"]))
+    )
+    incoming = (
+        select(entity_links.c.object_ref, entity_links.c.link_ref)
+        .where(entity_links.c.object_ref.in_(bindparam("source_refs", expanding=True)))
+        .where(entity_links.c.status.in_(["linked", "accepted"]))
+    )
+    with engine.connect() as connection:
+        for row in connection.execute(outgoing, {"source_refs": source_refs}).mappings():
+            counts[str(row["source_ref"])] = counts.get(str(row["source_ref"]), 0) + 1
+        for row in connection.execute(incoming, {"source_refs": source_refs}).mappings():
+            counts[str(row["object_ref"])] = counts.get(str(row["object_ref"]), 0) + 1
+    return counts
+
+
+def _candidate_row_for_source_ref(
+    engine: Engine,
+    source_records,
+    retrieval_records,
+    source_ref: str,
+    *,
+    query: str,
+    score: float,
+    retriever: str,
+    reason: str,
+) -> dict[str, object] | None:
+    statement = (
+        select(
+            source_records.c.source_ref,
+            source_records.c.source_system,
+            source_records.c.record_type,
+            source_records.c.title,
+            source_records.c.occurred_at,
+            source_records.c.permission_refs,
+            source_records.c.retrieval_text,
+            retrieval_records.c.prepared_text,
+            retrieval_records.c.unit_index,
+        )
+        .select_from(
+            source_records.outerjoin(
+                retrieval_records,
+                (source_records.c.source_ref == retrieval_records.c.source_ref)
+                & (retrieval_records.c.status == "current")
+                & (retrieval_records.c.unit_index == 0),
+            )
+        )
+        .where(source_records.c.source_ref == source_ref)
+        .where(source_records.c.lifecycle_state == "active")
+    )
+    with engine.connect() as connection:
+        row = connection.execute(statement).mappings().first()
+    if row is None:
+        return None
+    title = str(row["title"])
+    text_value = str(row["retrieval_text"] or row["prepared_text"] or "")
+    return {
+        "source_ref": str(row["source_ref"]),
+        "source_system": str(row["source_system"]),
+        "record_type": str(row["record_type"]),
+        "title": title,
+        "occurred_at": str(row["occurred_at"]),
+        "permission_refs": _json_string_tuple(str(row["permission_refs"])),
+        "snippet": _evidence_snippet(text_value, title, query, source_ref),
+        "score": score,
+        "retrievers": {retriever},
+        "rerank_reasons": (reason,),
+        "unit_index": int(row["unit_index"] or 0),
+    }
+
+
 def _rank_and_diversify(
     candidates_by_key: dict[tuple[str, int], dict[str, object]],
     *,
@@ -400,7 +573,7 @@ def _direct_context_source_refs(
             continue
         deduped.append(ref)
         seen.add(ref)
-    return deduped[:4]
+    return deduped
 
 
 def _canonical_link_source_refs(
@@ -412,29 +585,37 @@ def _canonical_link_source_refs(
 ) -> list[str]:
     if canonical_objects is None or entity_links is None:
         return []
-    link_statement = (
+    outgoing_statement = (
         select(entity_links.c.object_ref)
         .where(entity_links.c.source_ref == source_ref)
+        .where(entity_links.c.status.in_(["linked", "accepted"]))
+    )
+    incoming_statement = (
+        select(entity_links.c.source_ref)
+        .where(entity_links.c.object_ref == source_ref)
         .where(entity_links.c.status.in_(["linked", "accepted"]))
     )
     with engine.connect() as connection:
         object_refs = [
             str(row["object_ref"])
-            for row in connection.execute(link_statement).mappings()
+            for row in connection.execute(outgoing_statement).mappings()
             if row["object_ref"]
         ]
-        if not object_refs:
-            return []
-        object_statement = select(
-            canonical_objects.c.object_ref,
-            canonical_objects.c.source_refs,
-        ).where(canonical_objects.c.object_ref.in_(bindparam("object_refs", expanding=True)))
-        refs: list[str] = []
-        for row in connection.execute(
-            object_statement, {"object_refs": sorted(set(object_refs))}
-        ).mappings():
-            source_refs = _json_string_tuple(str(row["source_refs"]))
-            refs.extend(source_refs or (str(row["object_ref"]),))
+        refs = [
+            str(row["source_ref"])
+            for row in connection.execute(incoming_statement).mappings()
+            if row["source_ref"]
+        ]
+        if object_refs:
+            object_statement = select(
+                canonical_objects.c.object_ref,
+                canonical_objects.c.source_refs,
+            ).where(canonical_objects.c.object_ref.in_(bindparam("object_refs", expanding=True)))
+            for row in connection.execute(
+                object_statement, {"object_refs": sorted(set(object_refs))}
+            ).mappings():
+                source_refs = _json_string_tuple(str(row["source_refs"]))
+                refs.extend(source_refs or (str(row["object_ref"]),))
         return refs
 
 
@@ -630,7 +811,9 @@ def _metadata_by_source_ref(
 
 def _vector_rows(engine: Engine, query: str, *, limit: int) -> list[dict[str, object]]:
     try:
-        vector_results = ChunkVectorIndex(engine).search(query, limit=limit)
+        vector_results = ChunkVectorIndex(
+            engine, recreate_mismatched_schema=False
+        ).search(query, limit=limit)
     except Exception:
         return []
     source_refs = [result.source_ref for result in vector_results if result.score > 0]

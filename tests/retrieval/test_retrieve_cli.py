@@ -9,6 +9,7 @@ import pytest
 
 from fourok.cli import main
 from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
+from fourok.etl.load.context_objects import store_canonical_objects, store_entity_links
 from fourok.governance import GovernedContext
 from fourok.retrieval.augmentation import _source_date_label
 
@@ -519,6 +520,165 @@ def test_retrieve_expands_high_ranked_hits_with_direct_context(
     assert "Budget follow-up says the rollout needs Finance approval." in output
     assert "source_ref: linear:user:person-1" in output
     assert "is accountable for approval routing." in output
+
+
+def test_retrieve_expands_one_hop_links_before_reranking(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:issue:atlas-seed",
+                source_system="linear",
+                source_id="atlas-seed",
+                record_type="work_item",
+                title="Atlas rollout seed",
+                body="atlas rollout launch checklist",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:issue:atlas-budget",
+                source_system="linear",
+                source_id="atlas-budget",
+                record_type="work_item",
+                title="Atlas budget approval",
+                body="Budget approval from graph neighbor.",
+                occurred_at="2026-06-21T12:00:00+00:00",
+            ),
+        ]
+    )
+    store_canonical_objects(
+        context._engine,
+        context._canonical_objects,
+        objects=[
+            {
+                "object_ref": "linear:issue:atlas-budget",
+                "object_type": "WorkItem",
+                "title": "Atlas budget approval",
+                "source_refs": ("linear:issue:atlas-budget",),
+                "metadata": {},
+                "lifecycle_state": "active",
+            }
+        ],
+    )
+    store_entity_links(
+        context._engine,
+        context._entity_links,
+        links=[
+            {
+                "link_ref": "linear:issue:atlas-seed->linear:issue:atlas-budget",
+                "source_ref": "linear:issue:atlas-seed",
+                "object_ref": "linear:issue:atlas-budget",
+                "relationship_type": "related_work",
+                "confidence": 1.0,
+                "evidence": {},
+                "reason": "fixture",
+                "status": "linked",
+            },
+            *[
+                {
+                    "link_ref": f"linear:issue:source-{index}->linear:issue:atlas-budget",
+                    "source_ref": f"linear:issue:source-{index}",
+                    "object_ref": "linear:issue:atlas-budget",
+                    "relationship_type": "mentions",
+                    "confidence": 1.0,
+                    "evidence": {},
+                    "reason": "fixture",
+                    "status": "linked",
+                }
+                for index in range(8)
+            ],
+        ],
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "atlas rollout launch",
+            "--state",
+            str(state),
+            "--retrievers",
+            "keyword",
+        ],
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert output.index("source_ref: linear:issue:atlas-budget") < output.index(
+        "source_ref: linear:issue:atlas-seed"
+    )
+    assert "why_relevant: direct link from linear:issue:atlas-seed" in output
+    assert "graph_link_count=9" in output
+
+
+def test_retrieve_uses_graph_link_count_as_general_rerank_signal(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:issue:a-leaf",
+                source_system="linear",
+                source_id="a-leaf",
+                record_type="work_item",
+                title="Apollo decision leaf",
+                body="apollo decision evidence",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:issue:z-hub",
+                source_system="linear",
+                source_id="z-hub",
+                record_type="work_item",
+                title="Apollo decision hub",
+                body="apollo decision evidence",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+        ]
+    )
+    store_entity_links(
+        context._engine,
+        context._entity_links,
+        links=[
+            {
+                "link_ref": f"linear:issue:ref-{index}->linear:issue:z-hub",
+                "source_ref": f"linear:issue:ref-{index}",
+                "object_ref": "linear:issue:z-hub",
+                "relationship_type": "mentions",
+                "confidence": 1.0,
+                "evidence": {},
+                "reason": "fixture",
+                "status": "linked",
+            }
+            for index in range(8)
+        ],
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "apollo decision",
+            "--state",
+            str(state),
+            "--retrievers",
+            "keyword",
+        ],
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert output.index("source_ref: linear:issue:z-hub") < output.index(
+        "source_ref: linear:issue:a-leaf"
+    )
+    assert "graph_link_count=8" in output
 
 
 def test_retrieve_no_results_is_successful_augmentation_block(

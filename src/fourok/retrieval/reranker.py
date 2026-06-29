@@ -59,7 +59,7 @@ class RetrievalReranker:
     def _apply(self, row: CandidateRow, query: str) -> CandidateRow:
         updated = dict(row)
         score = float(updated.get("score", 0.0) or 0.0)
-        reasons: list[str] = []
+        reasons = [str(item) for item in updated.get("rerank_reasons", ())]
         for rule in self._rules:
             if rule.applies(updated, query):
                 score = score * rule.multiplier + rule.additive
