@@ -642,7 +642,7 @@ def test_dagster_code_receives_connector_secret_env_names() -> None:
         assert "GOOGLE_WORKSPACE_DRIVE_IDS: ${GOOGLE_WORKSPACE_DRIVE_IDS:-}" in dagster_code
 
 
-def test_compose_does_not_force_openai_embedding_dimensions_without_provider() -> None:
+def test_compose_defaults_to_local_hash_embeddings_without_explicit_provider() -> None:
     compose_files = [Path("docker-compose.yml"), Path("deploy/runtime/docker-compose.pinned.yml")]
 
     for compose_file in compose_files:
@@ -650,6 +650,7 @@ def test_compose_does_not_force_openai_embedding_dimensions_without_provider() -
         for service_name in ["dagster-code", "app"]:
             service = _compose_service_block(compose, service_name)
 
+            assert "FOUROK_EMBEDDING_PROVIDER: ${FOUROK_EMBEDDING_PROVIDER:-hash}" in service
             assert "FOUROK_EMBEDDING_DIMENSIONS: ${FOUROK_EMBEDDING_DIMENSIONS:-}" in service
             assert "FOUROK_EMBEDDING_DIMENSIONS: ${FOUROK_EMBEDDING_DIMENSIONS:-256}" not in service
 
