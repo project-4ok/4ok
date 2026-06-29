@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import sqlite3
 from datetime import UTC, datetime
 from pathlib import Path
@@ -52,6 +53,46 @@ def test_retrieve_rejects_limit_option(monkeypatch) -> None:
 
     with pytest.raises(SystemExit):
         main()
+
+
+def test_retrieve_loads_embedding_env_from_dotenv_before_retrieval(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    (tmp_path / ".env").write_text("OPENAI_API_KEY=test-key\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("FOUROK_EMBEDDING_PROVIDER", raising=False)
+    monkeypatch.delenv("FOUROK_EMBEDDING_DIMENSIONS", raising=False)
+    observed = {}
+
+    def fake_retrieve_augmentation(*_args, **_kwargs):
+        from fourok.retrieval.embeddings import embedding_dimensions, embedding_provider
+
+        observed["provider"] = embedding_provider()
+        observed["dimensions"] = embedding_dimensions()
+        return {"status": "ok", "results": [], "limitations": []}
+
+    monkeypatch.setattr(
+        "fourok.retrieval.cli.retrieval_client.retrieve_augmentation",
+        fake_retrieve_augmentation,
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        ["fourok", "retrieve", "olivia", "--json"],
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    for key in (
+        "OPENAI_API_KEY",
+        "FOUROK_EMBEDDING_PROVIDER",
+        "FOUROK_EMBEDDING_DIMENSIONS",
+    ):
+        os.environ.pop(key, None)
+
+    assert json.loads(output)["status"] == "ok"
+    assert observed == {"provider": "openai", "dimensions": 256}
 
 
 def test_retrieve_defaults_to_token_budget_not_item_limit(

@@ -24,9 +24,9 @@ class VectorSearchResult:
 
 
 class ChunkVectorIndex:
-    def __init__(self, engine: Engine) -> None:
+    def __init__(self, engine: Engine, *, recreate_mismatched_schema: bool = True) -> None:
         self._engine = engine
-        self._create_schema()
+        self._create_schema(recreate_mismatched_schema=recreate_mismatched_schema)
 
     def index(self, chunks: list[dict[str, object]]) -> None:
         with self._engine.begin() as connection:
@@ -101,13 +101,17 @@ class ChunkVectorIndex:
             )
             return [row[0] for row in rows]
 
-    def _create_schema(self) -> None:
+    def _create_schema(self, *, recreate_mismatched_schema: bool) -> None:
         with self._engine.begin() as connection:
             if self._engine.dialect.name == "postgresql":
                 connection.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
                 expected_dimensions = embedding_dimensions()
                 existing_dimensions = _postgres_chunk_embedding_dimensions(connection)
-                if existing_dimensions is not None and existing_dimensions != expected_dimensions:
+                if (
+                    recreate_mismatched_schema
+                    and existing_dimensions is not None
+                    and existing_dimensions != expected_dimensions
+                ):
                     connection.execute(text("DROP TABLE chunk_embeddings"))
                 connection.execute(
                     text(

@@ -1,4 +1,5 @@
 import json
+from pathlib import Path
 
 import pytest
 
@@ -232,6 +233,38 @@ def test_status_json_is_available_for_agents(capsys, monkeypatch) -> None:
 
     main()
     assert json.loads(capsys.readouterr().out)["status"] == "ok"
+
+
+def test_status_json_reports_embedding_provider_from_dotenv(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    (tmp_path / ".env").write_text("OPENAI_API_KEY=test-key\n", encoding="utf-8")
+    monkeypatch.chdir(tmp_path)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.delenv("FOUROK_EMBEDDING_PROVIDER", raising=False)
+    monkeypatch.delenv("FOUROK_EMBEDDING_DIMENSIONS", raising=False)
+    monkeypatch.setattr("sys.argv", ["fourok", "status", "--json"])
+    monkeypatch.setattr(
+        "fourok.runtime.cli.health_database_url",
+        lambda **_kwargs: None,
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli.create_governed_context_state",
+        lambda **_kwargs: object(),
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli.check_runtime_health",
+        lambda _state: {"status": "ok", "checks": []},
+    )
+
+    main()
+
+    report = json.loads(capsys.readouterr().out)
+    assert report["retrieval_embeddings"] == {
+        "status": "ok",
+        "provider": "openai",
+        "dimensions": 256,
+    }
 
 
 def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) -> None:

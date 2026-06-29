@@ -14,6 +14,15 @@ from fourok.retrieval.clients import cli as retrieval_client
 from fourok.retrieval.context_eval import evaluate_governed_context_retrieval
 from fourok.runtime.cli import health_database_url
 from fourok.runtime.operator_live import host_database_url
+from fourok.secrets.env import load_dotenv
+
+_EMBEDDING_ENV_KEYS = (
+    "OPENAI_API_KEY",
+    "FOUROK_EMBEDDING_PROVIDER",
+    "FOUROK_EMBEDDING_DIMENSIONS",
+    "FOUROK_OPENAI_EMBEDDING_MODEL",
+    "FOUROK_OPENAI_EMBEDDING_URL",
+)
 
 
 def add_search_commands(subparsers, *, public: bool = False) -> None:
@@ -229,6 +238,7 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
 
     if args.command == "retrieve":
         database_url = _retrieval_database_url(args, database_url)
+        _load_embedding_env_for_retrieve()
         retrievers = tuple(item.strip() for item in str(args.retrievers).split(",") if item.strip())
         try:
             if args.format == "json":
@@ -342,6 +352,15 @@ def _retrieval_database_url(args: argparse.Namespace, database_url: str | None) 
     if getattr(args, "state", DEFAULT_STATE) != DEFAULT_STATE:
         return database_url
     return host_database_url(database_url)
+
+
+def _load_embedding_env_for_retrieve() -> None:
+    dotenv_path = Path(os.environ.get("FOUROK_DOTENV_PATH") or ".env")
+    dotenv_values = load_dotenv(dotenv_path)
+    for key in _EMBEDDING_ENV_KEYS:
+        value = dotenv_values.get(key)
+        if value and not os.environ.get(key):
+            os.environ[key] = value
 
 
 def _running_in_container() -> bool:

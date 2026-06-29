@@ -49,8 +49,97 @@ def test_import_source_records_ingests_and_reports_observable_counts() -> None:
         "record_types": ["document", "work_item"],
         "lifecycle_states": ["active", "restricted"],
         "restricted_count": 1,
+        "deleted_record_count": 0,
+        "deleted_source_refs": [],
         "retrieval_unit_count": 2,
     }
+
+
+def test_snapshot_import_marks_missing_records_deleted_without_touching_other_scopes(
+    tmp_path,
+) -> None:
+    context = GovernedContext(raw_store_path=tmp_path / "raw-source-objects")
+    stale_issue = SourceRecord(
+        source_ref="linear:issue:stale",
+        source_system="linear",
+        source_id="stale",
+        record_type="work_item",
+        title="Stale issue",
+        body="This issue disappeared from the latest Linear snapshot.",
+    )
+    current_issue = SourceRecord(
+        source_ref="linear:issue:current",
+        source_system="linear",
+        source_id="current",
+        record_type="work_item",
+        title="Current issue",
+        body="This issue remains in the latest Linear snapshot.",
+    )
+    current_user = SourceRecord(
+        source_ref="linear:user:current",
+        source_system="linear",
+        source_id="current-user",
+        record_type="person",
+        title="Current user",
+        body="This person stream is outside the issue snapshot scope.",
+    )
+    twenty_company = SourceRecord(
+        source_ref="twenty:company:1",
+        source_system="twenty",
+        source_id="1",
+        record_type="organization",
+        title="Twenty Company",
+        body="This other source system must not be touched.",
+    )
+    context.ingest_source_records([stale_issue, current_issue, current_user, twenty_company])
+
+    report = import_source_records(
+        context,
+        [current_issue],
+        snapshot_deletes=True,
+    )
+
+    rows = {row["source_ref"]: row for row in context.source_records()}
+    assert rows["linear:issue:stale"]["lifecycle_state"] == "deleted"
+    assert rows["linear:issue:current"]["lifecycle_state"] == "active"
+    assert rows["linear:user:current"]["lifecycle_state"] == "active"
+    assert rows["twenty:company:1"]["lifecycle_state"] == "active"
+    assert context.search_context("disappeared").results == []
+    assert report.deleted_record_count == 1
+    assert report.to_dict()["deleted_source_refs"] == ["linear:issue:stale"]
+
+
+def test_snapshot_import_can_delete_an_empty_stream_when_scope_is_explicit(tmp_path) -> None:
+    context = GovernedContext(raw_store_path=tmp_path / "raw-source-objects")
+    stale_company = SourceRecord(
+        source_ref="twenty:company:gone",
+        source_system="twenty",
+        source_id="gone",
+        record_type="organization",
+        title="Gone Company",
+        body="This company disappeared from a complete companies snapshot.",
+    )
+    remaining_person = SourceRecord(
+        source_ref="twenty:person:kept",
+        source_system="twenty",
+        source_id="kept",
+        record_type="person",
+        title="Kept Person",
+        body="This person stream is not in scope.",
+    )
+    context.ingest_source_records([stale_company, remaining_person])
+
+    report = import_source_records(
+        context,
+        [],
+        snapshot_deletes=True,
+        snapshot_scopes={("twenty", "organization")},
+    )
+
+    rows = {row["source_ref"]: row for row in context.source_records()}
+    assert rows["twenty:company:gone"]["lifecycle_state"] == "deleted"
+    assert rows["twenty:person:kept"]["lifecycle_state"] == "active"
+    assert report.deleted_source_refs == ("twenty:company:gone",)
 
 
 def test_source_record_import_report_can_be_used_without_mutating_context() -> None:

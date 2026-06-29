@@ -1,5 +1,6 @@
 from pathlib import Path
 
+import pytest
 from sqlalchemy import delete
 
 from fourok.etl.extract.email_parser import load_email_dir
@@ -11,6 +12,13 @@ from fourok.retrieval.vector_search import _vector_dimension_from_type
 FIXTURES = Path(__file__).parents[1] / "fixtures"
 EMAILS = FIXTURES / "emails"
 RETRIEVAL_EVAL = FIXTURES / "retrieval_eval" / "customer_context_queries.json"
+
+
+@pytest.fixture(autouse=True)
+def _default_to_local_hash_embeddings(monkeypatch) -> None:
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("FOUROK_EMBEDDING_PROVIDER", "hash")
+    monkeypatch.delenv("FOUROK_EMBEDDING_DIMENSIONS", raising=False)
 
 RAW_SEEDED_VALUES = [
     "DE89370400440532013000",

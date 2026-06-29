@@ -529,7 +529,12 @@ def _import_live_landed_source_records(
             for stream_name in stream_names
             for record in load_landed_source_records(landing_dir, stream=stream_name)
         ]
-        result, report = _import_source_records(records=records, fourok_runtime=fourok_runtime)
+        result, report = _import_source_records(
+            records=records,
+            fourok_runtime=fourok_runtime,
+            snapshot_deletes=True,
+            snapshot_scopes=_snapshot_scopes_for_landed_streams(stream_names),
+        )
         _record_live_connector_success(
             _governed_state(fourok_runtime),
             connector_name=connector_name,
@@ -550,13 +555,22 @@ def _import_live_landed_source_records(
 
 
 def _import_source_records(
-    *, records: list[Any], fourok_runtime: FourokRuntimeResource
+    *,
+    records: list[Any],
+    fourok_runtime: FourokRuntimeResource,
+    snapshot_deletes: bool = False,
+    snapshot_scopes: set[tuple[str, str]] | None = None,
 ) -> tuple[MaterializeResult[Any], SourceRecordImportReport]:
     context = GovernedContext(
         fourok_runtime.state,
         database_url=fourok_runtime.database_url or None,
     )
-    report = import_source_records(context, records)
+    report = import_source_records(
+        context,
+        records,
+        snapshot_deletes=snapshot_deletes,
+        snapshot_scopes=snapshot_scopes,
+    )
 
     return _source_record_materialization(report), report
 
@@ -573,12 +587,27 @@ def _source_record_materialization(
         "record_types": MetadataValue.json(list(report.record_types)),
         "lifecycle_states": MetadataValue.json(list(report.lifecycle_states)),
         "restricted_count": report.restricted_count,
+        "deleted_record_count": report.deleted_record_count,
         "failure_count": 0,
         "retrieval_unit_count": report.retrieval_unit_count,
     }
     if metadata:
         result_metadata.update(metadata)
     return MaterializeResult(metadata=result_metadata)
+
+
+def _snapshot_scopes_for_landed_streams(
+    stream_names: tuple[str | None, ...],
+) -> set[tuple[str, str]]:
+    stream_scopes = {
+        "twenty_companies": ("twenty", "organization"),
+        "twenty_people": ("twenty", "person"),
+        "linear_users": ("linear", "person"),
+        "linear_issues": ("linear", "work_item"),
+        "linear_comments": ("linear", "message"),
+        "google_drive_files": ("google_drive", "document"),
+    }
+    return {stream_scopes[name] for name in stream_names if name in stream_scopes}
 
 
 def _record_live_connector_success(
@@ -611,6 +640,7 @@ def _record_live_connector_success(
             "freshness_status": "fresh",
             "idempotency_status": "recorded",
             "source_record_count": report.record_count,
+            "deleted_source_record_count": report.deleted_record_count,
             "retrieval_record_count": report.retrieval_unit_count,
             "dagster_run_id": dagster_run_id,
         },

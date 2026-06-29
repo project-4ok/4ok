@@ -15,6 +15,7 @@ from fourok.cli_parts.shared import DEFAULT_STATE
 from fourok.devtools.goal_audit import audit_goal_alignment
 from fourok.governance.state import create_governed_context_state
 from fourok.observability import emit_observability_smoke
+from fourok.retrieval.embeddings import HASH_EMBEDDING_DIMENSIONS, OPENAI_EMBEDDING_DIMENSIONS
 from fourok.runtime.acceptance import internal_v0_acceptance_proof
 from fourok.runtime.access import check_compose_access_boundary
 from fourok.runtime.dashboard import operator_dashboard, operator_status
@@ -256,6 +257,7 @@ def _client_status_report(state, report: dict) -> dict:
     client_status["configured_connectors"] = _configured_connector_names(
         _connector_secret_report()
     )
+    client_status["retrieval_embeddings"] = _embedding_secret_report()
     if source_count is not None and int(source_count) == 0:
         client_status["status"] = "needs_onboarding"
         client_status["detail"] = "no connector data has been imported yet"
@@ -659,9 +661,23 @@ def _embedding_secret_report() -> dict[str, object]:
     env = _dotenv_values(Path(".env"))
     env.update({key: value for key, value in os.environ.items() if value})
     provider = str(env.get("FOUROK_EMBEDDING_PROVIDER") or "").strip().casefold()
-    if env.get("OPENAI_API_KEY") or provider == "openai":
-        return {"status": "ok", "provider": "openai"}
-    return {"status": "missing", "provider": "hash"}
+    if not provider:
+        provider = "openai" if env.get("OPENAI_API_KEY") else "hash"
+    dimensions = _embedding_dimensions_for_report(env, provider=provider)
+    if provider == "openai" and env.get("OPENAI_API_KEY"):
+        return {"status": "ok", "provider": "openai", "dimensions": dimensions}
+    if provider == "openai":
+        return {"status": "missing", "provider": "openai", "dimensions": dimensions}
+    return {"status": "missing", "provider": provider or "hash", "dimensions": dimensions}
+
+
+def _embedding_dimensions_for_report(env: dict[str, str], *, provider: str) -> int:
+    configured = str(env.get("FOUROK_EMBEDDING_DIMENSIONS") or "").strip()
+    if configured:
+        return int(configured)
+    if provider == "openai":
+        return OPENAI_EMBEDDING_DIMENSIONS
+    return HASH_EMBEDDING_DIMENSIONS
 
 
 def _embedding_lines(embedding_report: dict[str, object]) -> list[str]:

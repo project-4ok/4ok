@@ -38,6 +38,7 @@ _live_connector_asset_names: Any = _check_module._live_connector_asset_names
 _load_dotenv_defaults: Any = _check_module._load_dotenv_defaults
 _verify_live_db_changed: Any = _check_module._verify_live_db_changed
 _record_live_connector_success: Any = _module._record_live_connector_success
+_snapshot_scopes_for_landed_streams: Any = _module._snapshot_scopes_for_landed_streams
 _meltano_asset_span_name: Any = _module._meltano_asset_span_name
 _source_records_asset_span_name: Any = _module._source_records_asset_span_name
 _configured_live_backfill_asset_keys: Any = _module._configured_live_backfill_asset_keys
@@ -160,6 +161,11 @@ def test_dagster_hourly_schedule_reads_current_dotenv_for_source_selection(
 
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("LINEAR_API_KEY", raising=False)
+    monkeypatch.delenv("TWENTY_API_KEY", raising=False)
+    monkeypatch.delenv("SLACK_BOT_TOKEN", raising=False)
+    monkeypatch.delenv("GOOGLE_WORKSPACE_OAUTH_CLIENT_SECRET_JSON", raising=False)
+    monkeypatch.delenv("GOOGLE_WORKSPACE_OAUTH_REFRESH_TOKEN", raising=False)
+    monkeypatch.delenv("GOOGLE_WORKSPACE_DRIVE_IDS", raising=False)
     monkeypatch.setenv("FOUROK_DOTENV_PATH", str(tmp_path / ".env"))
     (tmp_path / ".env").write_text("LINEAR_API_KEY=linear-secret\n", encoding="utf-8")
 
@@ -362,6 +368,7 @@ def test_dagster_live_source_import_records_operator_freshness_and_counts(
         "freshness_status": "fresh",
         "idempotency_status": "recorded",
         "source_record_count": 3,
+        "deleted_source_record_count": 0,
         "retrieval_record_count": 7,
         "dagster_run_id": "run-123",
     }
@@ -575,7 +582,19 @@ def test_dagster_live_connector_asset_names_can_select_linear_only() -> None:
     }
 
 
+def test_dagster_live_snapshot_scopes_cover_empty_landed_streams() -> None:
+    assert _snapshot_scopes_for_landed_streams(
+        ("twenty_companies", "twenty_people", "linear_issues", "google_drive_files")
+    ) == {
+        ("twenty", "organization"),
+        ("twenty", "person"),
+        ("linear", "work_item"),
+        ("google_drive", "document"),
+    }
+
+
 def test_dagster_check_loads_project_dotenv_defaults(tmp_path, monkeypatch) -> None:
+    monkeypatch.delenv("LINEAR_API_KEY", raising=False)
     dotenv = tmp_path / ".env"
     dotenv.write_text(
         "LINEAR_API_KEY=project-123\nSLACK_BOT_TOKEN=dotenv-value\n",
