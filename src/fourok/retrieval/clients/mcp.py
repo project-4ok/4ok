@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from pathlib import Path
 
 from fourok.governance import GovernedContext
@@ -12,9 +12,6 @@ ContextFactory = Callable[..., GovernedContext]
 def search_fourok(
     query: str,
     *,
-    roles: Sequence[str] | None = None,
-    human_id: str = "local-human",
-    agent_id: str = "local-agent",
     state: str | Path | None = None,
     database_url: str | None = None,
     config: str | Path | None = None,
@@ -26,15 +23,7 @@ def search_fourok(
         config=config,
         context_factory=context_factory,
     )
-    if roles is None:
-        return api.retrieve_augmentation(query)
-    return api.search_evidence(
-        query,
-        limit=5,
-        roles=roles,
-        human_id=human_id,
-        agent_id=agent_id,
-    )
+    return api.retrieve_augmentation(query)
 
 
 def operator_status(

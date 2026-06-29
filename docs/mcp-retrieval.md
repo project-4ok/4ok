@@ -6,19 +6,22 @@ the retrieval API boundary in `fourok.retrieval.api.RetrievalAPI`.
 
 ## Tools
 
-- `search_fourok`: searches governed retrieval units with permission filtering and
-  returns `query`, `results`, `summary`, `result_candidates`, `evidence_items`,
-  object/entity fields, `limitations`, and `audit_ref`.
+- `search_fourok`: runs the same retrieval-augmentation path as
+  `fourok retrieve "<query>" --json` and returns an LLM-ready context pack with
+  source-backed result cards, retrieval notes/limitations, token metadata, and a
+  rendered `context_block`.
 - `operator_status`: returns the same compact runtime operator status as
   `fourok operator-status`, including active imported-item counts, retrieval
   record totals/status counts, connector job freshness, and latest live
   ingestion metadata.
 
-Both tools accept optional `state`, `database_url`, and `config` arguments. If
-`database_url` is omitted and `state` is not provided, the server uses
-`FOUROK_DATABASE_URL`; otherwise it falls back to the explicit or default SQLite
-state path. `config` points at the normal fourok runtime TOML file and applies the
-configured raw-store and retrieval settings.
+`search_fourok` intentionally accepts only `query`; database/config details stay
+server-side. `operator_status` accepts optional `state`, `database_url`, and
+`config` arguments for local/operator diagnostics. If `database_url` is omitted
+and `state` is not provided, the server uses `FOUROK_DATABASE_URL`; otherwise it
+falls back to the explicit or default SQLite state path. `config` points at the
+normal fourok runtime TOML file and applies the configured raw-store and retrieval
+settings.
 
 ## Run
 
@@ -141,10 +144,11 @@ Interactive MCP inspection, when the local runtime database is available:
 npx -y @modelcontextprotocol/inspector uv run fourok-mcp
 ```
 
-Expected tools are `search_fourok` and `operator_status`. Use `search_fourok` with the
-same query, roles, and optional `config` as the CLI comparison. The MCP tool intentionally
-does not expose a caller-facing result limit; it returns an agent-ready evidence pack and
-retrieval notes instead of asking clients to tune candidate counts.
+Expected tools are `search_fourok` and `operator_status`. Use `search_fourok` with
+the same query as the CLI comparison. The MCP tool intentionally does not expose
+caller-facing tuning knobs; it returns an agent-ready retrieval context pack and
+retrieval notes instead of asking clients to tune candidate counts or runtime
+state.
 
 SDK stdio smoke check:
 

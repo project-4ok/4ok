@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import argparse
 import sys
-from collections.abc import Callable, Sequence
+from collections.abc import Callable
 from pathlib import Path
 
 from fourok.governance import GovernedContext
@@ -17,7 +17,7 @@ def tool_schemas() -> list[dict[str, object]]:
         {
             "name": "search_fourok",
             "description": (
-                "Search governed fourok state and return evidence-pack fields for agents."
+                "Search fourok and return an LLM-ready retrieval context pack."
             ),
             "input_schema": {
                 "type": "object",
@@ -25,39 +25,7 @@ def tool_schemas() -> list[dict[str, object]]:
                 "properties": {
                     "query": {
                         "type": "string",
-                        "description": "Search query to run against governed retrieval units.",
-                    },
-                    "roles": {
-                        "type": ["array", "null"],
-                        "items": {"type": "string"},
-                        "description": "Optional principal roles for permission filtering.",
-                    },
-                    "human_id": {
-                        "type": "string",
-                        "default": "local-human",
-                        "description": "Human principal identifier for audit and policy.",
-                    },
-                    "agent_id": {
-                        "type": "string",
-                        "default": "local-agent",
-                        "description": "Agent principal identifier for audit and policy.",
-                    },
-                    "state": {
-                        "type": ["string", "null"],
-                        "description": (
-                            "SQLite state path. Ignored when database_url points to PostgreSQL."
-                        ),
-                    },
-                    "database_url": {
-                        "type": ["string", "null"],
-                        "description": (
-                            "SQLAlchemy database URL. Defaults to FOUROK_DATABASE_URL "
-                            "or SQLite state."
-                        ),
-                    },
-                    "config": {
-                        "type": ["string", "null"],
-                        "description": "Optional fourok runtime TOML config path.",
+                        "description": "Question or topic to retrieve source-backed context for.",
                     },
                 },
             },
@@ -96,9 +64,6 @@ def tool_schemas() -> list[dict[str, object]]:
 def search_fourok(
     query: str,
     *,
-    roles: Sequence[str] | None = None,
-    human_id: str = "local-human",
-    agent_id: str = "local-agent",
     state: str | Path | None = None,
     database_url: str | None = None,
     config: str | Path | None = None,
@@ -120,9 +85,6 @@ def search_fourok(
         )
         response = mcp_client.search_fourok(
             normalized_query,
-            roles=roles,
-            human_id=human_id,
-            agent_id=agent_id,
             state=state,
             database_url=database_url,
             config=config,
@@ -181,23 +143,9 @@ def build_mcp_server(
     @mcp.tool(name="search_fourok")
     def search_fourok_tool(
         query: str,
-        roles: list[str] | None = None,
-        human_id: str = "local-human",
-        agent_id: str = "local-agent",
-        state: str | None = None,
-        database_url: str | None = None,
-        config: str | None = None,
     ) -> dict[str, object]:
-        """Search governed fourok state and return evidence-pack fields for agents."""
-        return search_fourok(
-            query=query,
-            roles=roles,
-            human_id=human_id,
-            agent_id=agent_id,
-            state=state,
-            database_url=database_url,
-            config=config,
-        )
+        """Search fourok and return an LLM-ready retrieval context pack."""
+        return search_fourok(query=query)
 
     @mcp.tool(name="operator_status")
     def operator_status_tool(

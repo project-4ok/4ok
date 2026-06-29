@@ -326,7 +326,6 @@ def test_mcp_search_emits_safe_success_span(monkeypatch) -> None:
 
     response = search_fourok(
         query="Sensitive renewal",
-        roles=["operator"],
         state="private-state.sqlite",
         database_url="postgresql+psycopg://fourok:secret@localhost:5432/fourok",
         context_factory=lambda *args, **kwargs: context,
@@ -340,7 +339,7 @@ def test_mcp_search_emits_safe_success_span(monkeypatch) -> None:
             "fourok.mcp.status": "succeeded",
             "fourok.search.query_length": 17,
             "fourok.search.result_count": 1,
-            "fourok.search.evidence_item_count": 1,
+            "fourok.search.evidence_item_count": 0,
         },
     }
     assert "Sensitive renewal" not in str(spans)

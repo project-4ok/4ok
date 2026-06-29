@@ -92,20 +92,34 @@ class FakeContext:
             {"source_ref": "linear:issue:OPS-1", "status": "current"},
         ]
 
+    def retrieve_augmentation(self, query: str, **kwargs):
+        assert query == "refund escalation"
+        assert kwargs == {
+            "token_budget": 2000,
+            "candidate_limit": 40,
+            "retrievers": ("keyword", "vector"),
+        }
+
+        class Response:
+            context_block = "fourok RETRIEVAL FOR AGENTS\n"
+
+            def to_dict(self):
+                return {
+                    "status": "ok",
+                    "results": [{"source_ref": "slack:message:1"}],
+                    "limitations": ["Results are source excerpts, not a final answer."],
+                    "context_block": self.context_block,
+                }
+
+        return Response()
+
 
 def test_mcp_tool_schemas_are_discoverable_without_stdio_server() -> None:
     tools = {tool["name"]: tool for tool in mcp_retrieval.tool_schemas()}
 
     assert set(tools) == {"search_fourok", "operator_status"}
     assert tools["search_fourok"]["input_schema"]["required"] == ["query"]
-    assert set(tools["search_fourok"]["input_schema"]["properties"]) >= {
-        "query",
-        "roles",
-        "database_url",
-        "state",
-        "config",
-    }
-    assert "limit" not in tools["search_fourok"]["input_schema"]["properties"]
+    assert set(tools["search_fourok"]["input_schema"]["properties"]) == {"query"}
     assert tools["operator_status"]["input_schema"]["properties"]["database_url"]["type"] == [
         "string",
         "null",
@@ -159,51 +173,21 @@ async def test_fastmcp_server_registers_public_tool_names() -> None:
     assert [tool.name for tool in tools] == ["search_fourok", "operator_status"]
 
 
-def test_search_handler_returns_agent_ready_evidence_contract() -> None:
+def test_search_handler_returns_retrieval_augmentation_contract() -> None:
     FakeContext.created.clear()
 
     response = mcp_retrieval.search_fourok(
         query="refund escalation",
-        roles=["support", "operator"],
-        human_id="human-1",
-        agent_id="agent-1",
         state="state.sqlite",
         database_url="postgresql+psycopg://fourok:secret@localhost:5432/fourok",
         context_factory=FakeContext,
     )
 
     assert response == {
-        "query": "refund escalation",
-        "results": [
-            {
-                "source_ref": "slack:message:1",
-                "subject": "Refund escalation",
-                "date": "2026-06-01T10:00:00Z",
-                "snippet": "Customer refund escalation requires support follow-up.",
-            }
-        ],
-        "summary": "1 matching governed evidence item.",
-        "result_candidates": [
-            {
-                "source_ref": "slack:message:1",
-                "score": 1.0,
-                "ranking_reason": "keyword match",
-            }
-        ],
-        "evidence_items": [
-            {
-                "evidence_ref": "evidence:1",
-                "source_ref": "slack:message:1",
-                "snippet": "Customer refund escalation requires support follow-up.",
-            }
-        ],
-        "primary_objects": [],
-        "related_objects": [],
-        "related_object_groups": {},
-        "entities": [],
-        "unresolved_candidates": [],
-        "limitations": [],
-        "audit_ref": "audit:search:1",
+        "status": "ok",
+        "results": [{"source_ref": "slack:message:1"}],
+        "limitations": ["Results are source excerpts, not a final answer."],
+        "context_block": "fourok RETRIEVAL FOR AGENTS\n",
     }
 
 
@@ -214,9 +198,6 @@ def test_search_handler_loads_optional_runtime_config(tmp_path: Path) -> None:
 
     mcp_retrieval.search_fourok(
         query="refund escalation",
-        roles=["support", "operator"],
-        human_id="human-1",
-        agent_id="agent-1",
         config=str(config_path),
         context_factory=FakeContext,
     )
@@ -250,45 +231,28 @@ def test_search_handler_rejects_empty_query_before_opening_state() -> None:
 
 
 @pytest.mark.anyio
-async def test_mcp_search_tool_enforces_slack_channel_permission_refs(tmp_path: Path) -> None:
-    state_path = tmp_path / "fourok.sqlite"
-    context = GovernedContext(state_path)
-    context.ingest_source_records(
-        [
-            SourceRecord(
-                source_ref="slack:message:restricted",
-                source_system="slack",
-                source_id="restricted",
-                record_type="message",
-                title="Restricted Slack customer thread",
-                body="mcppermissionmarker customer escalation in the temp crm channel",
-                permission_refs=("slack:channel:C0TEMPCRM",),
-            )
-        ]
-    )
+async def test_mcp_search_tool_returns_retrieval_contract(monkeypatch: pytest.MonkeyPatch) -> None:
+    def fake_search_fourok(**kwargs):
+        assert kwargs == {"query": "mcppermissionmarker"}
+        return {
+            "status": "ok",
+            "results": [{"source_ref": "linear:issue:1"}],
+            "context_block": "fourok RETRIEVAL FOR AGENTS\n",
+        }
+
+    monkeypatch.setattr(mcp_retrieval, "search_fourok", fake_search_fourok)
     server = mcp_retrieval.build_mcp_server()
 
-    _, denied = await server.call_tool(
+    _, response = await server.call_tool(
         "search_fourok",
-        {
-            "query": "mcppermissionmarker",
-            "state": str(state_path),
-            "roles": ["operator"],
-        },
-    )
-    _, allowed = await server.call_tool(
-        "search_fourok",
-        {
-            "query": "mcppermissionmarker",
-            "state": str(state_path),
-            "roles": ["operator", "slack:channel:C0TEMPCRM"],
-        },
+        {"query": "mcppermissionmarker"},
     )
 
-    assert denied["results"] == []
-    assert denied["evidence_items"] == []
-    assert [result["source_ref"] for result in allowed["results"]] == ["slack:message:restricted"]
-    assert allowed["evidence_items"][0]["permission_refs"] == ["slack:channel:C0TEMPCRM"]
+    assert response == {
+        "status": "ok",
+        "results": [{"source_ref": "linear:issue:1"}],
+        "context_block": "fourok RETRIEVAL FOR AGENTS\n",
+    }
 
 
 def test_operator_status_returns_counts_and_freshness_without_secrets() -> None:
