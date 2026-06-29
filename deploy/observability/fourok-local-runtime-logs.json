@@ -573,7 +573,7 @@
       "id": 25,
       "type": "stat",
       "title": "\u2460 Raw landing",
-      "description": "Lineage node for latest (meltano_.*_raw_landing|fourok_.*_raw_landing) Dagster stages. The value is the total number of latest-run non-SUCCESS stages; 0 means this slice is green.",
+      "description": "Lineage node for latest raw landing Dagster stages. The value is the total number of latest-run FAILURE stages; 0 means this slice is green.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -643,7 +643,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"(meltano_.*_raw_landing|fourok_.*_raw_landing)\",status!=\"SUCCESS\"}) or vector(0)",
+          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"(meltano_.*_raw_landing|fourok_.*_raw_landing)\",stage!~\"fourok_.*source_records.*\",status=\"FAILURE\"}) or vector(0)",
           "instant": false,
           "legendFormat": "failing stages",
           "range": true,
@@ -655,7 +655,7 @@
       "id": 26,
       "type": "stat",
       "title": "\u2461 Source records",
-      "description": "Lineage node for latest fourok_.*source_records.* Dagster stages. The value is the total number of latest-run non-SUCCESS stages; 0 means this slice is green.",
+      "description": "Lineage node for latest fourok_.*source_records.* Dagster stages. The value is the total number of latest-run FAILURE stages; 0 means this slice is green.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -725,7 +725,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"fourok_.*source_records.*\",status!=\"SUCCESS\"}) or vector(0)",
+          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"fourok_.*source_records.*\",status=\"FAILURE\"}) or vector(0)",
           "instant": false,
           "legendFormat": "failing stages",
           "range": true,
@@ -737,7 +737,7 @@
       "id": 27,
       "type": "stat",
       "title": "\u2462 Retrieval records",
-      "description": "Lineage node for latest fourok_retrieval_records Dagster stages. The value is the total number of latest-run non-SUCCESS stages; 0 means this slice is green.",
+      "description": "Lineage node for latest fourok_retrieval_records Dagster stages. The value is the total number of latest-run FAILURE stages; 0 means this slice is green.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -807,7 +807,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"fourok_retrieval_records\",status!=\"SUCCESS\"}) or vector(0)",
+          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"fourok_retrieval_records\",status=\"FAILURE\"}) or vector(0)",
           "instant": false,
           "legendFormat": "failing stages",
           "range": true,
@@ -819,7 +819,7 @@
       "id": 28,
       "type": "stat",
       "title": "\u2463 Operator dashboard",
-      "description": "Lineage node for latest fourok_operator_dashboard Dagster stages. The value is the total number of latest-run non-SUCCESS stages; 0 means this slice is green.",
+      "description": "Lineage node for latest fourok_operator_dashboard Dagster stages. The value is the total number of latest-run FAILURE stages; 0 means this slice is green.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -889,7 +889,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"fourok_operator_dashboard\",status!=\"SUCCESS\"}) or vector(0)",
+          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"fourok_operator_dashboard\",status=\"FAILURE\"}) or vector(0)",
           "instant": false,
           "legendFormat": "failing stages",
           "range": true,
@@ -901,7 +901,7 @@
       "id": 29,
       "type": "stat",
       "title": "\u2464 Audit metadata",
-      "description": "Lineage node for latest fourok_audit_metadata Dagster stages. The value is the total number of latest-run non-SUCCESS stages; 0 means this slice is green.",
+      "description": "Lineage node for latest fourok_audit_metadata Dagster stages. The value is the total number of latest-run FAILURE stages; 0 means this slice is green.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -971,7 +971,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"fourok_audit_metadata\",status!=\"SUCCESS\"}) or vector(0)",
+          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"fourok_audit_metadata\",status=\"FAILURE\"}) or vector(0)",
           "instant": false,
           "legendFormat": "failing stages",
           "range": true,
@@ -983,7 +983,7 @@
       "id": 30,
       "type": "stat",
       "title": "\u21b3 Entity links",
-      "description": "Lineage node for latest fourok_.*entity_links.* Dagster stages. The value is the total number of latest-run non-SUCCESS stages; 0 means this slice is green.",
+      "description": "Lineage node for latest fourok_.*entity_links.* Dagster stages. The value is the total number of latest-run FAILURE stages; 0 means this slice is green.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -1053,7 +1053,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"fourok_.*entity_links.*\",status!=\"SUCCESS\"}) or vector(0)",
+          "expr": "sum(fourok_dagster_latest_run_stage_status{exported_job=\"$dagster_job\",stage=~\"fourok_.*entity_links.*\",status=\"FAILURE\"}) or vector(0)",
           "instant": false,
           "legendFormat": "failing stages",
           "range": true,

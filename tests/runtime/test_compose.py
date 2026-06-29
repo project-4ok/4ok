@@ -347,7 +347,10 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
         expr = panel["targets"][0]["expr"]
         assert "fourok_dagster_latest_run_stage_status" in expr
         assert "clamp_max" not in expr
-        assert "total number of latest-run non-SUCCESS stages" in panel["description"]
+        assert "total number of latest-run FAILURE stages" in panel["description"]
+        assert 'status="FAILURE"' in expr
+    raw_landing_panel = next(panel for panel in lineage_panels if panel["title"] == "① Raw landing")
+    assert 'stage!~"fourok_.*source_records.*"' in raw_landing_panel["targets"][0]["expr"]
     assert "1+ failures" not in dashboard
     assert any(
         'fourok_dagster_latest_run_stage_status{exported_job="$dagster_job",status!="SUCCESS"}'
