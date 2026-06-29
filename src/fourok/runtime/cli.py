@@ -253,6 +253,9 @@ def _client_status_report(state, report: dict) -> dict:
             client_status["freshness"] = operator_status(state).get("freshness", {})
         except Exception:
             client_status["freshness"] = {}
+    client_status["configured_connectors"] = _configured_connector_names(
+        _connector_secret_report()
+    )
     if source_count is not None and int(source_count) == 0:
         client_status["status"] = "needs_onboarding"
         client_status["detail"] = "no connector data has been imported yet"
@@ -325,11 +328,23 @@ def _client_pipeline_lines(report: dict) -> list[str]:
     sources = live_ingestion.get("sources", {})
     if not isinstance(sources, dict) or not sources:
         return []
-    status = str(live_ingestion.get("status") or "")
+    configured_connectors = report.get("configured_connectors")
+    if isinstance(configured_connectors, list):
+        configured = {str(source) for source in configured_connectors}
+        sources = {
+            source: source_report
+            for source, source_report in sources.items()
+            if str(source) in configured
+        }
+    if not sources:
+        return []
+    has_attention = any(
+        _client_source_needs_attention(source_report)
+        for source_report in sources.values()
+        if isinstance(source_report, dict)
+    )
     pipeline_line = (
-        "Data pipeline: working well"
-        if status == "fresh"
-        else "Data pipeline: needs attention"
+        "Data pipeline: needs attention" if has_attention else "Data pipeline: working well"
     )
     lines = ["", pipeline_line, "Sources:"]
     for source, source_report in sorted(sources.items()):
@@ -356,6 +371,12 @@ def _client_source_status_line(source: str, source_report: dict) -> str:
     if latest_status == "failed" or freshness in {"failed", "stale"}:
         return f"{source}: needs attention, last checked {age}{count_text}"
     return f"{source}: {freshness or latest_status or 'unknown'}, last checked {age}{count_text}"
+
+
+def _client_source_needs_attention(source_report: dict) -> bool:
+    freshness = str(source_report.get("freshness_status") or "")
+    latest_status = str(source_report.get("latest_status") or "")
+    return freshness != "fresh" or latest_status != "succeeded"
 
 
 def _relative_age_from_seconds(value: object) -> str:
@@ -540,6 +561,17 @@ def _connector_secret_report() -> dict[str, object]:
             missing_any = True
         connectors[connector] = {"status": "missing" if missing else "ok", "missing": missing}
     return {"status": "missing" if missing_any else "ok", "connectors": connectors}
+
+
+def _configured_connector_names(secret_report: dict[str, object]) -> list[str]:
+    connectors = secret_report.get("connectors", {})
+    if not isinstance(connectors, dict):
+        return []
+    return [
+        str(connector)
+        for connector, data in sorted(connectors.items())
+        if isinstance(data, dict) and data.get("status") == "ok"
+    ]
 
 
 def _connector_setup_lines(secret_report: dict[str, object]) -> list[str]:

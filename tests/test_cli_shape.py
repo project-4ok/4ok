@@ -94,7 +94,7 @@ def test_status_prints_client_safe_summary(capsys, monkeypatch) -> None:
             ],
             "freshness": {
                 "live_ingestion": {
-                    "status": "fresh",
+                    "status": "attention_required",
                     "sources": {
                         "linear": {
                             "freshness_status": "fresh",
@@ -113,6 +113,16 @@ def test_status_prints_client_safe_summary(capsys, monkeypatch) -> None:
             },
         },
     )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._connector_secret_report",
+        lambda: {
+            "status": "missing",
+            "connectors": {
+                "linear": {"status": "ok", "missing": []},
+                "twenty": {"status": "missing", "missing": ["TWENTY_API_KEY"]},
+            },
+        },
+    )
 
     main()
 
@@ -124,7 +134,7 @@ def test_status_prints_client_safe_summary(capsys, monkeypatch) -> None:
     assert "Data pipeline: working well" in output
     assert "Sources:" in output
     assert "linear: working well, imported 10 min ago (12 records)" in output
-    assert "twenty: not connected yet" in output
+    assert "twenty" not in output
     assert "Try:" in output
     assert "fourok retrieve" in output
     assert "postgresql" not in output
