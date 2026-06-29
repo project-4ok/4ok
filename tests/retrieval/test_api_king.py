@@ -120,7 +120,7 @@ def test_cli_and_mcp_clients_are_thin_wrappers_over_retrieval_api(monkeypatch) -
         "status": "ok",
         "results": [],
     }
-    assert mcp_client.search_fourok("mcp query", state="state.sqlite") == {
+    assert mcp_client.retrieve("mcp query", state="state.sqlite") == {
         "status": "ok",
         "results": [],
     }

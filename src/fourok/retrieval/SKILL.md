@@ -36,7 +36,7 @@ Do not use this for:
 
 ## Backend Selection
 
-1. Prefer MCP when native MCP tool `mcp_fourok_retrieval_search_fourok` or an equivalent `search_fourok` tool is available in the current Hermes session; otherwise use CLI from the repository root.
+1. Prefer MCP when native MCP tool `mcp_fourok_fourok_retrieve` or an equivalent `fourok.retrieve` tool is available in the current Hermes session; otherwise use CLI from the repository root.
 2. If Docker Compose is running but CLI context is unavailable, use the HTTP MCP endpoint only with a local MCP client.
 3. If neither CLI nor MCP is available, say retrieval is unavailable and what command would enable it.
 
@@ -85,8 +85,9 @@ http://127.0.0.1:8010/mcp
 
 Expected tools:
 
-- `search_fourok`
-- `operator_status`
+- `fourok.retrieve`
+- `fourok.status`
+- `fourok.onboard`
 
 Use MCP when it is already configured as a first-class Hermes tool. Prefer the CLI fallback if the current session has not discovered MCP tools yet; Hermes usually needs a restart/new session after MCP config changes.
 
@@ -99,23 +100,21 @@ CLI JSON from `retrieve` includes at least:
 - `results`: source evidence cards.
 - `limitations`: retrieval caveats.
 
-MCP `search_fourok` includes structured fields such as:
+MCP `fourok.retrieve` mirrors `fourok retrieve --json` and includes structured
+fields such as:
 
+- `status`
+- `context_block`
 - `results`
-- `summary`
-- `result_candidates`
-- `evidence_items`
-- `primary_objects`
-- `related_objects`
-- `entities`
 - `limitations`
-- `audit_ref`
+- `token_budget`
+- `estimated_tokens`
+- `candidate_count`
 
 Always cite durable refs when using retrieval evidence:
 
 ```text
 source_ref: slack:message:...
-audit_ref: audit:search:...
 ```
 
 If `results` is empty, say "No retrieved evidence matched" rather than "nothing exists". Empty retrieval can mean the state is fresh, permissions filtered records out, connectors have not run, or the query needs different wording.

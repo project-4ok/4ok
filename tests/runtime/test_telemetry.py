@@ -335,7 +335,7 @@ def test_mcp_search_emits_safe_success_span(monkeypatch) -> None:
     assert spans[-1] == {
         "name": "fourok.mcp.search",
         "attributes": {
-            "fourok.mcp.tool": "search_fourok",
+            "fourok.mcp.tool": "fourok.retrieve",
             "fourok.mcp.status": "succeeded",
             "fourok.search.query_length": 17,
             "fourok.search.result_count": 1,
@@ -358,7 +358,7 @@ def test_mcp_search_failure_span_keeps_query_and_state_out(monkeypatch) -> None:
         {
             "name": "fourok.mcp.search",
             "attributes": {
-                "fourok.mcp.tool": "search_fourok",
+                "fourok.mcp.tool": "fourok.retrieve",
                 "fourok.mcp.status": "failed",
                 "fourok.error.class": "ValueError",
             },

@@ -6,22 +6,18 @@ the retrieval API boundary in `fourok.retrieval.api.RetrievalAPI`.
 
 ## Tools
 
-- `search_fourok`: runs the same retrieval-augmentation path as
+- `fourok.retrieve`: runs the same retrieval-augmentation path as
   `fourok retrieve "<query>" --json` and returns an LLM-ready context pack with
   source-backed result cards, retrieval notes/limitations, token metadata, and a
   rendered `context_block`.
-- `operator_status`: returns the same compact runtime operator status as
-  `fourok operator-status`, including active imported-item counts, retrieval
-  record totals/status counts, connector job freshness, and latest live
-  ingestion metadata.
+- `fourok.status`: returns the same client-facing readiness/source freshness
+  summary as `fourok status`.
+- `fourok.onboard`: returns the same client-facing setup guidance as
+  `fourok onboard`.
 
-`search_fourok` intentionally accepts only `query`; database/config details stay
-server-side. `operator_status` accepts optional `state`, `database_url`, and
-`config` arguments for local/operator diagnostics. If `database_url` is omitted
-and `state` is not provided, the server uses `FOUROK_DATABASE_URL`; otherwise it
-falls back to the explicit or default SQLite state path. `config` points at the
-normal fourok runtime TOML file and applies the configured raw-store and retrieval
-settings.
+`fourok.retrieve` intentionally accepts only `query`; database/config details
+stay server-side. `fourok.status` and `fourok.onboard` accept no arguments and
+return client-facing text.
 
 ## Run
 
@@ -78,8 +74,8 @@ exposing this beyond localhost, implement and verify:
   requirements. Keep streamable HTTP compatibility tests for the client version
   being targeted.
 - Operator smoke test: add a repeatable check that connects through the public
-  HTTPS URL, lists `search_fourok` and `operator_status`, and runs a safe
-  `operator_status` call.
+  HTTPS URL, lists `fourok.retrieve`, `fourok.status`, and `fourok.onboard`, and
+  runs a safe `fourok.status` call.
 - Deployment runbook: document how to rotate tokens, disable the public endpoint,
   inspect logs, and fall back to loopback-only local mode.
 
@@ -144,11 +140,11 @@ Interactive MCP inspection, when the local runtime database is available:
 npx -y @modelcontextprotocol/inspector uv run fourok-mcp
 ```
 
-Expected tools are `search_fourok` and `operator_status`. Use `search_fourok` with
-the same query as the CLI comparison. The MCP tool intentionally does not expose
-caller-facing tuning knobs; it returns an agent-ready retrieval context pack and
-retrieval notes instead of asking clients to tune candidate counts or runtime
-state.
+Expected tools are `fourok.retrieve`, `fourok.status`, and `fourok.onboard`. Use
+`fourok.retrieve` with the same query as the CLI comparison. The MCP tool
+intentionally does not expose caller-facing tuning knobs; it returns an
+agent-ready retrieval context pack and retrieval notes instead of asking clients
+to tune candidate counts or runtime state.
 
 SDK stdio smoke check:
 

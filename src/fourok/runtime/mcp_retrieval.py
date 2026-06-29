@@ -15,7 +15,7 @@ ContextFactory = Callable[..., GovernedContext]
 def tool_schemas() -> list[dict[str, object]]:
     return [
         {
-            "name": "search_fourok",
+            "name": "fourok.retrieve",
             "description": (
                 "Search fourok and return an LLM-ready retrieval context pack."
             ),
@@ -31,31 +31,21 @@ def tool_schemas() -> list[dict[str, object]]:
             },
         },
         {
-            "name": "operator_status",
+            "name": "fourok.status",
             "description": (
-                "Return local fourok source/retrieval counts and simple freshness metadata."
+                "Return a client-facing fourok readiness and source freshness summary."
             ),
             "input_schema": {
                 "type": "object",
-                "properties": {
-                    "state": {
-                        "type": ["string", "null"],
-                        "description": (
-                            "SQLite state path. Ignored when database_url points to PostgreSQL."
-                        ),
-                    },
-                    "database_url": {
-                        "type": ["string", "null"],
-                        "description": (
-                            "SQLAlchemy database URL. Defaults to FOUROK_DATABASE_URL "
-                            "or SQLite state."
-                        ),
-                    },
-                    "config": {
-                        "type": ["string", "null"],
-                        "description": "Optional fourok runtime TOML config path.",
-                    },
-                },
+                "properties": {},
+            },
+        },
+        {
+            "name": "fourok.onboard",
+            "description": "Return client-facing fourok onboarding guidance.",
+            "input_schema": {
+                "type": "object",
+                "properties": {},
             },
         },
     ]
@@ -71,7 +61,7 @@ def search_fourok(
 ) -> dict[str, object]:
     with critical_span(
         "fourok.mcp.search",
-        attributes={"fourok.mcp.tool": "search_fourok"},
+        attributes={"fourok.mcp.tool": "fourok.retrieve"},
         status_attribute="fourok.mcp.status",
     ) as span:
         normalized_query = query.strip()
@@ -83,7 +73,7 @@ def search_fourok(
                 "fourok.search.query_length": len(normalized_query),
             },
         )
-        response = mcp_client.search_fourok(
+        response = mcp_client.retrieve(
             normalized_query,
             state=state,
             database_url=database_url,
@@ -120,6 +110,19 @@ def operator_status(
     )
 
 
+def status_text() -> dict[str, object]:
+    from fourok.runtime.cli import _format_client_status, _safe_client_status_report
+
+    report = _safe_client_status_report()
+    return {"text": _format_client_status(report)}
+
+
+def onboard_text() -> dict[str, object]:
+    from fourok.runtime.cli import _onboard_message
+
+    return {"text": _onboard_message(argparse.Namespace(demo=False))}
+
+
 def build_mcp_server(
     *,
     host: str = "127.0.0.1",
@@ -140,21 +143,22 @@ def build_mcp_server(
         streamable_http_path="/mcp",
     )
 
-    @mcp.tool(name="search_fourok")
-    def search_fourok_tool(
+    @mcp.tool(name="fourok.retrieve")
+    def retrieve_tool(
         query: str,
     ) -> dict[str, object]:
         """Search fourok and return an LLM-ready retrieval context pack."""
         return search_fourok(query=query)
 
-    @mcp.tool(name="operator_status")
-    def operator_status_tool(
-        state: str | None = None,
-        database_url: str | None = None,
-        config: str | None = None,
-    ) -> dict[str, object]:
-        """Return local fourok source/retrieval counts and simple freshness metadata."""
-        return operator_status(state=state, database_url=database_url, config=config)
+    @mcp.tool(name="fourok.status")
+    def status_tool() -> dict[str, object]:
+        """Return a client-facing fourok readiness and source freshness summary."""
+        return status_text()
+
+    @mcp.tool(name="fourok.onboard")
+    def onboard_tool() -> dict[str, object]:
+        """Return client-facing fourok onboarding guidance."""
+        return onboard_text()
 
     return mcp
 

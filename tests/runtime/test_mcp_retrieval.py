@@ -117,13 +117,11 @@ class FakeContext:
 def test_mcp_tool_schemas_are_discoverable_without_stdio_server() -> None:
     tools = {tool["name"]: tool for tool in mcp_retrieval.tool_schemas()}
 
-    assert set(tools) == {"search_fourok", "operator_status"}
-    assert tools["search_fourok"]["input_schema"]["required"] == ["query"]
-    assert set(tools["search_fourok"]["input_schema"]["properties"]) == {"query"}
-    assert tools["operator_status"]["input_schema"]["properties"]["database_url"]["type"] == [
-        "string",
-        "null",
-    ]
+    assert set(tools) == {"fourok.retrieve", "fourok.status", "fourok.onboard"}
+    assert tools["fourok.retrieve"]["input_schema"]["required"] == ["query"]
+    assert set(tools["fourok.retrieve"]["input_schema"]["properties"]) == {"query"}
+    assert tools["fourok.status"]["input_schema"]["properties"] == {}
+    assert tools["fourok.onboard"]["input_schema"]["properties"] == {}
 
 
 def test_mcp_main_can_run_streamable_http_transport(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -170,7 +168,11 @@ async def test_fastmcp_server_registers_public_tool_names() -> None:
 
     tools = await server.list_tools()
 
-    assert [tool.name for tool in tools] == ["search_fourok", "operator_status"]
+    assert [tool.name for tool in tools] == [
+        "fourok.retrieve",
+        "fourok.status",
+        "fourok.onboard",
+    ]
 
 
 def test_search_handler_returns_retrieval_augmentation_contract() -> None:
@@ -244,7 +246,7 @@ async def test_mcp_search_tool_returns_retrieval_contract(monkeypatch: pytest.Mo
     server = mcp_retrieval.build_mcp_server()
 
     _, response = await server.call_tool(
-        "search_fourok",
+        "fourok.retrieve",
         {"query": "mcppermissionmarker"},
     )
 
@@ -253,6 +255,29 @@ async def test_mcp_search_tool_returns_retrieval_contract(monkeypatch: pytest.Mo
         "results": [{"source_ref": "linear:issue:1"}],
         "context_block": "fourok RETRIEVAL FOR AGENTS\n",
     }
+
+
+@pytest.mark.anyio
+async def test_mcp_status_and_onboard_tools_return_client_facing_text(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        mcp_retrieval,
+        "status_text",
+        lambda: {"text": "fourok is ready\n\nContext: 1 source records, 1 retrieval units"},
+    )
+    monkeypatch.setattr(
+        mcp_retrieval,
+        "onboard_text",
+        lambda: {"text": "fourok onboarding\n\nNext:\n  fourok status"},
+    )
+    server = mcp_retrieval.build_mcp_server()
+
+    _, status = await server.call_tool("fourok.status", {})
+    _, onboard = await server.call_tool("fourok.onboard", {})
+
+    assert status == {"text": "fourok is ready\n\nContext: 1 source records, 1 retrieval units"}
+    assert onboard == {"text": "fourok onboarding\n\nNext:\n  fourok status"}
 
 
 def test_operator_status_returns_counts_and_freshness_without_secrets() -> None:

@@ -91,8 +91,8 @@ The current internal v0 is a source-record-first retrieval runtime:
 - permission/lifecycle-filtered search and retrieval augmentation
 - audit, dashboard, health, retention, backup/restore, recurring ingestion,
   webhooks, and local runtime checks
-- stdio and HTTP MCP retrieval surfaces: `search_fourok(query)` and
-  `operator_status()`
+- stdio and HTTP MCP surfaces: `fourok.retrieve(query)`, `fourok.status()`, and
+  `fourok.onboard()`
 
 Deferred or intentionally out of scope for the active stage:
 

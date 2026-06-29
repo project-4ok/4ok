@@ -9,7 +9,7 @@ from fourok.retrieval.api import RetrievalAPI
 ContextFactory = Callable[..., GovernedContext]
 
 
-def search_fourok(
+def retrieve(
     query: str,
     *,
     state: str | Path | None = None,
@@ -24,6 +24,9 @@ def search_fourok(
         context_factory=context_factory,
     )
     return api.retrieve_augmentation(query)
+
+
+search_fourok = retrieve
 
 
 def operator_status(
