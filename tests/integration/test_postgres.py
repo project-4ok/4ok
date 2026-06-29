@@ -10,7 +10,7 @@ from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
 from fourok.retrieval.evaluation import compare_retrieval_methods, load_retrieval_eval_cases
 
-FIXTURES = Path(__file__).parents[2] / "fixtures"
+FIXTURES = Path(__file__).parents[1] / "fixtures"
 EMAILS = FIXTURES / "emails"
 RETRIEVAL_EVAL = FIXTURES / "retrieval_eval" / "customer_context_queries.json"
 

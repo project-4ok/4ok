@@ -5,7 +5,7 @@ import pytest
 
 from fourok.runtime.seed_snapshots import prepare_context_seed_snapshot
 
-FIXTURES = Path(__file__).parents[2] / "fixtures" / "context_substrate"
+FIXTURES = Path(__file__).parents[1] / "fixtures" / "context_substrate"
 
 
 def test_prepare_context_seed_snapshot_writes_ignored_seed_and_manifest(tmp_path: Path) -> None:

@@ -11,7 +11,7 @@ from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
 from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
 
-FIXTURES = Path(__file__).parents[2] / "fixtures" / "emails"
+FIXTURES = Path(__file__).parents[1] / "fixtures" / "emails"
 RAW_IBAN = "DE89370400440532013000"
 RAW_EMAIL = "anna.refunds@example.com"
 RAW_PHONE = "+49 30 12345678"

@@ -10,7 +10,7 @@ from fourok.etl.extract.connectors import (
 )
 from fourok.etl.extract.linear_tap import LinearTapConfig, run_linear_tap
 
-FIXTURES = Path(__file__).parents[3] / "fixtures" / "connectors"
+FIXTURES = Path(__file__).parents[2] / "fixtures" / "connectors"
 SINGER_LINEAR_WORK_ITEMS = FIXTURES / "singer_linear_work_items.jsonl"
 
 
@@ -85,7 +85,7 @@ def test_committed_meltano_config_wires_linear_fixture_job() -> None:
     config = (Path(__file__).parents[3] / "meltano.yml").read_text(encoding="utf-8")
 
     assert "tap-fourok-linear-fixture" in config
-    assert "fixtures/connectors/singer_linear_work_items.jsonl" in config
+    assert "tests/fixtures/connectors/singer_linear_work_items.jsonl" in config
     assert "singer-linear-fixture-to-raw" in config
     assert "tap-fourok-linear-fixture target-fourok-raw-jsonl" in config
 

@@ -26,7 +26,7 @@ def add_search_commands(subparsers, *, public: bool = False) -> None:
     search_parser.add_argument(
         "--emails",
         type=Path,
-        default=Path("fixtures/emails"),
+        default=Path("tests/fixtures/emails"),
         help="Test-only directory containing fixture .eml files.",
     )
     search_parser.add_argument("--limit", type=int, default=5)
@@ -117,7 +117,7 @@ def add_search_commands(subparsers, *, public: bool = False) -> None:
         help="Run the human-with-agent governed context workflow.",
     )
     ask_parser.add_argument("query")
-    ask_parser.add_argument("--emails", type=Path, default=Path("fixtures/emails"))
+    ask_parser.add_argument("--emails", type=Path, default=Path("tests/fixtures/emails"))
     ask_parser.add_argument("--limit", type=int, default=5)
     ask_parser.add_argument("--state", type=Path, default=DEFAULT_STATE)
     ask_parser.add_argument("--database-url", default=os.environ.get("FOUROK_DATABASE_URL"))
@@ -132,7 +132,7 @@ def add_search_commands(subparsers, *, public: bool = False) -> None:
     live_retrieval_case_set_parser.add_argument(
         "--cases",
         type=Path,
-        default=Path("fixtures/retrieval_eval/live_retrieval_case_set.json"),
+        default=Path("tests/fixtures/retrieval_eval/live_retrieval_case_set.json"),
     )
     live_retrieval_case_set_parser.add_argument(
         "--state",
@@ -158,12 +158,12 @@ def add_search_commands(subparsers, *, public: bool = False) -> None:
     retrieval_eval_parser.add_argument(
         "--cases",
         type=Path,
-        default=Path("fixtures/context_substrate/evidence_baseline_cases.json"),
+        default=Path("tests/fixtures/context_substrate/evidence_baseline_cases.json"),
     )
     retrieval_eval_parser.add_argument(
         "--fixture",
         type=Path,
-        default=Path("fixtures/context_substrate/source_snapshot_eval.json"),
+        default=Path("tests/fixtures/context_substrate/source_snapshot_eval.json"),
         help="Fixture JSON containing source records and source catalog data.",
     )
     retrieval_eval_parser.add_argument("--limit", type=int, default=5)

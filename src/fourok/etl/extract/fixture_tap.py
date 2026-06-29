@@ -4,7 +4,7 @@ import os
 import sys
 from pathlib import Path
 
-DEFAULT_FIXTURE = Path("fixtures/connectors/singer_email_messages.jsonl")
+DEFAULT_FIXTURE = Path("tests/fixtures/connectors/singer_email_messages.jsonl")
 
 
 def main() -> None:

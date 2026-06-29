@@ -15,9 +15,9 @@ from fourok.etl.load.retrieval_records import retrieval_record_rows
 from fourok.governance import GovernedContext
 from fourok.governance.state import create_governed_context_state
 
-FIXTURES = Path(__file__).parent.parent / "fixtures" / "emails"
-CONNECTOR_FIXTURES = Path(__file__).parent.parent / "fixtures" / "connectors"
-CONTEXT_FIXTURES = Path(__file__).parent.parent / "fixtures" / "context_substrate"
+FIXTURES = Path(__file__).parent / "fixtures" / "emails"
+CONNECTOR_FIXTURES = Path(__file__).parent / "fixtures" / "connectors"
+CONTEXT_FIXTURES = Path(__file__).parent / "fixtures" / "context_substrate"
 LOCAL_TEST_ARTIFACTS = Path(".local/test-artifacts")
 
 

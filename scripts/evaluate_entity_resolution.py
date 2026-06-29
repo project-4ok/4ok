@@ -13,7 +13,7 @@ from fourok.etl.transform.entity_resolution import (
     splink_probability_clusters,
 )
 
-FIXTURE = Path("fixtures/entity_resolution/multi_source_identities.json")
+FIXTURE = Path("tests/fixtures/entity_resolution/multi_source_identities.json")
 
 
 def main() -> int:

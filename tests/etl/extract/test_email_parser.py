@@ -6,7 +6,7 @@ from fourok.etl.extract.email_parser import (
     parse_email_file,
 )
 
-FIXTURES = Path(__file__).parents[3] / "fixtures" / "emails"
+FIXTURES = Path(__file__).parents[2] / "fixtures" / "emails"
 
 
 def test_parse_email_extracts_core_fields() -> None:

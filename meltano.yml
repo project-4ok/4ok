@@ -16,7 +16,7 @@ plugins:
         - name: fixture_path
           kind: file
       config:
-        fixture_path: fixtures/connectors/singer_email_messages.jsonl
+        fixture_path: tests/fixtures/connectors/singer_email_messages.jsonl
     - name: tap-fourok-slack-fixture
       namespace: tap_fourok_slack_fixture
       pip_url: -e .
@@ -27,7 +27,7 @@ plugins:
         - name: fixture_path
           kind: file
       config:
-        fixture_path: fixtures/connectors/singer_slack_messages.jsonl
+        fixture_path: tests/fixtures/connectors/singer_slack_messages.jsonl
     - name: tap-fourok-twenty-fixture
       namespace: tap_fourok_twenty_fixture
       pip_url: -e .
@@ -38,7 +38,7 @@ plugins:
         - name: fixture_path
           kind: file
       config:
-        fixture_path: fixtures/connectors/singer_twenty_crm.jsonl
+        fixture_path: tests/fixtures/connectors/singer_twenty_crm.jsonl
     - name: tap-fourok-twenty
       namespace: tap_fourok_twenty
       pip_url: -e .
@@ -63,7 +63,7 @@ plugins:
         - name: fixture_path
           kind: file
       config:
-        fixture_path: fixtures/connectors/singer_linear_work_items.jsonl
+        fixture_path: tests/fixtures/connectors/singer_linear_work_items.jsonl
     - name: tap-fourok-linear
       namespace: tap_fourok_linear
       pip_url: -e .
@@ -88,7 +88,7 @@ plugins:
         - name: fixture_path
           kind: file
       config:
-        fixture_path: fixtures/connectors/singer_google_drive_docs.jsonl
+        fixture_path: tests/fixtures/connectors/singer_google_drive_docs.jsonl
     - name: tap-fourok-google-drive
       namespace: tap_fourok_google_drive
       pip_url: -e .

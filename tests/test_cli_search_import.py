@@ -8,9 +8,9 @@ from fourok.etl.extract.connectors import load_singer_source_records
 from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
 
-FIXTURES = Path(__file__).parent.parent / "fixtures" / "emails"
-CONNECTOR_FIXTURES = Path(__file__).parent.parent / "fixtures" / "connectors"
-CONTEXT_FIXTURES = Path(__file__).parent.parent / "fixtures" / "context_substrate"
+FIXTURES = Path(__file__).parent / "fixtures" / "emails"
+CONNECTOR_FIXTURES = Path(__file__).parent / "fixtures" / "connectors"
+CONTEXT_FIXTURES = Path(__file__).parent / "fixtures" / "context_substrate"
 
 
 def _source_record_legacy_fields(row: dict[str, object]) -> dict[str, object]:

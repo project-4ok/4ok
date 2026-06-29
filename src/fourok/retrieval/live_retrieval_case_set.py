@@ -17,13 +17,15 @@ from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
 from fourok.runtime.source_imports import import_source_records
 
-DEFAULT_CASES_PATH = Path("fixtures/retrieval_eval/live_retrieval_case_set.json")
+DEFAULT_CASES_PATH = Path("tests/fixtures/retrieval_eval/live_retrieval_case_set.json")
 DEFAULT_REPORT_PATH = Path(".local/codex-runs/live-retrieval-case-set/report.md")
-DEFAULT_SLACK_FIXTURE = Path("fixtures/connectors/singer_slack_messages.jsonl")
-DEFAULT_GOOGLE_DRIVE_FIXTURE = Path("fixtures/connectors/singer_google_drive_metadata_only.jsonl")
-DEFAULT_OPENVIKING_FIXTURE = Path("fixtures/openviking/messages_variants.jsonl")
-DEFAULT_LINEAR_FIXTURE = Path("fixtures/connectors/singer_linear_work_items.jsonl")
-DEFAULT_TWENTY_FIXTURE = Path("fixtures/connectors/singer_twenty_crm.jsonl")
+DEFAULT_SLACK_FIXTURE = Path("tests/fixtures/connectors/singer_slack_messages.jsonl")
+DEFAULT_GOOGLE_DRIVE_FIXTURE = Path(
+    "tests/fixtures/connectors/singer_google_drive_metadata_only.jsonl"
+)
+DEFAULT_OPENVIKING_FIXTURE = Path("tests/fixtures/openviking/messages_variants.jsonl")
+DEFAULT_LINEAR_FIXTURE = Path("tests/fixtures/connectors/singer_linear_work_items.jsonl")
+DEFAULT_TWENTY_FIXTURE = Path("tests/fixtures/connectors/singer_twenty_crm.jsonl")
 
 
 @dataclass(frozen=True)

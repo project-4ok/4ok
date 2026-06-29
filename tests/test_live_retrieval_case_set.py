@@ -23,8 +23,10 @@ from fourok.retrieval.live_retrieval_case_set import (
 )
 
 REPO_ROOT = Path(__file__).parent.parent
-CASES = REPO_ROOT / "fixtures" / "retrieval_eval" / "live_retrieval_case_set.json"
-SEEDED_CASES = REPO_ROOT / "fixtures" / "retrieval_eval" / "seeded_retrieval_case_set.json"
+CASES = REPO_ROOT / "tests" / "fixtures" / "retrieval_eval" / "live_retrieval_case_set.json"
+SEEDED_CASES = (
+    REPO_ROOT / "tests" / "fixtures" / "retrieval_eval" / "seeded_retrieval_case_set.json"
+)
 SLACK_FIXTURE = REPO_ROOT / DEFAULT_SLACK_FIXTURE
 DRIVE_FIXTURE = REPO_ROOT / DEFAULT_GOOGLE_DRIVE_FIXTURE
 OPENVIKING_FIXTURE = REPO_ROOT / DEFAULT_OPENVIKING_FIXTURE

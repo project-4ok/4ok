@@ -21,7 +21,7 @@ from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
 from fourok.governance.state import create_governed_context_state
 
-FIXTURES = Path(__file__).parents[3] / "fixtures" / "connectors"
+FIXTURES = Path(__file__).parents[2] / "fixtures" / "connectors"
 SINGER_EMAILS = FIXTURES / "singer_email_messages.jsonl"
 SINGER_SLACK_MESSAGES = FIXTURES / "singer_slack_messages.jsonl"
 
@@ -511,8 +511,8 @@ def test_committed_meltano_config_wires_fixture_tap_to_raw_target() -> None:
     assert "tap-fourok-fixture" in config
     assert "tap-fourok-slack-fixture" in config
     assert "target-fourok-raw-jsonl" in config
-    assert "fixtures/connectors/singer_email_messages.jsonl" in config
-    assert "fixtures/connectors/singer_slack_messages.jsonl" in config
+    assert "tests/fixtures/connectors/singer_email_messages.jsonl" in config
+    assert "tests/fixtures/connectors/singer_slack_messages.jsonl" in config
     assert ".local/raw/singer" in config
     assert "tap-fourok-fixture target-fourok-raw-jsonl" in config
     assert "tap-fourok-slack-fixture target-fourok-raw-jsonl" in config

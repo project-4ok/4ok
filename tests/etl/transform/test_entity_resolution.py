@@ -12,7 +12,7 @@ from fourok.etl.transform.entity_resolution import (
 )
 
 FIXTURE = (
-    Path(__file__).parents[3] / "fixtures" / "entity_resolution" / "multi_source_identities.json"
+    Path(__file__).parents[2] / "fixtures" / "entity_resolution" / "multi_source_identities.json"
 )
 
 

@@ -8,7 +8,7 @@ from fourok.retrieval.embeddings import chunk_text, embed_text, embedding_dimens
 from fourok.retrieval.evaluation import compare_retrieval_methods, load_retrieval_eval_cases
 from fourok.retrieval.vector_search import _vector_dimension_from_type
 
-FIXTURES = Path(__file__).parents[2] / "fixtures"
+FIXTURES = Path(__file__).parents[1] / "fixtures"
 EMAILS = FIXTURES / "emails"
 RETRIEVAL_EVAL = FIXTURES / "retrieval_eval" / "customer_context_queries.json"
 

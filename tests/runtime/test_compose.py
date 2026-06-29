@@ -146,7 +146,7 @@ def test_installer_does_not_seed_demo_context_by_default() -> None:
     startup_tail = installer.split("start_local_stack", maxsplit=1)[1]
 
     assert "seed_fixture_data" not in installer
-    assert "fixtures/emails" not in installer
+    assert "tests/fixtures/emails" not in installer
     assert "fourok search" not in startup_tail
     assert "refund cancellation payment" not in installer
 

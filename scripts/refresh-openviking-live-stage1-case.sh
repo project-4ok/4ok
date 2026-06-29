@@ -9,7 +9,7 @@ OPENVIKING_QUERY="${OPENVIKING_QUERY:-What are my priorities today}"
 OPENVIKING_CASE_ID="${OPENVIKING_CASE_ID:-openviking-live-current-message}"
 STAGE1_CASES_OUTPUT="${STAGE1_CASES_OUTPUT:-/app/.local/stage1/live_retrieval_case_set.generated.json}"
 NORMALIZED_OUTPUT="${NORMALIZED_OUTPUT:-/app/.local/openviking-live-normalized.jsonl}"
-BASE_CASES_PATH="${BASE_CASES_PATH:-/app/fixtures/retrieval_eval/live_retrieval_case_set.json}"
+BASE_CASES_PATH="${BASE_CASES_PATH:-/app/tests/fixtures/retrieval_eval/live_retrieval_case_set.json}"
 
 usage() {
   cat <<EOF

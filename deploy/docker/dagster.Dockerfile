@@ -18,7 +18,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 FROM dagster-deps AS dagster-code
 
 COPY src ./src
-COPY fixtures ./fixtures
+COPY tests/fixtures ./tests/fixtures
 COPY deploy/dagster ./deploy/dagster
 
 RUN --mount=type=cache,target=/root/.cache/uv \

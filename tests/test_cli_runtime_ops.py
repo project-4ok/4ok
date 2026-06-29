@@ -14,9 +14,9 @@ from fourok.runtime.webhooks import (
     process_pending_webhook_events,
 )
 
-FIXTURES = Path(__file__).parent.parent / "fixtures" / "emails"
-CONNECTOR_FIXTURES = Path(__file__).parent.parent / "fixtures" / "connectors"
-CONTEXT_FIXTURES = Path(__file__).parent.parent / "fixtures" / "context_substrate"
+FIXTURES = Path(__file__).parent / "fixtures" / "emails"
+CONNECTOR_FIXTURES = Path(__file__).parent / "fixtures" / "connectors"
+CONTEXT_FIXTURES = Path(__file__).parent / "fixtures" / "context_substrate"
 
 
 def _source_record_legacy_fields(row: dict[str, object]) -> dict[str, object]:

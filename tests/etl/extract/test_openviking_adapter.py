@@ -9,7 +9,7 @@ from fourok.etl.extract.openviking_adapter import (
 )
 
 FIXTURE = (
-    Path(__file__).parent.parent.parent.parent
+    Path(__file__).parents[2]
     / "fixtures"
     / "openviking"
     / "messages_variants.jsonl"

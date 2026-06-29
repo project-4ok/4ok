@@ -11,7 +11,7 @@ from fourok.evaluation import (
 )
 from fourok.governance import GovernedContext
 
-FIXTURES = Path(__file__).parent.parent / "fixtures"
+FIXTURES = Path(__file__).parent / "fixtures"
 EMAILS = FIXTURES / "emails"
 PII_EVAL = FIXTURES / "pii_eval" / "h5b_cases.json"
 ADDRESS_EVAL = FIXTURES / "pii_eval" / "address_cases.json"

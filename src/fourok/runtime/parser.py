@@ -17,7 +17,7 @@ def add_runtime_commands(subparsers) -> None:
     stage1_parser.add_argument(
         "--cases",
         type=Path,
-        default=Path("fixtures/retrieval_eval/live_retrieval_case_set.json"),
+        default=Path("tests/fixtures/retrieval_eval/live_retrieval_case_set.json"),
     )
     stage1_parser.add_argument("--case-limit", type=int, default=5)
     stage1_parser.add_argument(
@@ -51,7 +51,7 @@ def add_runtime_commands(subparsers) -> None:
     acceptance_parser.add_argument(
         "--fixture",
         type=Path,
-        default=Path("fixtures/context_substrate/source_snapshot_eval.json"),
+        default=Path("tests/fixtures/context_substrate/source_snapshot_eval.json"),
         help="Fixture seed for deterministic regression proof only.",
     )
     acceptance_parser.add_argument("--query", default="Robin Scharf")

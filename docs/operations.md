@@ -230,7 +230,7 @@ Fixture-only deterministic regression path:
 ```bash
 uv run fourok run-imports \
   --connector context-fixture \
-  --fixture fixtures/context_substrate/source_snapshot_eval.json \
+  --fixture tests/fixtures/context_substrate/source_snapshot_eval.json \
   --database-url "$FOUROK_DATABASE_URL"
 ```
 
@@ -609,7 +609,7 @@ state for deterministic regression checks only:
 
 ```bash
 uv run fourok import-context-fixture \
-  --fixture fixtures/context_substrate/source_snapshot_eval.json \
+  --fixture tests/fixtures/context_substrate/source_snapshot_eval.json \
   --state .local/context-substrate.sqlite
 ```
 
@@ -627,7 +627,7 @@ acceptance checks:
 
 ```bash
 uv run fourok prepare-seed-snapshot \
-  --input fixtures/context_substrate/source_snapshot_eval.json \
+  --input tests/fixtures/context_substrate/source_snapshot_eval.json \
   --output .local/seeds/context-substrate.json
 ```
 
@@ -660,8 +660,8 @@ evidence. Cases may also define `unacceptable_source_refs`; those fail the
 evaluation when lifecycle filtering, permissions, or ranking surface a known
 bad candidate. It uses:
 
-- `fixtures/context_substrate/source_snapshot_eval.json`
-- `fixtures/context_substrate/evidence_baseline_cases.json`
+- `tests/fixtures/context_substrate/source_snapshot_eval.json`
+- `tests/fixtures/context_substrate/evidence_baseline_cases.json`
 
 To evaluate a bounded live source snapshot instead, use env/.env-backed
 credentials and pass `--live-sources`:
@@ -685,7 +685,7 @@ docker compose build app
 
 docker compose run --rm app \
   import-context-fixture \
-  --fixture /app/fixtures/context_substrate/source_snapshot_eval.json
+  --fixture /app/tests/fixtures/context_substrate/source_snapshot_eval.json
 ```
 
 The active Compose services use named volumes for internal runtime state:
@@ -712,7 +712,7 @@ Prepare the same seed inside the Docker Compose app volume:
 ```bash
 docker compose run --rm app \
   prepare-seed-snapshot \
-    --input /app/fixtures/context_substrate/source_snapshot_eval.json \
+    --input /app/tests/fixtures/context_substrate/source_snapshot_eval.json \
     --output /app/.local/seeds/context-substrate.json
 ```
 
@@ -754,7 +754,7 @@ Recorded Docker Compose proof on 2026-06-07 used app image
 ```bash
 docker compose run --rm app \
   prepare-seed-snapshot \
-    --input /app/fixtures/context_substrate/source_snapshot_eval.json \
+    --input /app/tests/fixtures/context_substrate/source_snapshot_eval.json \
     --output /app/.local/seeds/context-substrate.json
 
 docker compose run --rm app \

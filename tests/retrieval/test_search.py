@@ -8,7 +8,7 @@ from fourok.governance import GovernedContext
 from fourok.retrieval.search import postgres_source_record_search_statement
 from fourok.storage.models import RetrievalRecordRow, SourceRecordRow, table_for_model
 
-FIXTURES = Path(__file__).parents[2] / "fixtures" / "emails"
+FIXTURES = Path(__file__).parents[1] / "fixtures" / "emails"
 
 
 def build_context() -> GovernedContext:

@@ -4,7 +4,7 @@ from pathlib import Path
 from fourok.cli import main
 from fourok.governance import GovernedContext
 
-FIXTURE = Path(__file__).parent.parent / "fixtures" / "openviking" / "messages_variants.jsonl"
+FIXTURE = Path(__file__).parent / "fixtures" / "openviking" / "messages_variants.jsonl"
 
 
 def test_cli_backfills_openviking_messages_and_is_idempotent(

@@ -10,7 +10,7 @@ from fourok.etl.extract.source_records import SourceAttachment, SourceRecord
 from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
 
-FIXTURES = Path(__file__).parents[3] / "fixtures" / "connectors"
+FIXTURES = Path(__file__).parents[2] / "fixtures" / "connectors"
 SINGER_EMAILS = FIXTURES / "singer_email_messages.jsonl"
 
 

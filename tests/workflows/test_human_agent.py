@@ -5,7 +5,7 @@ from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
 from fourok.workflows import AgentToolFacade, HumanAgentWorkflow
 
-FIXTURES = Path(__file__).parents[2] / "fixtures" / "emails"
+FIXTURES = Path(__file__).parents[1] / "fixtures" / "emails"
 RAW_IBAN = "DE89370400440532013000"
 
 

@@ -66,7 +66,7 @@ def test_slack_live_tap_streams_feed_source_record_adapter() -> None:
 
 def test_slack_fixture_stream_remains_supported() -> None:
     source_records = load_slack_source_records(
-        Path("fixtures/connectors/singer_slack_messages.jsonl")
+        Path("tests/fixtures/connectors/singer_slack_messages.jsonl")
     )
 
     assert [record.source_ref for record in source_records] == [

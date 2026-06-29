@@ -2,7 +2,7 @@ from pathlib import Path
 
 from fourok.runtime.acceptance import internal_v0_acceptance_proof
 
-FIXTURES = Path(__file__).parents[2] / "fixtures" / "context_substrate"
+FIXTURES = Path(__file__).parents[1] / "fixtures" / "context_substrate"
 
 
 def test_internal_v0_acceptance_proof_covers_runtime_loop_without_raw_bodies(

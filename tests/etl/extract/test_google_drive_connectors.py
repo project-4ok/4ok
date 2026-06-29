@@ -10,7 +10,7 @@ from fourok.etl.extract.google_drive_tap import GoogleDriveTapConfig, run_google
 from fourok.governance.context import GovernedContext
 from fourok.governance.policy import PrincipalContext
 
-FIXTURES = Path(__file__).parents[3] / "fixtures" / "connectors"
+FIXTURES = Path(__file__).parents[2] / "fixtures" / "connectors"
 SINGER_GOOGLE_DRIVE_DOCS = FIXTURES / "singer_google_drive_docs.jsonl"
 
 
@@ -262,6 +262,6 @@ def test_committed_meltano_config_wires_google_drive_fixture_job() -> None:
     config = (Path(__file__).parents[3] / "meltano.yml").read_text(encoding="utf-8")
 
     assert "tap-fourok-google-drive-fixture" in config
-    assert "fixtures/connectors/singer_google_drive_docs.jsonl" in config
+    assert "tests/fixtures/connectors/singer_google_drive_docs.jsonl" in config
     assert "singer-google-drive-fixture-to-raw" in config
     assert "tap-fourok-google-drive-fixture target-fourok-raw-jsonl" in config

@@ -236,7 +236,7 @@ Do not use the local env-file fallback for internal prod.
    ```bash
    docker compose run --rm app \
      prepare-seed-snapshot \
-       --input /app/fixtures/context_substrate/source_snapshot_eval.json \
+       --input /app/tests/fixtures/context_substrate/source_snapshot_eval.json \
        --output /app/.local/seeds/context-substrate.json
    ```
 

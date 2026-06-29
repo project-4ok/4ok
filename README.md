@@ -63,7 +63,7 @@ Try the source-record flow with a deterministic context snapshot:
 
 ```bash
 uv run fourok import-context-fixture \
-  --fixture fixtures/context_substrate/source_snapshot_eval.json \
+  --fixture tests/fixtures/context_substrate/source_snapshot_eval.json \
   --state .local/context-substrate.sqlite
 
 uv run fourok search-state \
@@ -119,7 +119,7 @@ src/fourok/runtime/           MCP, operator status, dashboards, observability, D
 src/fourok/orchestration/     Dagster resource wiring
 src/fourok/devtools/          local development gates, diagnostics, Grafana status, and goal audits
 src/fourok/secrets/           environment/secret loading helpers
-fixtures/                    synthetic data for deterministic onboarding and tests
+tests/fixtures/              synthetic data for deterministic onboarding and tests
 deploy/                      Docker, Compose, systemd, and runtime deployment artifacts
 docs/                        architecture, operations, compliance, and internal-v0 runbooks
 ```

@@ -12,11 +12,11 @@ from fourok.retrieval.evaluation import compare_retrieval_methods, load_retrieva
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Evaluate retrieval methods on local fixtures.")
-    parser.add_argument("--emails", type=Path, default=Path("fixtures/emails"))
+    parser.add_argument("--emails", type=Path, default=Path("tests/fixtures/emails"))
     parser.add_argument(
         "--cases",
         type=Path,
-        default=Path("fixtures/retrieval_eval/customer_context_queries.json"),
+        default=Path("tests/fixtures/retrieval_eval/customer_context_queries.json"),
     )
     parser.add_argument("--output", type=Path, default=Path(".local/retrieval-eval-summary.json"))
     args = parser.parse_args()
