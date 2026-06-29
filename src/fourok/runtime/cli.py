@@ -248,6 +248,11 @@ def _client_status_report(state, report: dict) -> dict:
     client_status = dict(report)
     client_status["source_system_counts"] = source_counts
     client_status["live_source_records"] = live_source_count
+    if not client_status.get("freshness"):
+        try:
+            client_status["freshness"] = operator_status(state).get("freshness", {})
+        except Exception:
+            client_status["freshness"] = {}
     if source_count is not None and int(source_count) == 0:
         client_status["status"] = "needs_onboarding"
         client_status["detail"] = "no connector data has been imported yet"
@@ -295,16 +300,81 @@ def _format_client_status(report: dict) -> str:
             ]
         )
     ready_line = "fourok is ready" if report.get("status") == "ok" else "fourok needs attention"
+    pipeline_lines = _client_pipeline_lines(report)
     return "\n".join(
         [
             ready_line,
             "",
             f"Context: {source_count} source records, {retrieval_count} retrieval units",
+            *pipeline_lines,
             "",
             "Try:",
             '  fourok retrieve "What changed this week?"',
         ]
     )
+
+
+def _client_pipeline_lines(report: dict) -> list[str]:
+    live_ingestion = (
+        report.get("freshness", {}).get("live_ingestion", {})
+        if isinstance(report.get("freshness"), dict)
+        else {}
+    )
+    if not isinstance(live_ingestion, dict):
+        return []
+    sources = live_ingestion.get("sources", {})
+    if not isinstance(sources, dict) or not sources:
+        return []
+    status = str(live_ingestion.get("status") or "")
+    pipeline_line = (
+        "Data pipeline: working well"
+        if status == "fresh"
+        else "Data pipeline: needs attention"
+    )
+    lines = ["", pipeline_line, "Sources:"]
+    for source, source_report in sorted(sources.items()):
+        if not isinstance(source_report, dict):
+            continue
+        lines.append(f"  {_client_source_status_line(str(source), source_report)}")
+    return lines
+
+
+def _client_source_status_line(source: str, source_report: dict) -> str:
+    freshness = str(source_report.get("freshness_status") or "")
+    latest_status = str(source_report.get("latest_status") or "")
+    if freshness == "missing" or latest_status == "missing":
+        return f"{source}: not connected yet"
+    age = _relative_age_from_seconds(source_report.get("age_seconds"))
+    count = source_report.get("source_record_count")
+    count_text = (
+        f" ({int(count)} {_plural(int(count), 'record')})"
+        if isinstance(count, int)
+        else ""
+    )
+    if freshness == "fresh" and latest_status == "succeeded":
+        return f"{source}: working well, imported {age}{count_text}"
+    if latest_status == "failed" or freshness in {"failed", "stale"}:
+        return f"{source}: needs attention, last checked {age}{count_text}"
+    return f"{source}: {freshness or latest_status or 'unknown'}, last checked {age}{count_text}"
+
+
+def _relative_age_from_seconds(value: object) -> str:
+    if not isinstance(value, int):
+        return "not yet"
+    if value < 60:
+        return "just now"
+    minutes = value // 60
+    if minutes < 60:
+        return f"{minutes} min ago"
+    hours = minutes // 60
+    if hours < 24:
+        return f"{hours} h ago"
+    days = hours // 24
+    return f"{days} d ago"
+
+
+def _plural(count: int, word: str) -> str:
+    return word if count == 1 else f"{word}s"
 
 
 _REQUIRED_CONNECTOR_SECRETS = {

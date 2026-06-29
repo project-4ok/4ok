@@ -92,6 +92,25 @@ def test_status_prints_client_safe_summary(capsys, monkeypatch) -> None:
                 {"name": "source_records", "status": "ok", "count": 12},
                 {"name": "retrieval_records", "status": "ok", "count": 34},
             ],
+            "freshness": {
+                "live_ingestion": {
+                    "status": "fresh",
+                    "sources": {
+                        "linear": {
+                            "freshness_status": "fresh",
+                            "latest_status": "succeeded",
+                            "age_seconds": 600,
+                            "source_record_count": 12,
+                        },
+                        "twenty": {
+                            "freshness_status": "missing",
+                            "latest_status": "missing",
+                            "age_seconds": None,
+                            "source_record_count": None,
+                        },
+                    },
+                }
+            },
         },
     )
 
@@ -102,6 +121,10 @@ def test_status_prints_client_safe_summary(capsys, monkeypatch) -> None:
     assert "Context:" in output
     assert "12 source records" in output
     assert "34 retrieval units" in output
+    assert "Data pipeline: working well" in output
+    assert "Sources:" in output
+    assert "linear: working well, imported 10 min ago (12 records)" in output
+    assert "twenty: not connected yet" in output
     assert "Try:" in output
     assert "fourok retrieve" in output
     assert "postgresql" not in output
