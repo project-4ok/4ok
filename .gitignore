@@ -1,4 +1,6 @@
 .venv/
+.agents/
+.codex/
 .scratch/
 .reference/
 .local/
