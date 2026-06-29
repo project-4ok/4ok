@@ -269,12 +269,15 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
     assert "Current state" in output
     assert "only demo context is present" in output
     assert "fourok works best when you connect your whole workspace" in output
-    assert "These connectors are already implemented" in output
-    assert "Add their secrets to .env, then refresh fourok:" in output
+    assert "Connected now:" in output
+    assert "More connections you can add:" in output
+    assert "After adding a connection:" in output
     assert "1. fourok onboard initial-run" in output
     assert "2. fourok status" in output
     assert '3. fourok retrieve "What changed this week?"' in output
-    assert "google_drive: missing GOOGLE_WORKSPACE_DRIVE_IDS" in output
+    assert "google_drive" in output
+    assert "GOOGLE_WORKSPACE_DRIVE_IDS" in output
+    assert ": missing" not in output
     assert "Better semantic search:" in output
     assert "Set OPENAI_API_KEY in .env" in output
     assert "Without it, fourok falls back to local hash embeddings" in output
@@ -284,6 +287,53 @@ def test_onboard_reports_current_blockers_and_next_actions(capsys, monkeypatch) 
     assert "docker compose up -d --build dagster-code" in output
     assert "fourok onboard initial-run" in output
     assert "fourok status" in output
+
+
+def test_onboard_ready_state_does_not_suggest_initial_run(capsys, monkeypatch) -> None:
+    monkeypatch.setattr("sys.argv", ["fourok", "onboard"])
+    monkeypatch.setattr(
+        "fourok.runtime.cli._safe_client_status_report",
+        lambda: {
+            "status": "ok",
+            "checks": [
+                {"name": "database", "status": "ok"},
+                {"name": "source_records", "status": "ok", "count": 2708},
+                {"name": "retrieval_records", "status": "ok", "count": 2733},
+            ],
+        },
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._connector_secret_report",
+        lambda: {
+            "status": "missing",
+            "connectors": {
+                "linear": {"status": "ok", "missing": []},
+                "twenty": {"status": "ok", "missing": []},
+                "slack": {"status": "missing", "missing": ["SLACK_BOT_TOKEN"]},
+            },
+        },
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._dagster_code_secret_presence",
+        lambda: {"status": "ok", "missing": []},
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._embedding_secret_report",
+        lambda: {"status": "ok", "provider": "openai"},
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "Connected now:" in output
+    assert "  linear" in output
+    assert "  twenty" in output
+    assert "More connections you can add:" in output
+    assert "slack" in output
+    assert ": missing" not in output
+    assert "fourok onboard initial-run" not in output
+    assert "fourok admin connector-jobs" not in output
+    assert 'fourok retrieve "What changed this week?"' in output
 
 
 def test_onboard_calls_out_initial_run_when_connector_configured_but_no_data(
@@ -323,7 +373,8 @@ def test_onboard_calls_out_initial_run_when_connector_configured_but_no_data(
     main()
 
     output = capsys.readouterr().out
-    assert "twenty: configured" in output
+    assert "Connected now:" in output
+    assert "  twenty" in output
     assert "twenty is configured, but no connector data has been imported yet" in output
     assert "Run the initial import now:" in output
     assert "fourok onboard initial-run" in output

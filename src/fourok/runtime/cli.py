@@ -418,14 +418,11 @@ def _onboard_message(args: argparse.Namespace) -> str:
             "",
             "Connect your workspace:",
             "  fourok works best when you connect your whole workspace.",
-            "  These connectors are already implemented; activate the ones you use by adding",
-            "  their secrets to .env:",
-            *_connector_lines(secret_report),
+            *_connector_setup_lines(secret_report),
             *_configured_connector_initial_run_lines(secret_report, source_count=source_count),
-            "  Add their secrets to .env, then refresh fourok:",
-            "    1. fourok onboard initial-run   # reloads .env into dagster-code and imports data",
-            "    2. fourok status              # confirm the connector imported context",
-            '    3. fourok retrieve "What changed this week?"',
+            *_post_connection_lines(
+                status=str(status_report.get("status") or ""), source_count=source_count
+            ),
             *_embedding_lines(embedding_report),
             "",
             "Need another connector?",
@@ -444,17 +441,7 @@ def _onboard_message(args: argparse.Namespace) -> str:
                 "    docker compose up -d --build dagster-code",
             ]
         )
-    lines.extend(
-        [
-            "",
-            "Next:",
-            "  fourok status",
-            "  fourok onboard initial-run",
-            "  fourok admin connector-jobs",
-        ]
-    )
-    if status_report.get("status") == "ok":
-        lines.append('  fourok retrieve "What changed this week?"')
+    lines.extend(_onboard_next_lines(status=str(status_report.get("status") or "")))
     if args.demo:
         lines.extend(["", "Demo:", '  fourok retrieve "refund cancellation payment"'])
     return "\n".join(lines)
@@ -555,21 +542,60 @@ def _connector_secret_report() -> dict[str, object]:
     return {"status": "missing" if missing_any else "ok", "connectors": connectors}
 
 
-def _connector_lines(secret_report: dict[str, object]) -> list[str]:
+def _connector_setup_lines(secret_report: dict[str, object]) -> list[str]:
     connectors = secret_report.get("connectors", {})
     if not isinstance(connectors, dict):
-        return ["  unknown"]
-    lines = []
+        return ["", "Connected now:", "  unknown"]
+    configured: list[str] = []
+    available: list[tuple[str, list[str]]] = []
     for connector in sorted(connectors):
         data = connectors[connector]
         if not isinstance(data, dict):
             continue
         missing = data.get("missing", [])
         if missing:
-            lines.append(f"  {connector}: missing {', '.join(str(item) for item in missing)}")
+            available.append((connector, [str(item) for item in missing]))
         else:
-            lines.append(f"  {connector}: configured")
-    return lines or ["  none configured"]
+            configured.append(connector)
+
+    lines: list[str] = ["", "Connected now:"]
+    lines.extend(f"  {connector}" for connector in configured)
+    if not configured:
+        lines.append("  none yet")
+    if available:
+        lines.extend(["", "More connections you can add:"])
+        for connector, missing in available:
+            lines.append(f"  {connector}")
+            lines.extend(f"    add {key} to .env" for key in missing)
+    return lines
+
+
+def _post_connection_lines(*, status: str, source_count: int) -> list[str]:
+    if status == "ok" or source_count > 0 and status != "needs_onboarding":
+        return []
+    return [
+        "",
+        "After adding a connection:",
+        "  1. fourok onboard initial-run   # imports your workspace data",
+        "  2. fourok status                # confirm data is available",
+        '  3. fourok retrieve "What changed this week?"',
+    ]
+
+
+def _onboard_next_lines(*, status: str) -> list[str]:
+    if status == "ok":
+        return [
+            "",
+            "Next:",
+            "  fourok status",
+            '  fourok retrieve "What changed this week?"',
+        ]
+    return [
+        "",
+        "Next:",
+        "  fourok onboard initial-run",
+        "  fourok status",
+    ]
 
 
 def _configured_connector_initial_run_lines(
