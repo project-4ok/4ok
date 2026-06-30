@@ -144,6 +144,9 @@ def test_write_retrieval_debug_artifacts_creates_json_and_html(tmp_path: Path) -
     assert "Other candidates" in html
     assert "Linear/source candidates" not in html
     assert "DB entity links" not in html
+    assert "#0f766e" not in html
+    assert "#7c3aed" not in html
+    assert "#8f8780" not in html
     assert "/api/retrieval-graph?query=" in html
     assert "d3@7" in html
     assert report["url"] == "http://127.0.0.1:8765/olivia-allen.graph.html"

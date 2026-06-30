@@ -510,7 +510,7 @@ def _html(query: str, graph: dict[str, Any]) -> str:
 </div>
 <script>
 let graph = {data};
-const colors = {{ query: '#1d05b9', linear: '#1d05b9', twenty: '#0f766e', identity: '#7c3aed', source: '#8f8780' }};
+const colors = {{ query: '#1800ad', linear: '#1800ad', twenty: '#f0353b', identity: '#f0353b', source: '#26211e' }};
 const svg = d3.select('#graph');
 const statusEl = document.getElementById('status');
 function visibleData() {{
