@@ -85,7 +85,8 @@ def test_retrieval_debug_graph_shows_final_wide_direct_and_db_edges() -> None:
     assert nodes["linear:user:olivia"]["final_selected"] is True
     assert nodes["linear:user:olivia"]["label"] == "Olivia Allen"
     assert nodes["linear:user:olivia"]["title"] == "olivia.allen@4ok.tech"
-    assert "employee_only" in nodes["linear:user:olivia"]["flags"]
+    assert "weak" not in nodes["linear:user:olivia"]
+    assert "flags" not in nodes["linear:user:olivia"]
     assert nodes["linear:issue:OPS-1"]["stage"] == "candidate_one_hop_not_selected"
     assert nodes["twenty:company:4ok"]["stage"] == "candidate_not_selected"
     assert nodes["identity:email:olivia.allen@4ok.tech"]["type"] == "entity"
@@ -130,6 +131,7 @@ def test_write_retrieval_debug_artifacts_creates_json_and_html(tmp_path: Path) -
     assert "id=\"showLabels\" type=\"checkbox\" checked" in html
     assert "id=\"showEdgeLabels\" type=\"checkbox\"" in html
     assert "id=\"showEdgeLabels\" type=\"checkbox\" checked" not in html
+    assert "weak/noisy" not in html
     assert "/api/retrieval-graph?query=" in html
     assert "d3@7" in html
     assert report["url"] == "http://127.0.0.1:8765/olivia-allen.graph.html"

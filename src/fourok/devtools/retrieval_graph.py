@@ -83,8 +83,6 @@ def build_retrieval_debug_graph(
         reasons = [str(item) for item in result.get("rerank_reasons", [])]
         is_final = source_ref in final_refs
         direct_source = _direct_context_source(reasons)
-        flags = _flags(result)
-
         add_node(
             source_ref,
             label=_short_title(_result_label(result, source_ref)),
@@ -100,8 +98,6 @@ def build_retrieval_debug_graph(
             score=result.get("score"),
             retrievers=retrievers,
             rerank_reasons=reasons,
-            flags=flags,
-            weak=any(flag in flags for flag in ("empty_snippet", "vector_only_org", "employee_only")),
             snippet=str(result.get("snippet") or "")[:900],
             occurred_at=result.get("occurred_at", ""),
         )
@@ -180,7 +176,6 @@ def build_retrieval_debug_graph(
         "entity_link_relationship_counts": dict(
             Counter(str(row.get("relationship_type") or "") for row in entity_edge_rows)
         ),
-        "weak_nodes": [node.get("source_ref") for node in nodes.values() if node.get("weak")],
         "direct_context_edge_count": len(direct_edges),
         "limitations": final_retrieval.get("limitations", []),
     }
@@ -405,26 +400,6 @@ def _direct_context_source(reasons: list[str]) -> str:
     return ""
 
 
-def _flags(result: dict[str, Any]) -> list[str]:
-    flags: list[str] = []
-    retrievers = set(result.get("retrievers") or [])
-    snippet = str(result.get("snippet") or "").strip()
-    if not snippet:
-        flags.append("empty_snippet")
-    if retrievers == {"vector"}:
-        flags.append("vector_only")
-    if result.get("record_type") == "organization" and retrievers == {"vector"}:
-        flags.append("vector_only_org")
-    if _is_employee_only_snippet(snippet):
-        flags.append("employee_only")
-    return flags
-
-
-def _is_employee_only_snippet(snippet: str) -> bool:
-    without_emails = re.sub(r"\b[\w.+-]+@[\w.-]+\.[a-z]{2,}\b", "", snippet.casefold()).strip()
-    return without_emails == "employee"
-
-
 def _entity_label(row: dict[str, Any]) -> str:
     object_ref = str(row.get("object_ref") or "")
     if object_ref.startswith("identity:"):
@@ -476,25 +451,28 @@ def _html(query: str, graph: dict[str, Any]) -> str:
 <title>fourok retrieval analysis dashboard</title>
 <script src=\"https://cdn.jsdelivr.net/npm/d3@7\"></script>
 <style>
-  :root {{ color-scheme: dark; }}
-  body {{ margin:0; background:#0b1020; color:#e7ecff; font:14px/1.4 Inter, ui-sans-serif, system-ui, sans-serif; }}
+  :root {{ color-scheme: light; }}
+  body {{ margin:0; background:#f6f4f1; color:#25211f; font:14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif; }}
   #app {{ display:grid; grid-template-columns: 1fr 430px; height:100vh; }}
-  #graph {{ width:100%; height:100%; }}
-  aside {{ border-left:1px solid #25304f; background:#111832; padding:16px; overflow:auto; }}
-  h1 {{ margin:0 0 8px; font-size:18px; }}
-  h2 {{ margin:18px 0 8px; font-size:13px; color:#aebcff; text-transform:uppercase; letter-spacing:.08em; }}
+  #graph {{ width:100%; height:100%; background:radial-gradient(circle at 30% 20%, rgba(29,0,216,.08), transparent 28%), #f7f5f2; }}
+  aside {{ border-left:1px solid #d8d1ca; background:rgba(250,249,247,.96); padding:18px; overflow:auto; box-shadow:-12px 0 28px rgba(37,33,31,.06); }}
+  h1 {{ margin:0 0 8px; font-size:20px; line-height:1.05; letter-spacing:-.03em; }}
+  h2 {{ margin:18px 0 8px; font-size:11px; color:#1d05b9; text-transform:uppercase; letter-spacing:.18em; }}
+  form {{ display:flex; gap:8px; margin:12px 0 4px; }}
+  input {{ flex:1; border:1px solid #cfc7bf; border-radius:10px; padding:9px 10px; background:white; color:#25211f; }}
+  button {{ border:0; border-radius:10px; padding:9px 12px; background:#1d05b9; color:white; font-weight:700; }}
   .controls label {{ display:block; margin:8px 0; }}
   .legend {{ display:grid; grid-template-columns: 14px 1fr; gap:6px 8px; align-items:center; }}
   .dot {{ width:11px; height:11px; border-radius:50%; }}
-  pre {{ white-space:pre-wrap; background:#081024; border:1px solid #25304f; border-radius:8px; padding:10px; color:#cbd5ff; }}
-  .muted {{ color:#97a3c8; }}
-  .pill {{ display:inline-block; margin:2px 3px 2px 0; padding:2px 6px; border-radius:999px; background:#26345d; color:#dbe4ff; font-size:12px; }}
-  .node text {{ fill:#dce6ff; paint-order:stroke; stroke:#0b1020; stroke-width:4px; stroke-linejoin:round; font-size:11px; pointer-events:none; }}
-  .link {{ stroke:#5d6f9d; stroke-opacity:.42; }}
-  .link.direct {{ stroke:#f7d046; stroke-opacity:.9; }}
-  .link.entity {{ stroke:#41d6a4; stroke-opacity:.7; stroke-dasharray:4 3; }}
-  .link.vector {{ stroke:#ff7ab6; stroke-opacity:.7; }}
-  .link-label {{ fill:#91a0c8; font-size:10px; pointer-events:none; opacity:.85; paint-order:stroke; stroke:#0b1020; stroke-width:3px; }}
+  pre {{ white-space:pre-wrap; background:white; border:1px solid #d8d1ca; border-radius:14px; padding:12px; color:#3f3833; }}
+  .muted {{ color:#6d6660; }}
+  .pill {{ display:inline-block; margin:2px 3px 2px 0; padding:2px 7px; border-radius:999px; background:#eee9ff; color:#1d05b9; font-size:12px; }}
+  .node text {{ fill:#25211f; paint-order:stroke; stroke:#f7f5f2; stroke-width:5px; stroke-linejoin:round; font-size:11px; pointer-events:none; }}
+  .link {{ stroke:#928a84; stroke-opacity:.38; }}
+  .link.direct {{ stroke:#1d05b9; stroke-opacity:.82; }}
+  .link.entity {{ stroke:#15936b; stroke-opacity:.68; stroke-dasharray:4 3; }}
+  .link.vector {{ stroke:#7c3aed; stroke-opacity:.65; }}
+  .link-label {{ fill:#57504a; font-size:10px; pointer-events:none; opacity:.85; paint-order:stroke; stroke:#f7f5f2; stroke-width:3px; }}
 </style>
 </head>
 <body>
@@ -511,7 +489,6 @@ def _html(query: str, graph: dict[str, Any]) -> str:
     <h2>Controls</h2>
     <div class=\"controls\">
       <label><input id="hideOutside" type="checkbox"> hide candidates outside final result</label>
-      <label><input id="hideWeak" type="checkbox"> hide weak/noisy nodes</label>
       <label><input id="showLabels" type="checkbox" checked> show labels</label>
       <label><input id="showEdgeLabels" type="checkbox"> show edge labels</label>
     </div>
@@ -522,13 +499,12 @@ def _html(query: str, graph: dict[str, Any]) -> str:
 </div>
 <script>
 let graph = {data};
-const colors = {{ query: '#f7d046', linear: '#7c9cff', twenty: '#41d6a4', identity: '#f59e0b', source: '#94a3b8' }};
+const colors = {{ query: '#1d05b9', linear: '#1d05b9', twenty: '#0f766e', identity: '#7c3aed', source: '#8f8780' }};
 const svg = d3.select('#graph');
 const statusEl = document.getElementById('status');
 function visibleData() {{
-  const hideWeak = document.getElementById('hideWeak').checked;
   const hideOutside = document.getElementById('hideOutside').checked;
-  const nodes = graph.nodes.filter(n => !(hideWeak && n.weak) && !(hideOutside && !n.final_selected && n.group !== 'query'));
+  const nodes = graph.nodes.filter(n => !(hideOutside && !n.final_selected && n.group !== 'query'));
   const ids = new Set(nodes.map(n => n.id));
   const links = graph.links.filter(l => ids.has(l.source.id || l.source) && ids.has(l.target.id || l.target));
   return {{nodes: nodes.map(n => ({{...n}})), links: links.map(l => ({{...l}}))}};
@@ -548,12 +524,12 @@ function render() {{
   const link = g.append('g').selectAll('line').data(data.links).join('line').attr('class', d => 'link ' + (d.rel === 'direct_context_for' ? 'direct' : d.rel === 'entity_link' ? 'entity' : d.rel === 'vector_candidate' ? 'vector' : '')).attr('stroke-width', d => d.rel === 'direct_context_for' ? 3 : d.rel === 'entity_link' ? 2 : Math.sqrt(d.weight || 1));
   const edgeLabels = g.append('g').selectAll('text').data(data.links).join('text').attr('class','link-label').text(d => d.relationship_type || d.rel.replace('_candidate','')).style('display', document.getElementById('showEdgeLabels').checked ? null : 'none');
   const node = g.append('g').selectAll('g').data(data.nodes).join('g').attr('class','node').call(drag(sim)).on('click', showDetails);
-  node.append('circle').attr('r', radius).attr('fill', d => colors[d.group] || colors.source).attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .38).attr('stroke', d => d.weak ? '#ff4d6d' : d.stage.includes('one_hop') || d.stage.includes('direct') ? '#f7d046' : d.final_selected ? '#f8fafc' : '#64748b').attr('stroke-width', d => d.weak ? 3 : d.stage.includes('one_hop') || d.stage.includes('direct') ? 3 : d.final_selected ? 1.8 : 1);
+  node.append('circle').attr('r', radius).attr('fill', d => colors[d.group] || colors.source).attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .42).attr('stroke', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? '#1d05b9' : d.final_selected ? '#25211f' : '#bdb5ad').attr('stroke-width', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? 2.6 : d.final_selected ? 1.8 : 1);
   node.append('text').attr('x', d => radius(d)+4).attr('y', 4).text(d => `${{d.order ? d.order + '. ' : d.candidate_order ? '#' + d.candidate_order + ' ' : ''}}${{d.label || d.id}}`).style('display', document.getElementById('showLabels').checked ? null : 'none').attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .55);
   sim.on('tick', () => {{ link.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y); node.attr('transform', d => `translate(${{d.x}},${{d.y}})`); edgeLabels.attr('x', d => (d.source.x + d.target.x)/2).attr('y', d => (d.source.y + d.target.y)/2); }});
 }}
 function drag(sim) {{ return d3.drag().on('start', e => {{ if(!e.active) sim.alphaTarget(.3).restart(); e.subject.fx=e.subject.x; e.subject.fy=e.subject.y; }}).on('drag', e => {{ e.subject.fx=e.x; e.subject.fy=e.y; }}).on('end', e => {{ if(!e.active) sim.alphaTarget(0); e.subject.fx=null; e.subject.fy=null; }}); }}
-function showDetails(_event, d) {{ document.getElementById('details').innerHTML = `<div><b>${{escapeHtml(d.label || d.id)}}</b></div><div class=\"muted\">${{escapeHtml(d.source_ref || d.id)}}</div><div>${{['stage:'+d.stage, 'type:'+d.type, d.final_selected ? 'FINAL' : 'outside final', d.weak ? 'weak/noisy' : '', d.candidate_order ? 'candidate #'+d.candidate_order : ''].filter(Boolean).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.retrievers||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.rerank_reasons||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.flags||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><pre>${{escapeHtml(d.snippet || d.title || '')}}</pre>`; }}
+function showDetails(_event, d) {{ document.getElementById('details').innerHTML = `<div><b>${{escapeHtml(d.label || d.id)}}</b></div><div class=\"muted\">${{escapeHtml(d.source_ref || d.id)}}</div><div>${{['stage:'+d.stage, 'type:'+d.type, d.final_selected ? 'FINAL' : 'outside final', d.candidate_order ? 'candidate #'+d.candidate_order : ''].filter(Boolean).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.retrievers||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.rerank_reasons||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><pre>${{escapeHtml(d.snippet || d.title || '')}}</pre>`; }}
 function escapeHtml(s) {{ return String(s ?? '').replace(/[&<>\"]/g, c => ({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}}[c])); }}
 async function graphQuery(query) {{
   statusEl.textContent = 'Building graph…';
@@ -573,8 +549,8 @@ document.getElementById('queryForm').addEventListener('submit', event => {{
   const query = document.getElementById('queryInput').value.trim();
   if (query) graphQuery(query);
 }});
-function initLegend() {{ const legend = document.getElementById('legend'); [['query','#f7d046'], ['linear','#7c9cff'], ['twenty','#41d6a4'], ['identity','#f59e0b'], ['DB entity links: green dashed','#41d6a4'], ['weak/noisy outline','#ff4d6d']].forEach(([k,v]) => legend.insertAdjacentHTML('beforeend', `<span class=\"dot\" style=\"background:${{v}}\"></span><span>${{k}}</span>`)); }}
-['hideOutside','hideWeak','showLabels','showEdgeLabels'].forEach(id => document.getElementById(id).addEventListener('change', render));
+function initLegend() {{ const legend = document.getElementById('legend'); [['query','#1d05b9'], ['Linear/source candidates','#1d05b9'], ['Twenty','#0f766e'], ['identity/entity','#7c3aed'], ['retrieval direct-context edges','#1d05b9'], ['DB entity links: green dashed','#15936b']].forEach(([k,v]) => legend.insertAdjacentHTML('beforeend', `<span class=\"dot\" style=\"background:${{v}}\"></span><span>${{k}}</span>`)); }}
+['hideOutside','showLabels','showEdgeLabels'].forEach(id => document.getElementById(id).addEventListener('change', render));
 window.addEventListener('resize', render); initLegend(); render();
 </script>
 </body>
