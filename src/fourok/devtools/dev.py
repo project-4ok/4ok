@@ -19,6 +19,7 @@ from fourok.devtools.retrieval_graph import (
     DEFAULT_OUTPUT_DIR,
     DEFAULT_SERVE_URL_BASE,
     retrieval_debug_graph_report,
+    serve_retrieval_analysis_dashboard,
 )
 
 UV_CACHE_DIR = ".scratch/uv-cache"
@@ -226,6 +227,22 @@ def main(argv: Sequence[str] | None = None) -> None:
     retrieval_graph_parser.add_argument("--candidate-limit", type=int, default=80)
     retrieval_graph_parser.add_argument("--serve-url-base", default=DEFAULT_SERVE_URL_BASE)
 
+    retrieval_dashboard_parser = subparsers.add_parser(
+        "retrieval-analysis-dashboard",
+        help="Serve a local retrieval analysis dashboard with query input.",
+    )
+    retrieval_dashboard_parser.add_argument("--host", default="127.0.0.1")
+    retrieval_dashboard_parser.add_argument("--port", type=int, default=8765)
+    retrieval_dashboard_parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    retrieval_dashboard_parser.add_argument("--state", type=Path)
+    retrieval_dashboard_parser.add_argument(
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
+    )
+    retrieval_dashboard_parser.add_argument("--config", type=Path)
+    retrieval_dashboard_parser.add_argument("--final-token-budget", type=int, default=2000)
+    retrieval_dashboard_parser.add_argument("--wide-token-budget", type=int, default=20000)
+    retrieval_dashboard_parser.add_argument("--candidate-limit", type=int, default=80)
+
     args = parser.parse_args(argv)
     if args.command == "lint":
         _run_ruff("check")
@@ -313,6 +330,19 @@ def main(argv: Sequence[str] | None = None) -> None:
                 indent=2,
                 sort_keys=True,
             )
+        )
+        return
+    if args.command == "retrieval-analysis-dashboard":
+        serve_retrieval_analysis_dashboard(
+            host=args.host,
+            port=args.port,
+            output_dir=args.output_dir,
+            state=args.state,
+            database_url=args.database_url,
+            config=args.config,
+            final_token_budget=args.final_token_budget,
+            wide_token_budget=args.wide_token_budget,
+            candidate_limit=args.candidate_limit,
         )
         return
 

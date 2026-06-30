@@ -5,6 +5,7 @@ from pathlib import Path
 
 from fourok.devtools.retrieval_graph import (
     build_retrieval_debug_graph,
+    retrieval_analysis_dashboard_html,
     write_retrieval_debug_artifacts,
 )
 
@@ -122,6 +123,17 @@ def test_write_retrieval_debug_artifacts_creates_json_and_html(tmp_path: Path) -
     assert html_path.exists()
     assert json.loads(graph_json.read_text(encoding="utf-8"))["stats"]["query"] == "olivia allen"
     html = html_path.read_text(encoding="utf-8")
-    assert "Retrieval graph: olivia allen" in html
+    assert "Retrieval analysis dashboard" in html
+    assert "queryInput" in html
+    assert "/api/retrieval-graph?query=" in html
     assert "d3@7" in html
     assert report["url"] == "http://127.0.0.1:8765/olivia-allen.graph.html"
+
+
+def test_retrieval_analysis_dashboard_starts_without_hardcoded_query() -> None:
+    html = retrieval_analysis_dashboard_html()
+
+    assert "Retrieval analysis dashboard" in html
+    assert "placeholder=\"Enter retrieval query…\"" in html
+    assert "value=\"\"" in html
+    assert "olivia" not in html.casefold()

@@ -5,8 +5,10 @@ import html
 import json
 import re
 from collections import Counter
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from typing import Any
+from urllib.parse import parse_qs, urlparse
 
 from sqlalchemy import bindparam, create_engine, text
 from sqlalchemy.engine import Engine
@@ -279,6 +281,92 @@ def write_retrieval_debug_artifacts(
     }
 
 
+
+def serve_retrieval_analysis_dashboard(
+    *,
+    host: str = "127.0.0.1",
+    port: int = 8765,
+    output_dir: Path = DEFAULT_OUTPUT_DIR,
+    state: str | Path | None = None,
+    database_url: str | None = None,
+    config: str | Path | None = None,
+    final_token_budget: int = 2000,
+    wide_token_budget: int = 20000,
+    candidate_limit: int = 80,
+) -> None:
+    serve_url_base = f"http://{host}:{port}"
+
+    class Handler(BaseHTTPRequestHandler):
+        def do_GET(self) -> None:  # noqa: N802
+            parsed = urlparse(self.path)
+            if parsed.path in {"/", "/dashboard.html"}:
+                self._send_html(retrieval_analysis_dashboard_html())
+                return
+            if parsed.path == "/api/retrieval-graph":
+                params = parse_qs(parsed.query)
+                query = (params.get("query") or [""])[0].strip()
+                if not query:
+                    self._send_json({"status": "error", "error": "query is required"}, status=400)
+                    return
+                try:
+                    report = retrieval_debug_graph_report(
+                        query=query,
+                        output_dir=output_dir,
+                        state=state,
+                        database_url=database_url,
+                        config=config,
+                        final_token_budget=final_token_budget,
+                        wide_token_budget=wide_token_budget,
+                        candidate_limit=candidate_limit,
+                        serve_url_base=serve_url_base,
+                    )
+                    graph = json.loads(Path(str(report["graph_json"])).read_text(encoding="utf-8"))
+                    self._send_json({"status": "ok", "report": report, "graph": graph})
+                except Exception as exc:  # pragma: no cover - depends on local runtime state.
+                    self._send_json({"status": "error", "error": str(exc)}, status=500)
+                return
+            self._send_json({"status": "error", "error": "not found"}, status=404)
+
+        def log_message(self, format: str, *args: Any) -> None:
+            return
+
+        def _send_html(self, body: str) -> None:
+            payload = body.encode("utf-8")
+            self.send_response(200)
+            self.send_header("content-type", "text/html; charset=utf-8")
+            self.send_header("content-length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+        def _send_json(self, body: dict[str, Any], *, status: int = 200) -> None:
+            payload = json.dumps(body, indent=2).encode("utf-8")
+            self.send_response(status)
+            self.send_header("content-type", "application/json; charset=utf-8")
+            self.send_header("content-length", str(len(payload)))
+            self.end_headers()
+            self.wfile.write(payload)
+
+    output_dir.mkdir(parents=True, exist_ok=True)
+    print(f"retrieval analysis dashboard: {serve_url_base}/dashboard.html")
+    ThreadingHTTPServer((host, port), Handler).serve_forever()
+
+
+def retrieval_analysis_dashboard_html(
+    *, query: str = "", graph: dict[str, Any] | None = None
+) -> str:
+    empty_graph = {
+        "stats": {
+            "query": query,
+            "note": "Enter a query to build a retrieval analysis graph.",
+            "node_count": 0,
+            "edge_count": 0,
+        },
+        "nodes": [],
+        "links": [],
+    }
+    return _html(query, graph or empty_graph)
+
+
 def _result_list(payload: dict[str, Any]) -> list[dict[str, Any]]:
     results = payload.get("results", [])
     return list(results) if isinstance(results, list) else []
@@ -368,7 +456,7 @@ def _html(query: str, graph: dict[str, Any]) -> str:
 <html lang=\"en\">
 <head>
 <meta charset=\"utf-8\" />
-<title>fourok retrieval graph — {escaped_query}</title>
+<title>fourok retrieval analysis dashboard</title>
 <script src=\"https://cdn.jsdelivr.net/npm/d3@7\"></script>
 <style>
   :root {{ color-scheme: dark; }}
@@ -396,8 +484,13 @@ def _html(query: str, graph: dict[str, Any]) -> str:
 <div id=\"app\">
   <svg id=\"graph\"></svg>
   <aside>
-    <h1>Retrieval graph: {escaped_query}</h1>
+    <h1>Retrieval analysis dashboard</h1>
     <div class=\"muted\">Final selected results + wider ranked candidates outside token budget.</div>
+    <form id=\"queryForm\">
+      <input id=\"queryInput\" name=\"query\" value=\"{escaped_query}\" placeholder=\"Enter retrieval query…\" />
+      <button type=\"submit\">Graph query</button>
+    </form>
+    <div id=\"status\" class=\"muted\"></div>
     <h2>Controls</h2>
     <div class=\"controls\">
       <label><input id=\"hideOutside\" type=\"checkbox\"> hide candidates outside final result</label>
@@ -410,9 +503,10 @@ def _html(query: str, graph: dict[str, Any]) -> str:
   </aside>
 </div>
 <script>
-const graph = {data};
+let graph = {data};
 const colors = {{ query: '#f7d046', linear: '#7c9cff', twenty: '#41d6a4', identity: '#f59e0b', source: '#94a3b8' }};
 const svg = d3.select('#graph');
+const statusEl = document.getElementById('status');
 function visibleData() {{
   const hideWeak = document.getElementById('hideWeak').checked;
   const hideOutside = document.getElementById('hideOutside').checked;
@@ -443,6 +537,24 @@ function render() {{
 function drag(sim) {{ return d3.drag().on('start', e => {{ if(!e.active) sim.alphaTarget(.3).restart(); e.subject.fx=e.subject.x; e.subject.fy=e.subject.y; }}).on('drag', e => {{ e.subject.fx=e.x; e.subject.fy=e.y; }}).on('end', e => {{ if(!e.active) sim.alphaTarget(0); e.subject.fx=null; e.subject.fy=null; }}); }}
 function showDetails(_event, d) {{ document.getElementById('details').innerHTML = `<div><b>${{escapeHtml(d.label || d.id)}}</b></div><div class=\"muted\">${{escapeHtml(d.source_ref || d.id)}}</div><div>${{['stage:'+d.stage, 'type:'+d.type, d.final_selected ? 'FINAL' : 'outside final', d.weak ? 'weak/noisy' : '', d.candidate_order ? 'candidate #'+d.candidate_order : ''].filter(Boolean).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.retrievers||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.rerank_reasons||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.flags||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><pre>${{escapeHtml(d.snippet || d.title || '')}}</pre>`; }}
 function escapeHtml(s) {{ return String(s ?? '').replace(/[&<>\"]/g, c => ({{'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}}[c])); }}
+async function graphQuery(query) {{
+  statusEl.textContent = 'Building graph…';
+  const response = await fetch('/api/retrieval-graph?query=' + encodeURIComponent(query));
+  const payload = await response.json();
+  if (!response.ok || payload.status !== 'ok') {{
+    statusEl.textContent = payload.error || 'Graph build failed';
+    return;
+  }}
+  graph = payload.graph;
+  document.querySelector('aside pre').textContent = JSON.stringify(graph.stats, null, 2);
+  statusEl.textContent = 'Graph built: ' + (payload.report?.url || query);
+  render();
+}}
+document.getElementById('queryForm').addEventListener('submit', event => {{
+  event.preventDefault();
+  const query = document.getElementById('queryInput').value.trim();
+  if (query) graphQuery(query);
+}});
 function initLegend() {{ const legend = document.getElementById('legend'); [['query','#f7d046'], ['linear','#7c9cff'], ['twenty','#41d6a4'], ['identity','#f59e0b'], ['DB entity links: green dashed','#41d6a4'], ['weak/noisy outline','#ff4d6d']].forEach(([k,v]) => legend.insertAdjacentHTML('beforeend', `<span class=\"dot\" style=\"background:${{v}}\"></span><span>${{k}}</span>`)); }}
 ['hideOutside','hideWeak','showLabels'].forEach(id => document.getElementById(id).addEventListener('change', render));
 window.addEventListener('resize', render); initLegend(); render();

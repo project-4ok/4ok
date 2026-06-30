@@ -542,3 +542,40 @@ def test_retrieval_graph_debug_command_prints_artifact_report(monkeypatch, capsy
             "serve_url_base": "http://127.0.0.1:8765",
         }
     ]
+
+
+def test_retrieval_analysis_dashboard_command_serves_query_ui(monkeypatch) -> None:
+    from fourok.devtools import dev
+
+    calls: list[dict[str, object]] = []
+
+    def fake_serve(**kwargs):
+        calls.append(kwargs)
+
+    monkeypatch.setattr(dev, "serve_retrieval_analysis_dashboard", fake_serve)
+
+    dev.main(
+        [
+            "retrieval-analysis-dashboard",
+            "--host",
+            "127.0.0.1",
+            "--port",
+            "8766",
+            "--database-url",
+            "sqlite:///state.sqlite",
+        ]
+    )
+
+    assert calls == [
+        {
+            "host": "127.0.0.1",
+            "port": 8766,
+            "output_dir": Path(".local/retrieval-graph-debug"),
+            "state": None,
+            "database_url": "sqlite:///state.sqlite",
+            "config": None,
+            "final_token_budget": 2000,
+            "wide_token_budget": 20000,
+            "candidate_limit": 80,
+        }
+    ]
