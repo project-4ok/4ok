@@ -475,7 +475,7 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
         "[Retrieval] Candidates found before reranking",
         "[Retrieval] Zero-result requests",
         "[Retrieval] Average duration (ms)",
-        "[Retrieval] Opened source rank distribution",
+        "[Retrieval] Opened source relevancy over time",
         "[Retrieval] Average opened source rank",
     ]:
         assert title in panel_titles
@@ -497,21 +497,17 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     inspected_rank_panel = next(
         panel
         for panel in prometheus_panels
-        if panel["title"] == "[Retrieval] Opened source rank distribution"
+        if panel["title"] == "[Retrieval] Opened source relevancy over time"
     )
-    assert inspected_rank_panel["type"] == "bargauge"
+    assert inspected_rank_panel["type"] == "timeseries"
     assert inspected_rank_panel["gridPos"] == {"x": 0, "y": 88, "w": 12, "h": 7}
-    rank_bucket_targets = inspected_rank_panel["targets"]
-    assert [target["legendFormat"] for target in rank_bucket_targets] == [
-        "rank 1",
-        "rank 2-3",
-        "rank 4-10",
-        "rank 11+",
-    ]
-    assert inspected_rank_panel["options"]["orientation"] == "vertical"
-    assert all(target["instant"] is True for target in rank_bucket_targets)
-    assert all("sum by (rank)" not in target["expr"] for target in rank_bucket_targets)
-    assert "rank buckets" in inspected_rank_panel["description"]
+    rank_trend_target = inspected_rank_panel["targets"][0]
+    assert rank_trend_target["instant"] is False
+    assert rank_trend_target["range"] is True
+    assert "increase(fourok_retrieval_source_inspection_rank_sum" in rank_trend_target["expr"]
+    assert "increase(fourok_retrieval_source_inspection_rank_total" in rank_trend_target["expr"]
+    assert "Lower is better" in inspected_rank_panel["description"]
+    assert "code changes" in inspected_rank_panel["description"]
     average_opened_rank_panel = next(
         panel
         for panel in prometheus_panels

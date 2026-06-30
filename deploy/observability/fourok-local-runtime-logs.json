@@ -2327,9 +2327,9 @@
     },
     {
       "id": 45,
-      "type": "bargauge",
-      "title": "[Retrieval] Opened source rank distribution",
-      "description": "Latest opened-result rank buckets for sources the agent chose to open via inspect_source. Lower buckets are better; rank 11+ means relevant sources are buried.",
+      "type": "timeseries",
+      "title": "[Retrieval] Opened source relevancy over time",
+      "description": "Interval average rank for sources the agent opened via inspect_source. Lower is better; a downward trend after deploys/code changes means useful sources are moving closer to the top of search results.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -2347,56 +2347,47 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum(fourok_retrieval_source_inspection_rank_total{rank=\"1\"}) or vector(0)",
-          "legendFormat": "rank 1",
-          "range": false,
-          "instant": true,
+          "expr": "sum(increase(fourok_retrieval_source_inspection_rank_sum[$__rate_interval])) / sum(increase(fourok_retrieval_source_inspection_rank_total[$__rate_interval]))",
+          "legendFormat": "avg opened rank",
+          "range": true,
+          "instant": false,
           "refId": "A"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "sum(fourok_retrieval_source_inspection_rank_total{rank=~\"2|3\"}) or vector(0)",
-          "legendFormat": "rank 2-3",
-          "range": false,
-          "instant": true,
-          "refId": "B"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "sum(fourok_retrieval_source_inspection_rank_total{rank=~\"4|5|6|7|8|9|10\"}) or vector(0)",
-          "legendFormat": "rank 4-10",
-          "range": false,
-          "instant": true,
-          "refId": "C"
-        },
-        {
-          "datasource": {
-            "type": "prometheus",
-            "uid": "prometheus"
-          },
-          "editorMode": "code",
-          "expr": "sum(fourok_retrieval_source_inspection_rank_total{rank=~\"1[1-9]|[2-9][0-9]|[1-9][0-9]{2,}\"}) or vector(0)",
-          "legendFormat": "rank 11+",
-          "range": false,
-          "instant": true,
-          "refId": "D"
         }
       ],
       "fieldConfig": {
         "defaults": {
           "unit": "short",
-          "decimals": 0,
-          "min": 0,
-          "color": {
-            "mode": "palette-classic"
+          "decimals": 2,
+          "custom": {
+            "drawStyle": "line",
+            "lineInterpolation": "linear",
+            "barAlignment": 0,
+            "lineWidth": 2,
+            "fillOpacity": 8,
+            "gradientMode": "none",
+            "spanNulls": false,
+            "insertNulls": false,
+            "showPoints": "auto",
+            "pointSize": 5,
+            "stacking": {
+              "mode": "none",
+              "group": "A"
+            },
+            "axisPlacement": "auto",
+            "axisLabel": "avg opened rank (lower is better)",
+            "axisColorMode": "text",
+            "scaleDistribution": {
+              "type": "linear"
+            },
+            "axisCenteredZero": false,
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            },
+            "thresholdsStyle": {
+              "mode": "off"
+            }
           },
           "thresholds": {
             "mode": "absolute",
@@ -2404,29 +2395,35 @@
               {
                 "color": "green",
                 "value": null
+              },
+              {
+                "color": "yellow",
+                "value": 3
+              },
+              {
+                "color": "red",
+                "value": 8
               }
             ]
+          },
+          "color": {
+            "mode": "thresholds"
           }
         },
         "overrides": []
       },
       "options": {
-        "reduceOptions": {
+        "legend": {
           "calcs": [
             "lastNotNull"
           ],
-          "fields": "",
-          "values": false
+          "displayMode": "list",
+          "placement": "bottom",
+          "showLegend": true
         },
-        "orientation": "vertical",
-        "displayMode": "basic",
-        "showUnfilled": false,
-        "minVizWidth": 12,
-        "minVizHeight": 120,
-        "namePlacement": "auto",
-        "valueMode": "color",
-        "legend": {
-          "showLegend": false
+        "tooltip": {
+          "mode": "single",
+          "sort": "none"
         }
       }
     },
