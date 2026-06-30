@@ -87,7 +87,7 @@ def build_retrieval_debug_graph(
 
         add_node(
             source_ref,
-            label=_short_title(str(result.get("title") or source_ref)),
+            label=_short_title(_result_label(result, source_ref)),
             title=result.get("title", ""),
             source_ref=source_ref,
             type=result.get("record_type") or "source",
@@ -109,7 +109,7 @@ def build_retrieval_debug_graph(
         if direct_source:
             add_node(
                 direct_source,
-                label=_short_title(direct_source),
+                label=nodes.get(direct_source, {}).get("label") or _short_title(direct_source),
                 source_ref=direct_source,
                 type="source",
                 group=_source_group(direct_source),
@@ -140,7 +140,7 @@ def build_retrieval_debug_graph(
         entity_edge_rows.append(row)
         add_node(
             object_ref,
-            label=_short_title(_entity_label(row)),
+            label=nodes.get(object_ref, {}).get("label") or _short_title(_entity_label(row)),
             source_ref=object_ref,
             type="entity" if object_ref not in nodes else nodes[object_ref].get("type"),
             group=nodes.get(object_ref, {}).get("group") or _source_group(object_ref) or "entity",
@@ -432,6 +432,23 @@ def _entity_label(row: dict[str, Any]) -> str:
     return object_ref
 
 
+def _result_label(result: dict[str, Any], source_ref: str) -> str:
+    title = str(result.get("title") or "").strip()
+    if result.get("record_type") == "person" and _looks_like_email(title):
+        return _name_from_email(title)
+    return title or source_ref
+
+
+def _looks_like_email(value: str) -> bool:
+    return bool(re.match(r"^[^@\s]+@[^@\s]+\.[^@\s]+$", value))
+
+
+def _name_from_email(email: str) -> str:
+    local_part = email.split("@", 1)[0]
+    words = [word for word in re.split(r"[._+-]+", local_part) if word]
+    return " ".join(word[:1].upper() + word[1:] for word in words) or email
+
+
 def _source_group(source_ref: str) -> str:
     if ":" in source_ref:
         return source_ref.split(":", 1)[0]
@@ -493,9 +510,10 @@ def _html(query: str, graph: dict[str, Any]) -> str:
     <div id=\"status\" class=\"muted\"></div>
     <h2>Controls</h2>
     <div class=\"controls\">
-      <label><input id=\"hideOutside\" type=\"checkbox\"> hide candidates outside final result</label>
-      <label><input id=\"hideWeak\" type=\"checkbox\"> hide weak/noisy nodes</label>
-      <label><input id=\"showLabels\" type=\"checkbox\" checked> show labels</label>
+      <label><input id="hideOutside" type="checkbox"> hide candidates outside final result</label>
+      <label><input id="hideWeak" type="checkbox"> hide weak/noisy nodes</label>
+      <label><input id="showLabels" type="checkbox" checked> show labels</label>
+      <label><input id="showEdgeLabels" type="checkbox"> show edge labels</label>
     </div>
     <h2>Legend</h2><div class=\"legend\" id=\"legend\"></div>
     <h2>Selected node</h2><div id=\"details\" class=\"muted\">Click a bubble.</div>
@@ -528,11 +546,11 @@ function render() {{
     .force('center', d3.forceCenter(width/2, height/2))
     .force('collision', d3.forceCollide().radius(d => radius(d)+10));
   const link = g.append('g').selectAll('line').data(data.links).join('line').attr('class', d => 'link ' + (d.rel === 'direct_context_for' ? 'direct' : d.rel === 'entity_link' ? 'entity' : d.rel === 'vector_candidate' ? 'vector' : '')).attr('stroke-width', d => d.rel === 'direct_context_for' ? 3 : d.rel === 'entity_link' ? 2 : Math.sqrt(d.weight || 1));
-  const labels = g.append('g').selectAll('text').data(data.links).join('text').attr('class','link-label').text(d => d.relationship_type || d.rel.replace('_candidate',''));
+  const edgeLabels = g.append('g').selectAll('text').data(data.links).join('text').attr('class','link-label').text(d => d.relationship_type || d.rel.replace('_candidate','')).style('display', document.getElementById('showEdgeLabels').checked ? null : 'none');
   const node = g.append('g').selectAll('g').data(data.nodes).join('g').attr('class','node').call(drag(sim)).on('click', showDetails);
   node.append('circle').attr('r', radius).attr('fill', d => colors[d.group] || colors.source).attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .38).attr('stroke', d => d.weak ? '#ff4d6d' : d.stage.includes('one_hop') || d.stage.includes('direct') ? '#f7d046' : d.final_selected ? '#f8fafc' : '#64748b').attr('stroke-width', d => d.weak ? 3 : d.stage.includes('one_hop') || d.stage.includes('direct') ? 3 : d.final_selected ? 1.8 : 1);
   node.append('text').attr('x', d => radius(d)+4).attr('y', 4).text(d => `${{d.order ? d.order + '. ' : d.candidate_order ? '#' + d.candidate_order + ' ' : ''}}${{d.label || d.id}}`).style('display', document.getElementById('showLabels').checked ? null : 'none').attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .55);
-  sim.on('tick', () => {{ link.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y); node.attr('transform', d => `translate(${{d.x}},${{d.y}})`); labels.attr('x', d => (d.source.x + d.target.x)/2).attr('y', d => (d.source.y + d.target.y)/2); }});
+  sim.on('tick', () => {{ link.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y); node.attr('transform', d => `translate(${{d.x}},${{d.y}})`); edgeLabels.attr('x', d => (d.source.x + d.target.x)/2).attr('y', d => (d.source.y + d.target.y)/2); }});
 }}
 function drag(sim) {{ return d3.drag().on('start', e => {{ if(!e.active) sim.alphaTarget(.3).restart(); e.subject.fx=e.subject.x; e.subject.fy=e.subject.y; }}).on('drag', e => {{ e.subject.fx=e.x; e.subject.fy=e.y; }}).on('end', e => {{ if(!e.active) sim.alphaTarget(0); e.subject.fx=null; e.subject.fy=null; }}); }}
 function showDetails(_event, d) {{ document.getElementById('details').innerHTML = `<div><b>${{escapeHtml(d.label || d.id)}}</b></div><div class=\"muted\">${{escapeHtml(d.source_ref || d.id)}}</div><div>${{['stage:'+d.stage, 'type:'+d.type, d.final_selected ? 'FINAL' : 'outside final', d.weak ? 'weak/noisy' : '', d.candidate_order ? 'candidate #'+d.candidate_order : ''].filter(Boolean).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.retrievers||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.rerank_reasons||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><div>${{(d.flags||[]).map(x=>`<span class=\"pill\">${{escapeHtml(x)}}</span>`).join('')}}</div><pre>${{escapeHtml(d.snippet || d.title || '')}}</pre>`; }}
@@ -556,7 +574,7 @@ document.getElementById('queryForm').addEventListener('submit', event => {{
   if (query) graphQuery(query);
 }});
 function initLegend() {{ const legend = document.getElementById('legend'); [['query','#f7d046'], ['linear','#7c9cff'], ['twenty','#41d6a4'], ['identity','#f59e0b'], ['DB entity links: green dashed','#41d6a4'], ['weak/noisy outline','#ff4d6d']].forEach(([k,v]) => legend.insertAdjacentHTML('beforeend', `<span class=\"dot\" style=\"background:${{v}}\"></span><span>${{k}}</span>`)); }}
-['hideOutside','hideWeak','showLabels'].forEach(id => document.getElementById(id).addEventListener('change', render));
+['hideOutside','hideWeak','showLabels','showEdgeLabels'].forEach(id => document.getElementById(id).addEventListener('change', render));
 window.addEventListener('resize', render); initLegend(); render();
 </script>
 </body>

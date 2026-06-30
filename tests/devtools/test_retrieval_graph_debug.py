@@ -21,7 +21,7 @@ def test_retrieval_debug_graph_shows_final_wide_direct_and_db_edges() -> None:
                 "source_ref": "linear:user:olivia",
                 "source_system": "linear",
                 "record_type": "person",
-                "title": "Olivia Allen",
+                "title": "olivia.allen@4ok.tech",
                 "snippet": "employee",
                 "score": 9.1,
                 "retrievers": ["keyword"],
@@ -83,6 +83,8 @@ def test_retrieval_debug_graph_shows_final_wide_direct_and_db_edges() -> None:
     links = {(link["source"], link["target"], link["rel"]): link for link in graph["links"]}
 
     assert nodes["linear:user:olivia"]["final_selected"] is True
+    assert nodes["linear:user:olivia"]["label"] == "Olivia Allen"
+    assert nodes["linear:user:olivia"]["title"] == "olivia.allen@4ok.tech"
     assert "employee_only" in nodes["linear:user:olivia"]["flags"]
     assert nodes["linear:issue:OPS-1"]["stage"] == "candidate_one_hop_not_selected"
     assert nodes["twenty:company:4ok"]["stage"] == "candidate_not_selected"
@@ -125,6 +127,9 @@ def test_write_retrieval_debug_artifacts_creates_json_and_html(tmp_path: Path) -
     html = html_path.read_text(encoding="utf-8")
     assert "Retrieval analysis dashboard" in html
     assert "queryInput" in html
+    assert "id=\"showLabels\" type=\"checkbox\" checked" in html
+    assert "id=\"showEdgeLabels\" type=\"checkbox\"" in html
+    assert "id=\"showEdgeLabels\" type=\"checkbox\" checked" not in html
     assert "/api/retrieval-graph?query=" in html
     assert "d3@7" in html
     assert report["url"] == "http://127.0.0.1:8765/olivia-allen.graph.html"
