@@ -38,8 +38,6 @@ query
        keyword, vector, entity/object match, temporal/activity signal
   -> fusion/rerank
        RRF-style multi-signal fusion, optional reranker later
-  -> canonical expansion
-       map source hits to object_refs, direct linked canonical objects, provenance source records
   -> token-budget packer
        default 2k tokens, add context packs in rank order until full
   -> rendered agent context
@@ -83,23 +81,22 @@ query
 - Long records get larger excerpts than today when budget allows.
 - Metadata-only lines stay minimal: source refs, relevance, date, evidence.
 
-### Stage 3 — Source-agnostic canonical expansion
+### Stage 3 — Source-agnostic graph signals
 
-**Status:** First pass implemented in `95c54ef`: high-ranked hits expand through `thread_ref` fallback and direct canonical/entity links before token-budget packing.
+**Status:** Graph links are now used as rerank/diagnostic signals only. One-hop expansion was removed because DB `entity_links` already represent the relationship and adding linked records as evidence made retrieval harder to reason about.
 
-**Objective:** Expand high-ranked hits through canonical objects and direct links, not source-specific Linear rules.
+**Objective:** Rank and explain retrieved source hits with graph information without adding non-matching neighbor records to evidence.
 
-**Initial expansion order:**
-1. ranked source hit;
-2. canonical object(s) linked to the source hit;
-3. source refs on those canonical objects;
-4. directly linked canonical neighbors from `entity_links`;
-5. transitional fallback via `thread_ref` siblings until canonical graph is richer.
+**Graph use:**
+1. retrieve keyword/vector source hits;
+2. count accepted/linked `entity_links` around those hits;
+3. apply graph-link count as a small rerank signal;
+4. show entity links in diagnostics/dashboard, not as extra evidence cards.
 
 **Acceptance:**
-- Context packs are grouped by object/canonical ref when available.
-- Evidence is deduplicated by source ref and object ref.
-- Linear issue/comment assembly works as an outcome of canonical/provenance expansion, not as a Linear-only core abstraction.
+- Entity links improve ranking/diagnostics without fan-out.
+- Evidence cards are only keyword/vector retrieved records.
+- Linear issue/comment assembly is represented through stored source records and entity-link diagnostics, not retrieval-time expansion.
 
 ### Stage 4 — Temporal retrieval
 
@@ -159,7 +156,7 @@ query
 **Acceptance:**
 - useful evidence text present;
 - cited source refs present;
-- canonical/direct-link context included where available;
+- entity-link diagnostics included where available;
 - output within token budget;
 - no `permission_refs:` in rendered context;
 - no metadata-only cards when underlying source text exists;

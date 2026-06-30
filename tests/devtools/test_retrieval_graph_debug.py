@@ -43,8 +43,8 @@ def test_retrieval_debug_graph_shows_final_wide_direct_and_db_edges() -> None:
                 "title": "Access for Olivia",
                 "snippet": "Olivia needs dashboard access.",
                 "score": 7.0,
-                "retrievers": ["keyword", "direct-link"],
-                "rerank_reasons": ["direct context for linear:user:olivia"],
+                "retrievers": ["keyword"],
+                "rerank_reasons": [],
             },
             {
                 "source_ref": "twenty:company:4ok",
@@ -88,7 +88,7 @@ def test_retrieval_debug_graph_shows_final_wide_direct_and_db_edges() -> None:
     assert nodes["linear:user:olivia"]["title"] == "olivia.allen@4ok.tech"
     assert "weak" not in nodes["linear:user:olivia"]
     assert "flags" not in nodes["linear:user:olivia"]
-    assert nodes["linear:issue:OPS-1"]["stage"] == "candidate_one_hop_not_selected"
+    assert nodes["linear:issue:OPS-1"]["stage"] == "candidate_not_selected"
     assert nodes["twenty:company:4ok"]["stage"] == "candidate_not_selected"
     assert nodes["identity:email:olivia.allen@4ok.tech"]["type"] == "entity"
     query_olivia_link = links[("query:olivia", "linear:user:olivia", "keyword_candidate")]
@@ -96,14 +96,14 @@ def test_retrieval_debug_graph_shows_final_wide_direct_and_db_edges() -> None:
     assert links[("query:olivia", "twenty:company:4ok", "vector_candidate")]
     olivia_ops_link = link_pairs[frozenset(("linear:user:olivia", "linear:issue:OPS-1"))]
     assert olivia_ops_link["rel"] == "entity_link"
-    assert olivia_ops_link["rels"] == ["direct_context_for", "entity_link"]
+    assert olivia_ops_link["rels"] == ["entity_link"]
     assert olivia_ops_link["relationship_type"] == "assignee"
     assert links[
         ("linear:user:olivia", "identity:email:olivia.allen@4ok.tech", "entity_link")
     ]["relationship_type"] == "email_identity"
     assert graph["stats"]["final_result_count"] == 1
     assert graph["stats"]["wide_result_count"] == 3
-    assert graph["stats"]["edge_counts"]["direct_context_for"] == 1
+    assert "direct_context_for" not in graph["stats"]["edge_counts"]
     assert graph["stats"]["edge_counts"]["entity_link"] == 2
     assert len(graph["links"]) == 5
 

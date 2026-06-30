@@ -221,27 +221,6 @@ def retrieve_augmentation(
         pre_rerank_count = len(candidates_by_key)
         distinct_sources = len({source_ref for source_ref, _unit_index in candidates_by_key})
         with _retrieval_stage_span(
-            "fourok.retrieve.direct_link_expand",
-            query=query,
-            candidate_limit=candidate_limit,
-            retriever_set=retriever_set,
-        ) as span:
-            seed_count = len(candidates_by_key)
-            _expand_candidates_with_direct_links(
-                engine,
-                source_records,
-                retrieval_records,
-                candidates_by_key,
-                query=query,
-                canonical_objects=canonical_objects,
-                entity_links=entity_links,
-            )
-            span.set_attribute("fourok.retrieve.seed_candidates", seed_count)
-            span.set_attribute(
-                "fourok.retrieve.direct_link_candidates_added", len(candidates_by_key) - seed_count
-            )
-            span.set_attribute("fourok.retrieve.candidate_count", len(candidates_by_key))
-        with _retrieval_stage_span(
             "fourok.retrieve.graph_link_metrics",
             query=query,
             candidate_limit=candidate_limit,
@@ -277,10 +256,6 @@ def retrieve_augmentation(
         searched = " and ".join(name for name in retrievers)
         if results:
             limitations.append(f"Searched {searched} candidates.")
-            if len(candidates_by_key) > pre_rerank_count:
-                limitations.append(
-                    "Expanded candidates with one-hop direct links before reranking."
-                )
         else:
             limitations.append(f"Searched {searched} candidates.")
             limitations.append("No relevant source excerpts found for the selected retrievers.")
@@ -428,70 +403,6 @@ def _merge_ranked_rows(
         candidate_retrievers.add(retriever)
 
 
-def _expand_candidates_with_direct_links(
-    engine: Engine,
-    source_records,
-    retrieval_records,
-    candidates_by_key: dict[tuple[str, int], dict[str, object]],
-    *,
-    query: str,
-    canonical_objects=None,
-    entity_links=None,
-) -> None:
-    if not candidates_by_key:
-        return
-    seed_rows = [row for row in candidates_by_key.values() if _has_substantive_snippet(row)]
-    seed_refs = [str(seed["source_ref"]) for seed in seed_rows]
-    context_refs_by_seed = _direct_context_source_ref_map(
-        engine,
-        source_records,
-        seed_refs,
-        canonical_objects=canonical_objects,
-        entity_links=entity_links,
-    )
-    linked_specs: dict[str, dict[str, object]] = {}
-    existing_source_refs = {str(source_ref) for source_ref, _unit_index in candidates_by_key}
-    for seed in seed_rows:
-        seed_ref = str(seed["source_ref"])
-        seed_score = max(float(seed.get("score", 0.0) or 0.0) * 0.5, 0.000001)
-        for linked_ref in context_refs_by_seed.get(seed_ref, ()):
-            if linked_ref == seed_ref:
-                continue
-            if linked_ref in existing_source_refs:
-                for key, existing in candidates_by_key.items():
-                    if str(key[0]) != linked_ref:
-                        continue
-                    existing["score"] = max(float(existing.get("score", 0.0) or 0.0), seed_score)
-                    existing_retrievers = existing["retrievers"]
-                    assert isinstance(existing_retrievers, set)
-                    existing_retrievers.add("direct-link")
-                    _append_rerank_reason(existing, f"direct link from {seed_ref}")
-                continue
-            spec = linked_specs.setdefault(
-                linked_ref,
-                {"score": seed_score, "seed_refs": []},
-            )
-            spec["score"] = max(float(spec["score"]), seed_score)
-            seed_ref_list = spec["seed_refs"]
-            assert isinstance(seed_ref_list, list)
-            seed_ref_list.append(seed_ref)
-    candidate_rows = _candidate_rows_for_source_refs(
-        engine,
-        source_records,
-        retrieval_records,
-        sorted(linked_specs),
-        query=query,
-    )
-    for linked_ref, row in candidate_rows.items():
-        spec = linked_specs[linked_ref]
-        seed_refs_for_reason = tuple(str(ref) for ref in spec["seed_refs"])
-        row["score"] = float(spec["score"])
-        row["retrievers"] = {"direct-link"}
-        row["rerank_reasons"] = (_direct_link_reason(seed_refs_for_reason),)
-        key = (str(row["source_ref"]), int(row["unit_index"]))
-        candidates_by_key[key] = row
-
-
 def _apply_graph_link_metrics(
     engine: Engine,
     candidates_by_key: dict[tuple[str, int], dict[str, object]],
@@ -557,61 +468,6 @@ def _graph_link_counts(engine: Engine, entity_links, source_refs: list[str]) -> 
     return counts
 
 
-def _candidate_row_for_source_ref(
-    engine: Engine,
-    source_records,
-    retrieval_records,
-    source_ref: str,
-    *,
-    query: str,
-    score: float,
-    retriever: str,
-    reason: str,
-) -> dict[str, object] | None:
-    statement = (
-        select(
-            source_records.c.source_ref,
-            source_records.c.source_system,
-            source_records.c.record_type,
-            source_records.c.title,
-            source_records.c.occurred_at,
-            source_records.c.permission_refs,
-            source_records.c.retrieval_text,
-            retrieval_records.c.prepared_text,
-            retrieval_records.c.unit_index,
-        )
-        .select_from(
-            source_records.outerjoin(
-                retrieval_records,
-                (source_records.c.source_ref == retrieval_records.c.source_ref)
-                & (retrieval_records.c.status == "current")
-                & (retrieval_records.c.unit_index == 0),
-            )
-        )
-        .where(source_records.c.source_ref == source_ref)
-        .where(source_records.c.lifecycle_state == "active")
-    )
-    with engine.connect() as connection:
-        row = connection.execute(statement).mappings().first()
-    if row is None:
-        return None
-    title = str(row["title"])
-    text_value = str(row["retrieval_text"] or row["prepared_text"] or "")
-    return {
-        "source_ref": str(row["source_ref"]),
-        "source_system": str(row["source_system"]),
-        "record_type": str(row["record_type"]),
-        "title": title,
-        "occurred_at": str(row["occurred_at"]),
-        "permission_refs": _json_string_tuple(str(row["permission_refs"])),
-        "snippet": _evidence_snippet(text_value, title, query, source_ref),
-        "score": score,
-        "retrievers": {retriever},
-        "rerank_reasons": (reason,),
-        "unit_index": int(row["unit_index"] or 0),
-    }
-
-
 def _rank_and_diversify(
     candidates_by_key: dict[tuple[str, int], dict[str, object]],
     *,
@@ -646,48 +502,6 @@ def _rank_and_diversify(
             )
         )
     return results
-
-
-def _expand_ranked_results(
-    engine: Engine,
-    source_records,
-    retrieval_records,
-    results: list[RetrievalCandidate],
-    *,
-    query: str,
-    canonical_objects=None,
-    entity_links=None,
-) -> list[RetrievalCandidate]:
-    if not results:
-        return results
-    original_refs = {result.source_ref for result in results}
-    emitted_refs: set[str] = set()
-    expanded: list[RetrievalCandidate] = []
-    for result in results:
-        expanded.append(result)
-        emitted_refs.add(result.source_ref)
-        for source_ref in _direct_context_source_refs(
-            engine,
-            source_records,
-            result.source_ref,
-            canonical_objects=canonical_objects,
-            entity_links=entity_links,
-        ):
-            if source_ref in emitted_refs or source_ref in original_refs:
-                continue
-            candidate = _candidate_for_source_ref(
-                engine,
-                source_records,
-                retrieval_records,
-                source_ref,
-                query=query,
-                linked_from=result,
-            )
-            if candidate is None:
-                continue
-            expanded.append(candidate)
-            emitted_refs.add(source_ref)
-    return expanded
 
 
 def _direct_context_source_ref_map(
@@ -812,100 +626,6 @@ def _add_canonical_context_source_refs(
         refs_by_seed[seed_ref].extend(source_refs_by_object.get(object_ref, (object_ref,)))
 
 
-def _candidate_rows_for_source_refs(
-    engine: Engine,
-    source_records,
-    retrieval_records,
-    source_refs: list[str],
-    *,
-    query: str,
-) -> dict[str, dict[str, object]]:
-    if not source_refs:
-        return {}
-    statement = (
-        select(
-            source_records.c.source_ref,
-            source_records.c.source_system,
-            source_records.c.record_type,
-            source_records.c.title,
-            source_records.c.occurred_at,
-            source_records.c.permission_refs,
-            source_records.c.retrieval_text,
-            retrieval_records.c.prepared_text,
-            retrieval_records.c.unit_index,
-        )
-        .select_from(
-            source_records.outerjoin(
-                retrieval_records,
-                (source_records.c.source_ref == retrieval_records.c.source_ref)
-                & (retrieval_records.c.status == "current")
-                & (retrieval_records.c.unit_index == 0),
-            )
-        )
-        .where(source_records.c.source_ref.in_(bindparam("source_refs", expanding=True)))
-        .where(source_records.c.lifecycle_state == "active")
-    )
-    rows_by_ref: dict[str, dict[str, object]] = {}
-    with engine.connect() as connection:
-        rows = connection.execute(statement, {"source_refs": source_refs}).mappings()
-        for row in rows:
-            source_ref = str(row["source_ref"])
-            title = str(row["title"])
-            text_value = str(row["retrieval_text"] or row["prepared_text"] or "")
-            rows_by_ref[source_ref] = {
-                "source_ref": source_ref,
-                "source_system": str(row["source_system"]),
-                "record_type": str(row["record_type"]),
-                "title": title,
-                "occurred_at": str(row["occurred_at"]),
-                "permission_refs": _json_string_tuple(str(row["permission_refs"])),
-                "snippet": _evidence_snippet(text_value, title, query, source_ref),
-                "score": 0.0,
-                "retrievers": set(),
-                "rerank_reasons": (),
-                "unit_index": int(row["unit_index"] or 0),
-            }
-    return rows_by_ref
-
-
-def _direct_link_reason(seed_refs: tuple[str, ...]) -> str:
-    unique_seed_refs = tuple(dict.fromkeys(seed_refs))
-    if len(unique_seed_refs) == 1:
-        return f"direct link from {unique_seed_refs[0]}"
-    preview = ", ".join(unique_seed_refs[:3])
-    if len(unique_seed_refs) > 3:
-        preview += ", ..."
-    return f"direct links from {len(unique_seed_refs)} candidates: {preview}"
-
-
-def _direct_context_source_refs(
-    engine: Engine,
-    source_records,
-    source_ref: str,
-    *,
-    canonical_objects=None,
-    entity_links=None,
-) -> list[str]:
-    refs: list[str] = []
-    refs.extend(_thread_context_source_refs(engine, source_records, source_ref))
-    refs.extend(
-        _canonical_link_source_refs(
-            engine,
-            source_ref,
-            canonical_objects=canonical_objects,
-            entity_links=entity_links,
-        )
-    )
-    deduped: list[str] = []
-    seen = {source_ref}
-    for ref in refs:
-        if not ref or ref in seen:
-            continue
-        deduped.append(ref)
-        seen.add(ref)
-    return deduped
-
-
 def _canonical_link_source_refs(
     engine: Engine,
     source_ref: str,
@@ -973,59 +693,6 @@ def _thread_context_source_refs(engine: Engine, source_records, source_ref: str)
             for row in connection.execute(statement).mappings()
             if row["source_ref"]
         ]
-
-
-def _candidate_for_source_ref(
-    engine: Engine,
-    source_records,
-    retrieval_records,
-    source_ref: str,
-    *,
-    query: str,
-    linked_from: RetrievalCandidate,
-) -> RetrievalCandidate | None:
-    statement = (
-        select(
-            source_records.c.source_ref,
-            source_records.c.source_system,
-            source_records.c.record_type,
-            source_records.c.title,
-            source_records.c.occurred_at,
-            source_records.c.permission_refs,
-            source_records.c.retrieval_text,
-            retrieval_records.c.prepared_text,
-            retrieval_records.c.unit_index,
-        )
-        .select_from(
-            source_records.outerjoin(
-                retrieval_records,
-                (source_records.c.source_ref == retrieval_records.c.source_ref)
-                & (retrieval_records.c.status == "current")
-                & (retrieval_records.c.unit_index == 0),
-            )
-        )
-        .where(source_records.c.source_ref == source_ref)
-        .where(source_records.c.lifecycle_state == "active")
-    )
-    with engine.connect() as connection:
-        row = connection.execute(statement).mappings().first()
-    if row is None:
-        return None
-    title = str(row["title"])
-    text_value = str(row["retrieval_text"] or row["prepared_text"] or "")
-    return RetrievalCandidate(
-        source_ref=str(row["source_ref"]),
-        source_system=str(row["source_system"]),
-        record_type=str(row["record_type"]),
-        title=title,
-        occurred_at=str(row["occurred_at"]),
-        snippet=_evidence_snippet(text_value, title, query, source_ref),
-        score=round(max(linked_from.score * 0.5, 0.000001), 6),
-        retrievers=("direct-context",),
-        permission_refs=_json_string_tuple(str(row["permission_refs"])),
-        rerank_reasons=(f"direct context for {linked_from.source_ref}",),
-        unit_index=int(row["unit_index"] or 0),
-    )
 
 
 def _related_follow_up_hints(

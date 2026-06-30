@@ -177,10 +177,10 @@ def test_reranker_boosts_person_title_token_match_over_loose_work_item_match() -
             "snippet": "employee",
             "occurred_at": "2026-04-14T07:42:10Z",
             "score": 0.053,
-            "retrievers": {"direct-link"},
+            "retrievers": {"vector"},
             "unit_index": 0,
             "permission_refs": (),
-            "rerank_reasons": ("direct link from linear:issue:yc-video",),
+            "rerank_reasons": (),
         },
         {
             "source_ref": "twenty:person:olivia",

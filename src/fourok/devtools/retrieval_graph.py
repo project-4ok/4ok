@@ -18,7 +18,6 @@ from fourok.runtime.operator_live import host_database_url
 
 DEFAULT_OUTPUT_DIR = Path(".local/retrieval-graph-debug")
 DEFAULT_SERVE_URL_BASE = "http://127.0.0.1:8765"
-DIRECT_CONTEXT_RE = re.compile(r"^direct (?:context for|link from) (?P<source_ref>.+)$")
 
 
 def build_retrieval_debug_graph(
@@ -55,9 +54,8 @@ def build_retrieval_debug_graph(
         if rel not in link["rels"]:
             link["rels"].append(rel)
         if rel == "entity_link":
-            # Prefer the DB edge as the visible edge when a one-hop retrieval edge and
-            # an entity_link connect the same pair. Otherwise D3 draws two straight
-            # lines on top of each other and it looks like a duplicated edge.
+            # Prefer the DB edge as the visible edge when a multiple retrieval signals
+            # connect the same pair. D3 draws one straight line per link object.
             link.update({"source": source, "target": target, "rel": rel})
         relationship_type = str(attrs.pop("relationship_type", "") or "")
         if relationship_type:
@@ -90,8 +88,6 @@ def build_retrieval_debug_graph(
         for order, result in enumerate(wide_results, start=1)
         if result.get("source_ref")
     }
-    direct_edges: list[dict[str, str]] = []
-
     for result in wide_results:
         source_ref = str(result.get("source_ref") or "")
         if not source_ref:
@@ -99,7 +95,6 @@ def build_retrieval_debug_graph(
         retrievers = [str(item) for item in result.get("retrievers", [])]
         reasons = [str(item) for item in result.get("rerank_reasons", [])]
         is_final = source_ref in final_refs
-        direct_source = _direct_context_source(reasons)
         add_node(
             source_ref,
             label=_short_title(_result_label(result, source_ref)),
@@ -107,7 +102,7 @@ def build_retrieval_debug_graph(
             source_ref=source_ref,
             type=result.get("record_type") or "source",
             group=result.get("source_system") or _source_group(source_ref),
-            stage=_stage(retrievers, is_final=is_final, direct_source=direct_source),
+            stage=_stage(is_final=is_final),
             selected=True,
             final_selected=is_final,
             order=final_order.get(source_ref),
@@ -118,20 +113,6 @@ def build_retrieval_debug_graph(
             snippet=str(result.get("snippet") or "")[:900],
             occurred_at=result.get("occurred_at", ""),
         )
-
-        if direct_source:
-            add_node(
-                direct_source,
-                label=nodes.get(direct_source, {}).get("label") or _short_title(direct_source),
-                source_ref=direct_source,
-                type="source",
-                group=_source_group(direct_source),
-                stage="expanded_from_not_returned",
-                selected=direct_source in candidate_order,
-                final_selected=direct_source in final_refs,
-            )
-            add_link(direct_source, source_ref, "direct_context_for", weight=3)
-            direct_edges.append({"from": direct_source, "to": source_ref, "rel": "direct_context_for"})
 
         for retriever in retrievers:
             if retriever in {"keyword", "vector"}:
@@ -172,10 +153,7 @@ def build_retrieval_debug_graph(
 
     stats = {
         "query": query,
-        "pipeline": (
-            "keyword/vector candidates -> one-hop direct-link expansion -> rerank/diversify "
-            "-> token-budget selection"
-        ),
+        "pipeline": "keyword/vector candidates -> rerank/diversify -> token-budget selection",
         "note": (
             "Shows final selected results plus wider ranked candidates outside the normal "
             "token budget. Retrieval reason edges and DB entity_links are separate edge types."
@@ -195,7 +173,6 @@ def build_retrieval_debug_graph(
         "entity_link_relationship_counts": dict(
             Counter(str(row.get("relationship_type") or "") for row in entity_edge_rows)
         ),
-        "direct_context_edge_count": len(direct_edges),
         "limitations": final_retrieval.get("limitations", []),
     }
     return {"stats": stats, "nodes": list(nodes.values()), "links": list(links.values())}
@@ -410,20 +387,8 @@ def _link_key(source: str, target: str) -> tuple[str, str]:
     return (first, second)
 
 
-def _stage(retrievers: list[str], *, is_final: bool, direct_source: str) -> str:
-    if is_final:
-        return "final_selected_direct_link" if direct_source else "final_selected"
-    if direct_source or "direct-link" in retrievers or "direct-context" in retrievers:
-        return "candidate_one_hop_not_selected"
-    return "candidate_not_selected"
-
-
-def _direct_context_source(reasons: list[str]) -> str:
-    for reason in reasons:
-        match = DIRECT_CONTEXT_RE.match(reason)
-        if match:
-            return match.group("source_ref")
-    return ""
+def _stage(*, is_final: bool) -> str:
+    return "final_selected" if is_final else "candidate_not_selected"
 
 
 def _entity_label(row: dict[str, Any]) -> str:
@@ -555,14 +520,14 @@ function render() {{
   svg.call(d3.zoom().scaleExtent([0.15, 4]).on('zoom', e => g.attr('transform', e.transform)));
   const data = visibleData();
   const sim = d3.forceSimulation(data.nodes)
-    .force('link', d3.forceLink(data.links).id(d => d.id).distance(d => d.rel === 'direct_context_for' ? 72 : 145).strength(d => d.rel === 'direct_context_for' ? .7 : .18))
+    .force('link', d3.forceLink(data.links).id(d => d.id).distance(145).strength(.18))
     .force('charge', d3.forceManyBody().strength(d => d.final_selected ? -440 : -180))
     .force('center', d3.forceCenter(width/2, height/2))
     .force('collision', d3.forceCollide().radius(d => radius(d)+10));
-  const link = g.append('g').selectAll('line').data(data.links).join('line').attr('class', d => 'link ' + (d.rel === 'direct_context_for' ? 'direct' : d.rel === 'entity_link' ? 'entity' : d.rel === 'vector_candidate' ? 'vector' : '')).attr('stroke-width', d => d.rel === 'direct_context_for' ? 3 : d.rel === 'entity_link' ? 2 : Math.sqrt(d.weight || 1));
+  const link = g.append('g').selectAll('line').data(data.links).join('line').attr('class', d => 'link ' + (d.rel === 'entity_link' ? 'entity' : d.rel === 'vector_candidate' ? 'vector' : '')).attr('stroke-width', d => d.rel === 'entity_link' ? 2 : Math.sqrt(d.weight || 1));
   const edgeLabels = g.append('g').selectAll('text').data(data.links).join('text').attr('class','link-label').text(d => d.relationship_type || d.rel.replace('_candidate','')).style('display', document.getElementById('showEdgeLabels').checked ? null : 'none');
   const node = g.append('g').selectAll('g').data(data.nodes).join('g').attr('class','node').call(drag(sim)).on('click', showDetails);
-  node.append('circle').attr('r', radius).attr('fill', nodeColor).attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .42).attr('stroke', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? '#1800ad' : d.final_selected ? '#26211e' : '#26211e').attr('stroke-width', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? 2.6 : d.final_selected ? 1.8 : 1);
+  node.append('circle').attr('r', radius).attr('fill', nodeColor).attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .42).attr('stroke', d => d.final_selected ? '#26211e' : '#26211e').attr('stroke-width', d => d.final_selected ? 1.8 : 1);
   node.append('text').attr('x', d => radius(d)+4).attr('y', 4).text(d => `${{d.order ? d.order + '. ' : d.candidate_order ? '#' + d.candidate_order + ' ' : ''}}${{d.label || d.id}}`).style('display', document.getElementById('showLabels').checked ? null : 'none').attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .55);
   sim.on('tick', () => {{ link.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y); node.attr('transform', d => `translate(${{d.x}},${{d.y}})`); edgeLabels.attr('x', d => (d.source.x + d.target.x)/2).attr('y', d => (d.source.y + d.target.y)/2); }});
 }}

@@ -10,7 +10,7 @@ import pytest
 
 from fourok.cli import main
 from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
-from fourok.etl.load.context_objects import store_canonical_objects, store_entity_links
+from fourok.etl.load.context_objects import store_entity_links
 from fourok.governance import GovernedContext
 from fourok.retrieval.augmentation import _source_date_label
 
@@ -149,19 +149,15 @@ def test_retrieve_emits_stage_spans_for_tempo(monkeypatch, tmp_path: Path) -> No
     assert {
         "fourok.retrieve",
         "fourok.retrieve.keyword",
-        "fourok.retrieve.direct_link_expand",
         "fourok.retrieve.graph_link_metrics",
         "fourok.retrieve.rerank",
         "fourok.retrieve.token_pack",
     }.issubset(span_by_name)
+    assert "fourok.retrieve.direct_link_expand" not in span_by_name
     assert span_by_name["fourok.retrieve.keyword"]["fourok.retrieve.query_length"] == len(
         "olivia rollout"
     )
     assert span_by_name["fourok.retrieve.keyword"]["fourok.retrieve.keyword_candidates"] == 1
-    assert (
-        span_by_name["fourok.retrieve.direct_link_expand"]["fourok.retrieve.seed_candidates"]
-        == 1
-    )
     assert span_by_name["fourok.retrieve.token_pack"]["fourok.retrieve.returned_results"] == len(
         response.results
     )
@@ -627,7 +623,7 @@ def test_retrieve_centers_evidence_snippet_on_query_terms(
     assert "runtime deployment decision belongs with the fourok OpenClaw rollout notes" in output
 
 
-def test_retrieve_expands_high_ranked_hits_with_direct_context(
+def test_retrieve_keeps_keyword_thread_hits_without_graph_expansion(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
     state = tmp_path / "state.sqlite"
@@ -694,279 +690,8 @@ def test_retrieve_expands_high_ranked_hits_with_direct_context(
     assert "source_ref: linear:issue:alpha-plan" in output
     assert "source_ref: linear:comment:alpha-budget" in output
     assert "Budget follow-up says the rollout needs Finance approval." in output
-    assert "source_ref: linear:user:person-1" in output
-    assert "is accountable for approval routing." in output
-
-
-def test_retrieve_expands_one_hop_links_before_reranking(
-    capsys, monkeypatch, tmp_path: Path
-) -> None:
-    state = tmp_path / "state.sqlite"
-    context = GovernedContext(state)
-    context.ingest_source_records(
-        [
-            SourceRecord(
-                source_ref="linear:issue:atlas-seed",
-                source_system="linear",
-                source_id="atlas-seed",
-                record_type="work_item",
-                title="Atlas rollout seed",
-                body="atlas rollout launch checklist",
-                occurred_at="2026-06-20T12:00:00+00:00",
-            ),
-            SourceRecord(
-                source_ref="linear:issue:atlas-budget",
-                source_system="linear",
-                source_id="atlas-budget",
-                record_type="work_item",
-                title="Atlas budget approval",
-                body="Budget approval from graph neighbor.",
-                occurred_at="2026-06-21T12:00:00+00:00",
-            ),
-        ]
-    )
-    store_canonical_objects(
-        context._engine,
-        context._canonical_objects,
-        objects=[
-            {
-                "object_ref": "linear:issue:atlas-budget",
-                "object_type": "WorkItem",
-                "title": "Atlas budget approval",
-                "source_refs": ("linear:issue:atlas-budget",),
-                "metadata": {},
-                "lifecycle_state": "active",
-            }
-        ],
-    )
-    store_entity_links(
-        context._engine,
-        context._entity_links,
-        links=[
-            {
-                "link_ref": "linear:issue:atlas-seed->linear:issue:atlas-budget",
-                "source_ref": "linear:issue:atlas-seed",
-                "object_ref": "linear:issue:atlas-budget",
-                "relationship_type": "related_work",
-                "confidence": 1.0,
-                "evidence": {},
-                "reason": "fixture",
-                "status": "linked",
-            },
-            *[
-                {
-                    "link_ref": f"linear:issue:source-{index}->linear:issue:atlas-budget",
-                    "source_ref": f"linear:issue:source-{index}",
-                    "object_ref": "linear:issue:atlas-budget",
-                    "relationship_type": "mentions",
-                    "confidence": 1.0,
-                    "evidence": {},
-                    "reason": "fixture",
-                    "status": "linked",
-                }
-                for index in range(8)
-            ],
-        ],
-    )
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "fourok",
-            "retrieve",
-            "atlas rollout launch",
-            "--state",
-            str(state),
-            "--retrievers",
-            "keyword",
-        ],
-    )
-
-    main()
-
-    output = capsys.readouterr().out
-    assert output.index("source_ref: linear:issue:atlas-budget") < output.index(
-        "source_ref: linear:issue:atlas-seed"
-    )
-    assert "why_relevant: direct link from linear:issue:atlas-seed" in output
-    assert "graph_link_count=9" in output
-
-
-def test_retrieve_batches_duplicate_direct_link_candidate_fetches(
-    monkeypatch, tmp_path: Path
-) -> None:
-    state = tmp_path / "state.sqlite"
-    context = GovernedContext(state)
-    context.ingest_source_records(
-        [
-            SourceRecord(
-                source_ref="linear:issue:olivia-alpha",
-                source_system="linear",
-                source_id="olivia-alpha",
-                record_type="work_item",
-                title="Olivia alpha launch",
-                body="olivia shared launch planning alpha",
-                occurred_at="2026-06-20T12:00:00+00:00",
-            ),
-            SourceRecord(
-                source_ref="linear:issue:olivia-beta",
-                source_system="linear",
-                source_id="olivia-beta",
-                record_type="work_item",
-                title="Olivia beta launch",
-                body="olivia shared launch planning beta",
-                occurred_at="2026-06-21T12:00:00+00:00",
-            ),
-            SourceRecord(
-                source_ref="linear:user:olivia",
-                source_system="linear",
-                source_id="olivia",
-                record_type="person",
-                title="Olivia Allen",
-                body="employee",
-                occurred_at="2026-06-19T12:00:00+00:00",
-            ),
-        ]
-    )
-    store_canonical_objects(
-        context._engine,
-        context._canonical_objects,
-        objects=[
-            {
-                "object_ref": "linear:user:olivia",
-                "object_type": "Person",
-                "title": "Olivia Allen",
-                "source_refs": ("linear:user:olivia",),
-                "metadata": {},
-                "lifecycle_state": "active",
-            }
-        ],
-    )
-    store_entity_links(
-        context._engine,
-        context._entity_links,
-        links=[
-            {
-                "link_ref": f"linear:issue:olivia-{name}->linear:user:olivia",
-                "source_ref": f"linear:issue:olivia-{name}",
-                "object_ref": "linear:user:olivia",
-                "relationship_type": "assignee",
-                "confidence": 1.0,
-                "evidence": {},
-                "reason": "fixture",
-                "status": "linked",
-            }
-            for name in ("alpha", "beta")
-        ],
-    )
-    candidate_fetches: list[str] = []
-
-    def fail_if_old_per_edge_fetch_is_used(*args, **kwargs):
-        candidate_fetches.append(str(args[3]))
-        raise AssertionError("direct-link candidates should be fetched in one batch")
-
-    monkeypatch.setattr(
-        "fourok.retrieval.augmentation._candidate_row_for_source_ref",
-        fail_if_old_per_edge_fetch_is_used,
-    )
-
-    response = context.retrieve_augmentation("olivia launch", retrievers=("keyword",))
-
-    assert candidate_fetches == []
-    olivia = [result for result in response.results if result.source_ref == "linear:user:olivia"]
-    assert olivia
-    reasons = set(olivia[0].rerank_reasons)
-    assert "direct link from linear:issue:olivia-alpha" in reasons
-    assert "direct link from linear:issue:olivia-beta" in reasons
-
-
-def test_retrieve_keeps_direct_link_identity_evidence(
-    capsys, monkeypatch, tmp_path: Path
-) -> None:
-    state = tmp_path / "state.sqlite"
-    monkeypatch.setattr(
-        "fourok.etl.load.source_changes.entity_links_from_source_records", lambda _records: []
-    )
-    context = GovernedContext(state)
-    context.ingest_source_records(
-        [
-            SourceRecord(
-                source_ref="linear:issue:launch",
-                source_system="linear-live",
-                source_id="launch",
-                record_type="work_item",
-                title="Launch evidence",
-                body="Launch evidence needs a directly linked owner.",
-                occurred_at="2026-06-10T12:00:00+00:00",
-            ),
-            SourceRecord(
-                source_ref="linear:user:olivia",
-                source_system="linear-live",
-                source_id="olivia",
-                record_type="person",
-                title="olivia.allen@4ok.tech",
-                body="olivia.allen@4ok.tech employee",
-                occurred_at="2026-06-10T12:00:00+00:00",
-            ),
-        ]
-    )
-    store_canonical_objects(
-        context._engine,
-        context._canonical_objects,
-        objects=[
-            {
-                "object_ref": "linear:user:olivia",
-                "object_type": "Person",
-                "title": "olivia.allen@4ok.tech",
-                "source_refs": ("linear:user:olivia",),
-                "metadata": {},
-                "lifecycle_state": "active",
-            }
-        ],
-    )
-    store_entity_links(
-        context._engine,
-        context._entity_links,
-        links=[
-            {
-                "link_ref": "linear:issue:launch->linear:user:olivia",
-                "source_ref": "linear:issue:launch",
-                "object_ref": "linear:user:olivia",
-                "relationship_type": "assignee",
-                "confidence": 1.0,
-                "evidence": {},
-                "reason": "fixture",
-                "status": "linked",
-            }
-        ],
-    )
-
-    monkeypatch.setattr(
-        "sys.argv",
-        [
-            "fourok",
-            "retrieve",
-            "launch evidence",
-            "--state",
-            str(state),
-            "--json",
-            "--token-budget",
-            "4000",
-        ],
-    )
-
-    main()
-
-    response = json.loads(capsys.readouterr().out)
-    direct_identity = next(
-        result for result in response["results"] if result["source_ref"] == "linear:user:olivia"
-    )
-    assert "direct-link" in direct_identity["retrievers"]
-    assert direct_identity["title"] == "olivia.allen@4ok.tech"
-    assert direct_identity["snippet"] == "employee"
-    assert direct_identity["rerank_reasons"] == [
-        "direct link from linear:issue:launch",
-        "graph_link_count=1",
-    ]
+    assert "source_ref: linear:user:person-1" not in output
+    assert "is accountable for approval routing." not in output
 
 
 def test_retrieve_does_not_fan_out_from_weak_identity_seed(
@@ -1024,6 +749,8 @@ def test_retrieve_does_not_fan_out_from_weak_identity_seed(
             "--state",
             str(state),
             "--json",
+            "--retrievers",
+            "keyword",
             "--token-budget",
             "4000",
         ],
