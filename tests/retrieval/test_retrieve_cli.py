@@ -344,7 +344,10 @@ def test_retrieve_json_returns_stable_machine_shape_without_echoing_query(
     assert "query" not in output
     assert output["status"] == "ok"
     assert output["context_block"].startswith("fourok RETRIEVAL FOR AGENTS\n")
-    assert output["results"][0] == {
+    result = output["results"][0]
+    assert result["rank"] == 1
+    assert result["retrieval_event_id"].startswith("retrieval-query:")
+    assert result == {
         "source_ref": "slack:message:cancellation",
         "source_system": "slack-live",
         "record_type": "message",
@@ -353,12 +356,14 @@ def test_retrieve_json_returns_stable_machine_shape_without_echoing_query(
         "snippet": (
             "Customer asked whether the cancellation invoice was final and who owns follow-up."
         ),
-        "score": output["results"][0]["score"],
-        "retrievers": output["results"][0]["retrievers"],
+        "score": result["score"],
+        "retrievers": result["retrievers"],
         "permission_refs": [],
         "rerank_reasons": ["specific source excerpt"],
+        "rank": 1,
+        "retrieval_event_id": result["retrieval_event_id"],
     }
-    assert set(output["results"][0]["retrievers"]) >= {"keyword"}
+    assert set(result["retrievers"]) >= {"keyword"}
     assert output["limitations"]
 
 
