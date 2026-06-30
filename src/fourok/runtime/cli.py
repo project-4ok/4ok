@@ -421,6 +421,7 @@ def _onboard_message(args: argparse.Namespace) -> str:
     counts = {check.get("name"): check.get("count") for check in checks if isinstance(check, dict)}
     source_count = counts.get("source_records") or 0
     retrieval_count = counts.get("retrieval_records") or 0
+    source_system_counts = status_report.get("source_system_counts", {})
     lines = [
         "fourok onboarding",
         "",
@@ -442,7 +443,13 @@ def _onboard_message(args: argparse.Namespace) -> str:
             "Connect your workspace:",
             "  fourok works best when you connect your whole workspace.",
             *_connector_setup_lines(secret_report),
-            *_configured_connector_initial_run_lines(secret_report, source_count=source_count),
+            *_configured_connector_initial_run_lines(
+                secret_report,
+                source_count=source_count,
+                source_system_counts=source_system_counts
+                if isinstance(source_system_counts, dict)
+                else {},
+            ),
             *_post_connection_lines(
                 status=str(status_report.get("status") or ""), source_count=source_count
             ),
@@ -633,22 +640,33 @@ def _onboard_next_lines(*, status: str) -> list[str]:
 
 
 def _configured_connector_initial_run_lines(
-    secret_report: dict[str, object], *, source_count: int
+    secret_report: dict[str, object],
+    *,
+    source_count: int,
+    source_system_counts: dict[str, object],
 ) -> list[str]:
-    if source_count > 0:
-        return []
     connectors = secret_report.get("connectors", {})
     if not isinstance(connectors, dict):
         return []
     configured = [
-        name
+        str(name)
         for name, data in sorted(connectors.items())
         if isinstance(data, dict) and data.get("status") == "ok"
     ]
     if not configured:
         return []
-    connector_text = ", ".join(str(name) for name in configured)
-    verb = "is" if len(configured) == 1 else "are"
+    if source_count > 0:
+        missing_import = [
+            name
+            for name in configured
+            if int(str(source_system_counts.get(name, 0) or 0)) == 0
+        ]
+    else:
+        missing_import = configured
+    if not missing_import:
+        return []
+    connector_text = ", ".join(missing_import)
+    verb = "is" if len(missing_import) == 1 else "are"
     return [
         "",
         f"  {connector_text} {verb} configured, but no connector data has been imported yet.",

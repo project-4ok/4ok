@@ -373,6 +373,7 @@ def test_onboard_ready_state_does_not_suggest_initial_run(capsys, monkeypatch) -
                 {"name": "source_records", "status": "ok", "count": 2708},
                 {"name": "retrieval_records", "status": "ok", "count": 2733},
             ],
+            "source_system_counts": {"linear": 1200, "twenty": 1508},
         },
     )
     monkeypatch.setattr(
@@ -407,6 +408,51 @@ def test_onboard_ready_state_does_not_suggest_initial_run(capsys, monkeypatch) -
     assert "fourok onboard initial-run" not in output
     assert "fourok admin connector-jobs" not in output
     assert 'fourok retrieve "What changed this week?"' in output
+
+
+def test_onboard_ready_state_suggests_initial_run_for_new_configured_sources(
+    capsys, monkeypatch
+) -> None:
+    monkeypatch.setattr("sys.argv", ["fourok", "onboard"])
+    monkeypatch.setattr(
+        "fourok.runtime.cli._safe_client_status_report",
+        lambda: {
+            "status": "ok",
+            "checks": [
+                {"name": "database", "status": "ok"},
+                {"name": "source_records", "status": "ok", "count": 2708},
+                {"name": "retrieval_records", "status": "ok", "count": 2733},
+            ],
+            "source_system_counts": {"linear": 1200, "twenty": 1508},
+        },
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._connector_secret_report",
+        lambda: {
+            "status": "ok",
+            "connectors": {
+                "google_drive": {"status": "ok", "missing": []},
+                "linear": {"status": "ok", "missing": []},
+                "twenty": {"status": "ok", "missing": []},
+            },
+        },
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._dagster_code_secret_presence",
+        lambda: {"status": "ok", "missing": []},
+    )
+    monkeypatch.setattr(
+        "fourok.runtime.cli._embedding_secret_report",
+        lambda: {"status": "ok", "provider": "openai"},
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "google_drive is configured, but no connector data has been imported yet" in output
+    assert "Run the initial import now:" in output
+    assert "fourok onboard initial-run" in output
+    assert output.index("fourok onboard initial-run") < output.index("fourok status")
 
 
 def test_onboard_calls_out_initial_run_when_connector_configured_but_no_data(
