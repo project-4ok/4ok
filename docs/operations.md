@@ -485,10 +485,11 @@ uv run --group pipeline python scripts/check_slack_live_contract.py
 
 This runs `tap-slack` config validation, discovery, and SDK test-record mode,
 lands the Singer output into `.local/test-artifacts/slack-live-contract`, and
-adapts the landed `channels`, `users`, `channel_members`, `messages`, or
-`threads` streams into Slack `SourceRecord`s. Output reports counts, stream
-names, record types, and artifact paths only; it must not print Slack message
-text or credential values.
+adapts the landed `channels`, `users`, `messages`, or `threads` streams into
+Slack `SourceRecord`s. Landed `channel_members` data is intentionally ignored
+because channel-membership records were noisy and not useful as canonical
+relationship objects. Output reports counts, stream names, record types, and
+artifact paths only; it must not print Slack message text or credential values.
 
 When `TAP_SLACK_CHANNEL_TYPES` is unset, fourok defaults live Slack extraction to
 `["im","mpim","private_channel"]` because the current bot token can read those

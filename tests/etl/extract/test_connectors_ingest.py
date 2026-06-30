@@ -15,6 +15,7 @@ from fourok.etl.extract.connectors import (
 )
 from fourok.etl.extract.fixture_tap import main as fixture_tap_main
 from fourok.etl.extract.raw_jsonl_target import main as raw_jsonl_target_main
+from fourok.etl.extract.slack_adapter import load_slack_landed_source_records
 from fourok.etl.extract.source_records import SourceRecord
 from fourok.etl.load.source_metadata import source_metadata, store_source_records
 from fourok.governance import GovernedContext
@@ -217,6 +218,22 @@ def test_slack_raw_landing_can_be_reloaded_into_source_records() -> None:
         "slack:thread:C123456:1717235900.000000",
         "slack:thread:C123456:1717235900.000000",
     ]
+
+
+def test_slack_landed_source_records_ignore_channel_members(tmp_path: Path) -> None:
+    (tmp_path / "channel_members.jsonl").write_text(
+        '{"channel_id":"C123456","member_id":"U123456"}\n',
+        encoding="utf-8",
+    )
+    (tmp_path / "users.jsonl").write_text(
+        '{"id":"U123456","name":"olivia","real_name":"Olivia Example"}\n',
+        encoding="utf-8",
+    )
+
+    source_records = load_slack_landed_source_records(tmp_path)
+
+    assert [record.source_ref for record in source_records] == ["slack:user:U123456"]
+    assert [record.record_type for record in source_records] == ["person"]
 
 
 def test_missing_landed_stream_returns_no_source_records(tmp_path: Path) -> None:

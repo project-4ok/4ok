@@ -328,14 +328,6 @@ def test_operator_dashboard_exposes_slack_messages_separately_from_metadata(
                 body="Slack channel metadata.",
             ),
             SourceRecord(
-                source_ref="slack:channel_member:C1:U1",
-                source_system="slack",
-                source_id="C1:U1",
-                record_type="relationship",
-                title="Channel membership",
-                body="Slack membership metadata.",
-            ),
-            SourceRecord(
                 source_ref="linear:issue:OPS-1",
                 source_system="linear",
                 source_id="OPS-1",
@@ -369,7 +361,7 @@ def test_operator_dashboard_exposes_slack_messages_separately_from_metadata(
 
     report = operator_dashboard(state)
 
-    assert report["source_records"]["by_source_system"] == {"linear": 1, "slack": 5}
+    assert report["source_records"]["by_source_system"] == {"linear": 1, "slack": 4}
     assert report["slack_messages"] == {"active_total": 2}
 
 

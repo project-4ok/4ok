@@ -6,7 +6,7 @@ from typing import Any
 
 from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
 
-SLACK_LANDED_STREAMS = ("channels", "messages", "threads", "users", "channel_members")
+SLACK_LANDED_STREAMS = ("channels", "messages", "threads", "users")
 
 
 def load_slack_landed_source_records(
@@ -43,8 +43,6 @@ def slack_source_record_from_raw(stream: str, record: dict[str, Any]) -> SourceR
         return slack_user_source_record_from_raw(record)
     if stream == "channels":
         return slack_channel_source_record_from_raw(record)
-    if stream == "channel_members":
-        return slack_channel_member_source_record_from_raw(record)
     raise ValueError(f"Unsupported Slack stream: {stream}")
 
 
@@ -154,37 +152,6 @@ def slack_channel_source_record_from_raw(record: dict[str, Any]) -> SourceRecord
                 "num_members": str(record.get("num_members") or ""),
             }
         ),
-        raw=record,
-    )
-
-
-def slack_channel_member_source_record_from_raw(record: dict[str, Any]) -> SourceRecord:
-    channel_id = _required_string(
-        record,
-        "channel_id",
-        "Slack channel member record requires channel_id",
-    )
-    member_id = _required_string(
-        record,
-        "member_id",
-        "Slack channel member record requires member_id",
-    )
-
-    return SourceRecord(
-        source_ref=f"slack:channel_member:{channel_id}:{member_id}",
-        source_system="slack",
-        source_id=f"{channel_id}:{member_id}",
-        record_type="relationship",
-        title=f"{member_id} in {channel_id}",
-        body=f"Slack user {member_id} is a member of channel {channel_id}",
-        thread_ref=f"slack:channel:{channel_id}",
-        permission_refs=(f"slack:channel:{channel_id}",),
-        identity_refs=(f"slack:user:{member_id}",),
-        metadata={
-            "source_object_type": "channel_member",
-            "channel_id": channel_id,
-            "member_id": member_id,
-        },
         raw=record,
     )
 
