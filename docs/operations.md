@@ -491,12 +491,12 @@ because channel-membership records were noisy and not useful as canonical
 relationship objects. Output reports counts, stream names, record types, and
 artifact paths only; it must not print Slack message text or credential values.
 
-When `TAP_SLACK_CHANNEL_TYPES` is unset, fourok defaults live Slack extraction to
-`["im","mpim","private_channel"]` because the current bot token can read those
-conversation histories. Public-channel history still requires inviting the app
-to each public channel, or adding a separately proved auto-join workflow with
-`channels:join`; operators can set `TAP_SLACK_CHANNEL_TYPES` explicitly to
-override the default.
+Slack live extraction always requests every readable conversation type:
+`["public_channel","private_channel","mpim","im"]`. `TAP_SLACK_SELECTED_CHANNELS`
+and `TAP_SLACK_CHANNEL_TYPES` operator overrides are intentionally ignored so
+the import cannot be narrowed to a hand-picked channel subset. Public-channel
+history is included for public channels the Slack app is already invited into;
+channels the app has not joined remain outside the bot token's readable scope.
 
 Check the live Twenty connector contract with env/.env-backed credentials:
 

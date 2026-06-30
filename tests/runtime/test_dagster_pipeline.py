@@ -79,14 +79,12 @@ def test_connector_env_resource_drops_empty_dotenv_values(tmp_path: Path) -> Non
     assert "TAP_SLACK_SELECTED_CHANNELS" not in env
 
 
-def test_meltano_environment_ignores_empty_process_values_before_slack_defaults(
-    monkeypatch, tmp_path: Path
-) -> None:
-    monkeypatch.setenv("TAP_SLACK_SELECTED_CHANNELS", "")
+def test_meltano_environment_removes_selected_channel_limits(monkeypatch, tmp_path: Path) -> None:
+    monkeypatch.setenv("TAP_SLACK_SELECTED_CHANNELS", '["C0ASNARACMT"]')
 
     env = _meltano_environment(landing_dir=tmp_path, secret_env={"SLACK_BOT_TOKEN": "x"})
 
-    assert env["TAP_SLACK_SELECTED_CHANNELS"] == '["C0ASNARACMT"]'
+    assert "TAP_SLACK_SELECTED_CHANNELS" not in env
 
 
 def test_dagster_definitions_expose_only_operator_product_lineage_assets() -> None:
@@ -502,7 +500,7 @@ def test_dagster_meltano_environment_aliases_runtime_slack_bot_token(monkeypatch
     assert env["TAP_SLACK_API_KEY"] == "runtime-token"
 
 
-def test_dagster_meltano_environment_defaults_slack_to_readable_channel_types(
+def test_dagster_meltano_environment_defaults_slack_to_all_readable_channel_types(
     monkeypatch,
 ) -> None:
     monkeypatch.delenv("TAP_SLACK_CHANNEL_TYPES", raising=False)
@@ -512,20 +510,20 @@ def test_dagster_meltano_environment_defaults_slack_to_readable_channel_types(
         secret_env={"SLACK_BOT_TOKEN": "secret-token"},
     )
 
-    assert env["TAP_SLACK_CHANNEL_TYPES"] == '["im","mpim","private_channel"]'
+    assert env["TAP_SLACK_CHANNEL_TYPES"] == '["public_channel","private_channel","mpim","im"]'
 
 
-def test_dagster_meltano_environment_preserves_explicit_slack_channel_types(
+def test_dagster_meltano_environment_removes_explicit_slack_channel_type_limits(
     monkeypatch,
 ) -> None:
-    monkeypatch.setenv("TAP_SLACK_CHANNEL_TYPES", '["public_channel"]')
+    monkeypatch.setenv("TAP_SLACK_CHANNEL_TYPES", '["private_channel"]')
 
     env = _meltano_environment(
         landing_dir=Path(".local/raw/singer/slack"),
         secret_env={"SLACK_BOT_TOKEN": "secret-token"},
     )
 
-    assert env["TAP_SLACK_CHANNEL_TYPES"] == '["public_channel"]'
+    assert env["TAP_SLACK_CHANNEL_TYPES"] == '["public_channel","private_channel","mpim","im"]'
 
 
 def test_dagster_meltano_environment_adds_linear_api_key_alias() -> None:

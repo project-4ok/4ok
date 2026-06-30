@@ -696,6 +696,7 @@ def test_dagster_code_receives_connector_secret_env_names() -> None:
         )
         assert "GOOGLE_WORKSPACE_DRIVE_IDS: ${GOOGLE_WORKSPACE_DRIVE_IDS:-}" in dagster_code
         assert "GOOGLE_WORKSPACE_LIMIT" not in dagster_code
+        assert "TAP_SLACK_SELECTED_CHANNELS" not in dagster_code
 
 
 def test_compose_defaults_to_local_hash_embeddings_without_explicit_provider() -> None:

@@ -12,15 +12,16 @@ assert _SPEC.loader is not None
 _SPEC.loader.exec_module(slack_live_contract)
 
 
-def test_slack_env_defaults_to_readable_channel_types(monkeypatch, tmp_path: Path) -> None:
+def test_slack_env_defaults_to_all_readable_channel_types(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.delenv("TAP_SLACK_CHANNEL_TYPES", raising=False)
     monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test")
 
     env = slack_live_contract._slack_env()
 
-    assert env["TAP_SLACK_CHANNEL_TYPES"] == '["im","mpim","private_channel"]'
+    assert env["TAP_SLACK_CHANNEL_TYPES"] == '["public_channel","private_channel","mpim","im"]'
     assert env["TAP_SLACK_INCLUDE_ADMIN_STREAMS"] == "false"
+    assert "TAP_SLACK_SELECTED_CHANNELS" not in env
 
 
 def test_slack_env_uses_exported_token(monkeypatch, tmp_path: Path) -> None:
@@ -32,14 +33,16 @@ def test_slack_env_uses_exported_token(monkeypatch, tmp_path: Path) -> None:
     assert env["TAP_SLACK_API_KEY"] == "xoxb-test"
 
 
-def test_slack_env_preserves_explicit_channel_types(monkeypatch, tmp_path: Path) -> None:
+def test_slack_env_removes_explicit_channel_type_limits(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.chdir(tmp_path)
     monkeypatch.setenv("TAP_SLACK_CHANNEL_TYPES", '["private_channel"]')
+    monkeypatch.setenv("TAP_SLACK_SELECTED_CHANNELS", '["CEXPLICIT"]')
     monkeypatch.setenv("SLACK_BOT_TOKEN", "xoxb-test")
 
     env = slack_live_contract._slack_env()
 
-    assert env["TAP_SLACK_CHANNEL_TYPES"] == '["private_channel"]'
+    assert env["TAP_SLACK_CHANNEL_TYPES"] == '["public_channel","private_channel","mpim","im"]'
+    assert "TAP_SLACK_SELECTED_CHANNELS" not in env
 
 
 def test_live_checker_reports_missing_credentials_as_blocker(
