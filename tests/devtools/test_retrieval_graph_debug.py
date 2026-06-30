@@ -24,7 +24,7 @@ def test_retrieval_debug_graph_shows_final_wide_direct_and_db_edges() -> None:
                 "title": "olivia.allen@4ok.tech",
                 "snippet": "employee",
                 "score": 9.1,
-                "retrievers": ["keyword"],
+                "retrievers": ["keyword", "vector"],
                 "rerank_reasons": [],
             }
         ],
@@ -81,6 +81,7 @@ def test_retrieval_debug_graph_shows_final_wide_direct_and_db_edges() -> None:
 
     nodes = {node["id"]: node for node in graph["nodes"]}
     links = {(link["source"], link["target"], link["rel"]): link for link in graph["links"]}
+    link_pairs = {frozenset((link["source"], link["target"])): link for link in graph["links"]}
 
     assert nodes["linear:user:olivia"]["final_selected"] is True
     assert nodes["linear:user:olivia"]["label"] == "Olivia Allen"
@@ -90,12 +91,13 @@ def test_retrieval_debug_graph_shows_final_wide_direct_and_db_edges() -> None:
     assert nodes["linear:issue:OPS-1"]["stage"] == "candidate_one_hop_not_selected"
     assert nodes["twenty:company:4ok"]["stage"] == "candidate_not_selected"
     assert nodes["identity:email:olivia.allen@4ok.tech"]["type"] == "entity"
-    assert links[("query:olivia", "linear:user:olivia", "keyword_candidate")]
+    query_olivia_link = links[("query:olivia", "linear:user:olivia", "keyword_candidate")]
+    assert query_olivia_link["rels"] == ["keyword_candidate", "vector_candidate"]
     assert links[("query:olivia", "twenty:company:4ok", "vector_candidate")]
-    assert links[("linear:user:olivia", "linear:issue:OPS-1", "direct_context_for")]
-    assert links[("linear:issue:OPS-1", "linear:user:olivia", "entity_link")][
-        "relationship_type"
-    ] == "assignee"
+    olivia_ops_link = link_pairs[frozenset(("linear:user:olivia", "linear:issue:OPS-1"))]
+    assert olivia_ops_link["rel"] == "entity_link"
+    assert olivia_ops_link["rels"] == ["direct_context_for", "entity_link"]
+    assert olivia_ops_link["relationship_type"] == "assignee"
     assert links[
         ("linear:user:olivia", "identity:email:olivia.allen@4ok.tech", "entity_link")
     ]["relationship_type"] == "email_identity"
@@ -103,6 +105,7 @@ def test_retrieval_debug_graph_shows_final_wide_direct_and_db_edges() -> None:
     assert graph["stats"]["wide_result_count"] == 3
     assert graph["stats"]["edge_counts"]["direct_context_for"] == 1
     assert graph["stats"]["edge_counts"]["entity_link"] == 2
+    assert len(graph["links"]) == 5
 
 
 def test_write_retrieval_debug_artifacts_creates_json_and_html(tmp_path: Path) -> None:

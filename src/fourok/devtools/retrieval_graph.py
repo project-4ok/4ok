@@ -36,7 +36,7 @@ def build_retrieval_debug_graph(
     query_id = f"query:{query}"
 
     nodes: dict[str, dict[str, Any]] = {}
-    links: dict[tuple[str, str, str], dict[str, Any]] = {}
+    links: dict[tuple[str, str], dict[str, Any]] = {}
 
     def add_node(node_id: str, **attrs: Any) -> None:
         node = nodes.setdefault(node_id, {"id": node_id})
@@ -45,12 +45,29 @@ def build_retrieval_debug_graph(
     def add_link(source: str, target: str, rel: str, **attrs: Any) -> None:
         if not source or not target or source == target:
             return
-        key = (source, target, rel)
+        key = _link_key(source, target)
+        weight = attrs.pop("weight", 1)
         link = links.setdefault(
             key,
-            {"source": source, "target": target, "rel": rel, "weight": attrs.pop("weight", 1)},
+            {"source": source, "target": target, "rel": rel, "rels": [], "weight": weight},
         )
-        link.update(attrs)
+        link["weight"] = max(float(link.get("weight", 1)), float(weight))
+        if rel not in link["rels"]:
+            link["rels"].append(rel)
+        if rel == "entity_link":
+            # Prefer the DB edge as the visible edge when a one-hop retrieval edge and
+            # an entity_link connect the same pair. Otherwise D3 draws two straight
+            # lines on top of each other and it looks like a duplicated edge.
+            link.update({"source": source, "target": target, "rel": rel})
+        relationship_type = str(attrs.pop("relationship_type", "") or "")
+        if relationship_type:
+            relationship_types = link.setdefault("relationship_types", [])
+            if relationship_type not in relationship_types:
+                relationship_types.append(relationship_type)
+            link["relationship_type"] = ", ".join(relationship_types)
+        for key_name, value in attrs.items():
+            if value is not None:
+                link[key_name] = value
 
     add_node(
         query_id,
@@ -172,7 +189,9 @@ def build_retrieval_debug_graph(
         "wide_token_budget": wide_retrieval.get("token_budget"),
         "node_count": len(nodes),
         "edge_count": len(links),
-        "edge_counts": dict(Counter(link["rel"] for link in links.values())),
+        "edge_counts": dict(
+            Counter(rel for link in links.values() for rel in link.get("rels", [link["rel"]]))
+        ),
         "entity_link_relationship_counts": dict(
             Counter(str(row.get("relationship_type") or "") for row in entity_edge_rows)
         ),
@@ -382,6 +401,13 @@ def _dedupe_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 def _source_refs(payload: dict[str, Any]) -> set[str]:
     return {str(result["source_ref"]) for result in _result_list(payload) if result.get("source_ref")}
+
+
+def _link_key(source: str, target: str) -> tuple[str, str]:
+    if source.startswith("query:") or target.startswith("query:"):
+        return (source, target)
+    first, second = sorted((source, target))
+    return (first, second)
 
 
 def _stage(retrievers: list[str], *, is_final: bool, direct_source: str) -> str:
