@@ -12,6 +12,7 @@ from typing import Any
 HASH_EMBEDDING_DIMENSIONS = 32
 OPENAI_EMBEDDING_DIMENSIONS = 256
 OPENAI_EMBEDDING_MODEL = "text-embedding-3-small"
+OPENAI_EMBEDDING_BATCH_SIZE = 512
 
 _urlopen = urllib.request.urlopen
 
@@ -102,6 +103,14 @@ def _openai_embed_texts(texts: list[str], *, dimensions: int) -> list[list[float
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is required when FOUROK_EMBEDDING_PROVIDER=openai")
+    batch_size = _openai_embedding_batch_size()
+    if len(texts) > batch_size:
+        embeddings: list[list[float]] = []
+        for start in range(0, len(texts), batch_size):
+            embeddings.extend(
+                _openai_embed_texts(texts[start : start + batch_size], dimensions=dimensions)
+            )
+        return embeddings
     model = os.environ.get("FOUROK_OPENAI_EMBEDDING_MODEL", OPENAI_EMBEDDING_MODEL)
     endpoint = os.environ.get("FOUROK_OPENAI_EMBEDDING_URL", "https://api.openai.com/v1/embeddings")
     payload = {
@@ -131,6 +140,16 @@ def _openai_embed_texts(texts: list[str], *, dimensions: int) -> list[list[float
                 f"OpenAI embedding returned {len(embedding)} dimensions; expected {dimensions}"
             )
     return embeddings
+
+
+def _openai_embedding_batch_size() -> int:
+    configured = os.environ.get("FOUROK_OPENAI_EMBEDDING_BATCH_SIZE")
+    if not configured:
+        return OPENAI_EMBEDDING_BATCH_SIZE
+    batch_size = int(configured)
+    if batch_size < 1:
+        raise ValueError("FOUROK_OPENAI_EMBEDDING_BATCH_SIZE must be at least 1")
+    return batch_size
 
 
 def _extract_openai_embedding(body: dict[str, Any]) -> list[float]:

@@ -1,11 +1,12 @@
 from pathlib import Path
+import json
 
 import pytest
 from sqlalchemy import delete
 
 from fourok.etl.extract.email_parser import load_email_dir
 from fourok.governance import GovernedContext
-from fourok.retrieval.embeddings import chunk_text, embed_text, embedding_dimensions
+from fourok.retrieval.embeddings import chunk_text, embed_text, embed_texts, embedding_dimensions
 from fourok.retrieval.evaluation import compare_retrieval_methods, load_retrieval_eval_cases
 from fourok.retrieval.vector_search import _vector_dimension_from_type
 
@@ -80,6 +81,45 @@ def test_openai_embedding_provider_uses_api_when_key_is_configured(monkeypatch) 
     request = requests[0]["request"]
     assert request.get_header("Authorization") == "Bearer test-key"
     assert requests[0]["timeout"] == 30
+
+
+def test_openai_embedding_provider_batches_large_rebuilds(monkeypatch) -> None:
+    request_inputs: list[list[str]] = []
+
+    class FakeResponse:
+        def __init__(self, texts: list[str]) -> None:
+            self._texts = texts
+
+        def __enter__(self):
+            return self
+
+        def __exit__(self, *args):
+            return False
+
+        def read(self) -> bytes:
+            data = [
+                {"embedding": [float(index), float(index + 1)]}
+                for index, _text in enumerate(self._texts)
+            ]
+            return json.dumps({"data": data}).encode("utf-8")
+
+    def fake_urlopen(request, timeout):
+        payload = json.loads(request.data.decode("utf-8"))
+        request_inputs.append(list(payload["input"]))
+        return FakeResponse(list(payload["input"]))
+
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    monkeypatch.setenv("FOUROK_EMBEDDING_PROVIDER", "openai")
+    monkeypatch.setenv("FOUROK_EMBEDDING_DIMENSIONS", "2")
+    monkeypatch.setenv("FOUROK_OPENAI_EMBEDDING_BATCH_SIZE", "2")
+    monkeypatch.setattr("fourok.retrieval.embeddings._urlopen", fake_urlopen)
+
+    assert embed_texts(["one", "two", "three"], dimensions=2) == [
+        [0.0, 1.0],
+        [1.0, 2.0],
+        [0.0, 1.0],
+    ]
+    assert request_inputs == [["one", "two"], ["three"]]
 
 
 def test_vector_dimension_parser_detects_existing_pgvector_width() -> None:
