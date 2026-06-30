@@ -733,7 +733,7 @@ def test_retrieve_keeps_keyword_thread_hits_without_graph_expansion(
     assert "source_ref: linear:issue:alpha-plan" in output
     assert "source_ref: linear:comment:alpha-budget" in output
     assert "Budget follow-up says the rollout needs Finance approval." in output
-    assert "source_ref: linear:user:person-1" not in output
+    assert "Linear person — Casey Holder" not in output
     assert "is accountable for approval routing." not in output
 
 
@@ -805,6 +805,186 @@ def test_retrieve_does_not_fan_out_from_weak_identity_seed(
     source_refs = {result["source_ref"] for result in response["results"]}
     assert "linear:user:olivia" in source_refs
     assert "linear:issue:unrelated" not in source_refs
+
+
+def test_retrieve_json_includes_people_buckets_for_direct_and_related_people(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:user:olivia",
+                source_system="linear",
+                source_id="olivia",
+                record_type="person",
+                title="Olivia Allen",
+                body="olivia.allen@example.invalid employee",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:user:olivia-ops",
+                source_system="linear",
+                source_id="olivia-ops",
+                record_type="person",
+                title="Olivia Ops",
+                body="olivia.ops@example.invalid employee",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:user:lukas",
+                source_system="linear",
+                source_id="lukas",
+                record_type="person",
+                title="Lukas Meyer",
+                body="lukas.meyer@example.invalid employee",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:issue:olivia-launch",
+                source_system="linear",
+                source_id="olivia-launch",
+                record_type="work_item",
+                title="Olivia launch checklist",
+                body="Olivia launch owner evidence for the rollout.",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+        ]
+    )
+    store_entity_links(
+        context._engine,
+        context._entity_links,
+        links=[
+            {
+                "link_ref": "issue->lukas",
+                "source_ref": "linear:issue:olivia-launch",
+                "object_ref": "linear:user:lukas",
+                "relationship_type": "commenter",
+                "confidence": 1.0,
+                "evidence": {},
+                "reason": "fixture",
+                "status": "linked",
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "olivia",
+            "--state",
+            str(state),
+            "--format",
+            "json",
+            "--retrievers",
+            "keyword",
+            "--token-budget",
+            "4000",
+        ],
+    )
+
+    main()
+
+    output = json.loads(capsys.readouterr().out)
+    people = output["people"]
+    possible_refs = {person["source_ref"] for person in people["possible_query_matches"]}
+    related_refs = {person["source_ref"] for person in people["related_people"]}
+    assert possible_refs == {"linear:user:olivia", "linear:user:olivia-ops"}
+    assert all(person["reason"] == "matched_name" for person in people["possible_query_matches"])
+    assert "linear:user:lukas" in related_refs
+    assert "linear:user:lukas" not in possible_refs
+    related = next(
+        person for person in people["related_people"] if person["source_ref"] == "linear:user:lukas"
+    )
+    assert related == {
+        "source_ref": "linear:user:lukas",
+        "name": "Lukas Meyer",
+        "source_system": "linear",
+        "reason": "commented_on_same_thread",
+        "related_to": "linear:issue:olivia-launch",
+    }
+
+
+def test_retrieve_block_renders_people_buckets_as_compact_hints(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:user:olivia",
+                source_system="linear",
+                source_id="olivia",
+                record_type="person",
+                title="Olivia Allen",
+                body="olivia.allen@example.invalid employee",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:user:lukas",
+                source_system="linear",
+                source_id="lukas",
+                record_type="person",
+                title="Lukas Meyer",
+                body="lukas.meyer@example.invalid employee",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:issue:olivia-launch",
+                source_system="linear",
+                source_id="olivia-launch",
+                record_type="work_item",
+                title="Olivia launch checklist",
+                body="Olivia launch owner evidence for the rollout.",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+        ]
+    )
+    store_entity_links(
+        context._engine,
+        context._entity_links,
+        links=[
+            {
+                "link_ref": "issue->lukas",
+                "source_ref": "linear:issue:olivia-launch",
+                "object_ref": "linear:user:lukas",
+                "relationship_type": "commenter",
+                "confidence": 1.0,
+                "evidence": {},
+                "reason": "fixture",
+                "status": "linked",
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "olivia",
+            "--state",
+            str(state),
+            "--retrievers",
+            "keyword",
+            "--token-budget",
+            "4000",
+        ],
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "People:" in output
+    assert "Possible query matches:" in output
+    assert "- Olivia Allen (matched_name) source_ref: linear:user:olivia" in output
+    assert "Related people hints:" in output
+    assert (
+        "- Lukas Meyer (commented_on_same_thread; related_to: linear:issue:olivia-launch) "
+        "source_ref: linear:user:lukas"
+    ) in output
 
 
 def test_retrieve_json_includes_bounded_related_follow_up_hints(

@@ -56,10 +56,26 @@ class RelatedFollowUpHint:
 
 
 @dataclass(frozen=True)
+class RetrievalPerson:
+    source_ref: str
+    name: str
+    source_system: str
+    reason: str
+    related_to: str = ""
+
+
+@dataclass(frozen=True)
+class RetrievalPeopleBuckets:
+    possible_query_matches: list[RetrievalPerson] = field(default_factory=list)
+    related_people: list[RetrievalPerson] = field(default_factory=list)
+
+
+@dataclass(frozen=True)
 class RetrievalAugmentationResponse:
     status: str
     results: list[RetrievalCandidate]
     limitations: list[str]
+    people: RetrievalPeopleBuckets = field(default_factory=RetrievalPeopleBuckets)
     you_could_also_be_interested_in: list[RelatedFollowUpHint] = field(default_factory=list)
     token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET
     estimated_tokens: int = 0
@@ -91,6 +107,15 @@ class RetrievalAugmentationResponse:
                 }
                 for index, result in enumerate(self.results, start=1)
             ],
+            "people": {
+                "possible_query_matches": [
+                    _person_bucket_item(person)
+                    for person in self.people.possible_query_matches
+                ],
+                "related_people": [
+                    _person_bucket_item(person) for person in self.people.related_people
+                ],
+            },
             "you_could_also_be_interested_in": [
                 {
                     "topic": hint.topic,
@@ -245,6 +270,14 @@ def retrieve_augmentation(
             results = _select_results_for_token_budget(ranked_results, token_budget=token_budget)
             span.set_attribute("fourok.retrieve.returned_results", len(results))
             span.set_attribute("fourok.retrieve.token_budget", token_budget)
+        people = _people_buckets(
+            engine,
+            source_records,
+            query,
+            ranked_results,
+            results,
+            entity_links=entity_links,
+        )
         related_follow_up_hints = _related_follow_up_hints(
             engine,
             source_records,
@@ -265,6 +298,7 @@ def retrieve_augmentation(
             status="ok",
             results=results,
             limitations=limitations,
+            people=people,
             you_could_also_be_interested_in=related_follow_up_hints,
             token_budget=token_budget,
             estimated_tokens=_estimated_result_tokens(results),
@@ -291,6 +325,7 @@ def retrieve_augmentation(
             status=response.status,
             results=response.results,
             limitations=response.limitations,
+            people=response.people,
             you_could_also_be_interested_in=response.you_could_also_be_interested_in,
             token_budget=response.token_budget,
             estimated_tokens=response.estimated_tokens,
@@ -353,6 +388,8 @@ def render_augmentation_block(response: RetrievalAugmentationResponse) -> str:
         lines.append("")
         for index, result in enumerate(response.results, start=1):
             lines.extend(_result_card_lines(index, result))
+        if response.people.possible_query_matches or response.people.related_people:
+            lines.extend(_people_bucket_lines(response.people))
         if response.you_could_also_be_interested_in:
             lines.append("You could also be interested in:")
             for index, hint in enumerate(response.you_could_also_be_interested_in, start=1):
@@ -466,6 +503,180 @@ def _graph_link_counts(engine: Engine, entity_links, source_refs: list[str]) -> 
         for row in connection.execute(incoming, {"source_refs": source_refs}).mappings():
             counts[str(row["object_ref"])] = counts.get(str(row["object_ref"]), 0) + 1
     return counts
+
+
+def _people_buckets(
+    engine: Engine,
+    source_records,
+    query: str,
+    ranked_results: list[RetrievalCandidate],
+    selected_results: list[RetrievalCandidate],
+    *,
+    entity_links=None,
+    max_related: int = 4,
+) -> RetrievalPeopleBuckets:
+    direct_matches = _direct_person_matches(engine, source_records, query)
+    if entity_links is None:
+        return RetrievalPeopleBuckets(possible_query_matches=direct_matches, related_people=[])
+    direct_refs = {person.source_ref for person in direct_matches}
+    selected_refs = [result.source_ref for result in selected_results]
+    related_refs_by_person = _related_person_refs(
+        engine,
+        source_records,
+        entity_links,
+        selected_refs,
+        excluded_refs=direct_refs,
+    )
+    rank_by_ref = {result.source_ref: rank for rank, result in enumerate(ranked_results, start=1)}
+    person_rows = _person_rows_by_ref(
+        engine, source_records, sorted(related_refs_by_person), query=""
+    )
+    related_people: list[RetrievalPerson] = []
+    for person_ref, relation in sorted(
+        related_refs_by_person.items(), key=lambda item: (rank_by_ref.get(item[0], 9999), item[0])
+    ):
+        row = person_rows.get(person_ref)
+        if row is None:
+            continue
+        related_people.append(
+            RetrievalPerson(
+                source_ref=person_ref,
+                name=str(row["title"] or person_ref),
+                source_system=str(row["source_system"]),
+                reason=_people_relation_reason(str(relation["relationship_type"])),
+                related_to=str(relation["related_to"]),
+            )
+        )
+        if len(related_people) >= max_related:
+            break
+    return RetrievalPeopleBuckets(
+        possible_query_matches=direct_matches, related_people=related_people
+    )
+
+
+def _direct_person_matches(engine: Engine, source_records, query: str) -> list[RetrievalPerson]:
+    rows = _person_rows_by_ref(engine, source_records, [], query=query)
+    matches: list[RetrievalPerson] = []
+    for source_ref, row in sorted(rows.items(), key=lambda item: str(item[1]["title"]).casefold()):
+        reason = _person_match_reason(
+            query,
+            str(row["title"]),
+            str(row["retrieval_text"]),
+            source_ref,
+        )
+        if not reason:
+            continue
+        matches.append(
+            RetrievalPerson(
+                source_ref=source_ref,
+                name=str(row["title"] or source_ref),
+                source_system=str(row["source_system"]),
+                reason=reason,
+            )
+        )
+    return matches[:6]
+
+
+def _person_rows_by_ref(
+    engine: Engine, source_records, source_refs: list[str], *, query: str
+) -> dict[str, dict[str, object]]:
+    statement = select(
+        source_records.c.source_ref,
+        source_records.c.source_system,
+        source_records.c.title,
+        source_records.c.retrieval_text,
+    ).where(source_records.c.record_type == "person")
+    params: dict[str, object] = {}
+    if source_refs:
+        statement = statement.where(
+            source_records.c.source_ref.in_(bindparam("source_refs", expanding=True))
+        )
+        params["source_refs"] = source_refs
+    elif query:
+        terms = _query_terms(query)
+        if not terms:
+            return {}
+    with engine.connect() as connection:
+        return {
+            str(row["source_ref"]): dict(row)
+            for row in connection.execute(statement, params).mappings()
+        }
+
+
+def _person_match_reason(query: str, title: str, retrieval_text: str, source_ref: str) -> str:
+    normalized_query = query.strip().casefold()
+    haystack = f"{title} {retrieval_text} {source_ref}".casefold()
+    if "@" in normalized_query and normalized_query in haystack:
+        return "matched_email"
+    if normalized_query.startswith("@") and normalized_query.lstrip("@") in haystack:
+        return "matched_handle"
+    terms = _query_terms(query)
+    if terms and all(term in title.casefold() for term in terms):
+        return "matched_name"
+    if terms and all(term in haystack for term in terms):
+        return "matched_name"
+    return ""
+
+
+def _query_terms(query: str) -> list[str]:
+    return [term for term in re.findall(r"[\w.+-]+", query.casefold()) if len(term) > 1]
+
+
+def _related_person_refs(
+    engine: Engine,
+    source_records,
+    entity_links,
+    selected_refs: list[str],
+    *,
+    excluded_refs: set[str],
+) -> dict[str, dict[str, str]]:
+    if not selected_refs:
+        return {}
+    person_refs = set(_person_rows_by_ref(engine, source_records, [], query="").keys())
+    link_columns = (
+        entity_links.c.source_ref,
+        entity_links.c.object_ref,
+        entity_links.c.relationship_type,
+    )
+    outgoing = (
+        select(*link_columns)
+        .where(entity_links.c.status.in_(["linked", "accepted"]))
+        .where(entity_links.c.source_ref.in_(bindparam("source_refs", expanding=True)))
+    )
+    incoming = (
+        select(*link_columns)
+        .where(entity_links.c.status.in_(["linked", "accepted"]))
+        .where(entity_links.c.object_ref.in_(bindparam("source_refs", expanding=True)))
+    )
+    related: dict[str, dict[str, str]] = {}
+    with engine.connect() as connection:
+        rows = list(connection.execute(outgoing, {"source_refs": selected_refs}).mappings())
+        rows.extend(connection.execute(incoming, {"source_refs": selected_refs}).mappings())
+    for row in rows:
+        source_ref = str(row["source_ref"])
+        object_ref = str(row["object_ref"])
+        relationship_type = str(row["relationship_type"])
+        if object_ref in person_refs and object_ref not in excluded_refs:
+            related.setdefault(
+                object_ref,
+                {"related_to": source_ref, "relationship_type": relationship_type},
+            )
+        if source_ref in person_refs and source_ref not in excluded_refs:
+            related.setdefault(
+                source_ref,
+                {"related_to": object_ref, "relationship_type": relationship_type},
+            )
+    return related
+
+
+def _people_relation_reason(relationship_type: str) -> str:
+    if relationship_type == "commenter":
+        return "commented_on_same_thread"
+    if relationship_type in {"assignee", "creator", "author", "parent_work_item"}:
+        return "same_issue"
+    if relationship_type in {"project_member", "linked_project"}:
+        return "linked_project"
+    return "same_issue"
 
 
 def _rank_and_diversify(
@@ -864,6 +1075,39 @@ def _estimated_result_tokens(results: list[RetrievalCandidate]) -> int:
         _estimate_tokens("\n".join(_result_card_lines(index, result)))
         for index, result in enumerate(results, start=1)
     )
+
+
+def _person_bucket_item(person: RetrievalPerson) -> dict[str, str]:
+    item = {
+        "source_ref": person.source_ref,
+        "name": person.name,
+        "source_system": person.source_system,
+        "reason": person.reason,
+    }
+    if person.related_to:
+        item["related_to"] = person.related_to
+    return item
+
+
+def _people_bucket_lines(people: RetrievalPeopleBuckets) -> list[str]:
+    lines = ["People:"]
+    if people.possible_query_matches:
+        lines.append("Possible query matches:")
+        lines.extend(
+            f"- {person.name} ({person.reason}) source_ref: {person.source_ref}"
+            for person in people.possible_query_matches
+        )
+    if people.related_people:
+        lines.append("Related people hints:")
+        lines.extend(
+            (
+                f"- {person.name} ({person.reason}; related_to: {person.related_to}) "
+                f"source_ref: {person.source_ref}"
+            )
+            for person in people.related_people
+        )
+    lines.append("")
+    return lines
 
 
 def _result_card_lines(index: int, result: RetrievalCandidate) -> list[str]:
