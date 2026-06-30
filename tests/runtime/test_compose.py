@@ -469,6 +469,26 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     assert canonical_ratio_panel["type"] == "piechart"
     assert canonical_ratio_panel["targets"][0]["expr"] == "fourok_canonical_objects_total"
     assert "[Metrics] Processed entity links by relationship" in panel_titles
+    entity_links_panel = next(
+        panel
+        for panel in prometheus_panels
+        if panel["title"] == "[Metrics] Processed entity links by relationship"
+    )
+    assert entity_links_panel["type"] == "timeseries"
+    assert entity_links_panel["gridPos"] == {"x": 8, "y": 60, "w": 8, "h": 7}
+    assert entity_links_panel["targets"][0]["expr"] == "fourok_entity_links_total"
+    assert entity_links_panel["targets"][0]["legendFormat"] == "{{relationship}}"
+    assert "Time-series count" in entity_links_panel["description"]
+    assert "[Metrics] Entity link relationship ratio" in panel_titles
+    entity_link_ratio_panel = next(
+        panel
+        for panel in prometheus_panels
+        if panel["title"] == "[Metrics] Entity link relationship ratio"
+    )
+    assert entity_link_ratio_panel["type"] == "piechart"
+    assert entity_link_ratio_panel["gridPos"] == {"x": 16, "y": 60, "w": 8, "h": 7}
+    assert entity_link_ratio_panel["targets"][0]["expr"] == "fourok_entity_links_total"
+    assert entity_link_ratio_panel["targets"][0]["legendFormat"] == "{{relationship}}"
     assert "[Metrics] Raw landed records by connector/stream" in panel_titles
     for title in [
         "[Retrieval] Requests by status/retriever",

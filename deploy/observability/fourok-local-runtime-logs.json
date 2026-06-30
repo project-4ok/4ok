@@ -1735,7 +1735,7 @@
       "gridPos": {
         "x": 0,
         "y": 60,
-        "w": 12,
+        "w": 8,
         "h": 7
       },
       "id": 18,
@@ -1785,9 +1785,9 @@
         "overrides": []
       },
       "gridPos": {
-        "x": 12,
+        "x": 8,
         "y": 60,
-        "w": 12,
+        "w": 8,
         "h": 7
       },
       "id": 17,
@@ -1816,7 +1816,83 @@
         }
       ],
       "title": "[Metrics] Processed entity links by relationship",
-      "type": "timeseries"
+      "type": "timeseries",
+      "description": "Time-series count of processed entity links by relationship."
+    },
+    {
+      "id": 47,
+      "type": "piechart",
+      "title": "[Metrics] Entity link relationship ratio",
+      "description": "Pie chart for the current ratio of processed entity link relationship types.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "x": 16,
+        "y": 60,
+        "w": 8,
+        "h": 7
+      },
+      "fieldConfig": {
+        "defaults": {
+          "color": {
+            "mode": "palette-classic"
+          },
+          "custom": {
+            "hideFrom": {
+              "tooltip": false,
+              "viz": false,
+              "legend": false
+            }
+          },
+          "mappings": [],
+          "unit": "short"
+        },
+        "overrides": []
+      },
+      "options": {
+        "displayLabels": [
+          "name",
+          "percent"
+        ],
+        "legend": {
+          "displayMode": "list",
+          "placement": "right",
+          "showLegend": true,
+          "values": [
+            "value",
+            "percent"
+          ]
+        },
+        "pieType": "pie",
+        "reduceOptions": {
+          "calcs": [
+            "lastNotNull"
+          ],
+          "fields": "",
+          "values": false
+        },
+        "tooltip": {
+          "mode": "single",
+          "sort": "desc"
+        }
+      },
+      "pluginVersion": "13.0.1",
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "fourok_entity_links_total",
+          "instant": false,
+          "legendFormat": "{{relationship}}",
+          "range": true,
+          "refId": "A"
+        }
+      ]
     },
     {
       "datasource": {
