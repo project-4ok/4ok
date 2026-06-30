@@ -13,6 +13,7 @@ from sqlalchemy import text
 from fourok.cli_parts.runtime_helpers import _config_from_args, _context_state_from_args
 from fourok.cli_parts.shared import DEFAULT_STATE
 from fourok.devtools.goal_audit import audit_goal_alignment
+from fourok.devtools.stage1_acceptance import run_stage1_acceptance
 from fourok.governance.state import create_governed_context_state
 from fourok.observability import emit_observability_smoke
 from fourok.retrieval.embeddings import HASH_EMBEDDING_DIMENSIONS, OPENAI_EMBEDDING_DIMENSIONS
@@ -24,7 +25,6 @@ from fourok.runtime.operator_live import _dotenv_values, host_database_url, oper
 from fourok.runtime.readiness import internal_prod_readiness_report
 from fourok.runtime.rebuild import rebuild_retrieval_units
 from fourok.runtime.services import runtime_service_boundaries
-from fourok.runtime.stage1_acceptance import run_stage1_acceptance
 from fourok.storage.health import check_database_health, check_runtime_health
 
 

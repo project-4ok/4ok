@@ -224,7 +224,7 @@ DEPENDENCY_CONTRACTS = (
         status="proved-with-adapter-tests",
         dimensions=REQUIRED_DIMENSIONS,
         proof_commands=(
-            "uv run pytest tests/runtime/test_openclaw.py "
+            "uv run pytest tests/retrieval/clients/test_openclaw.py "
             "tests/runtime/test_openclaw_plugin_package.py -q",
         ),
         notes=(

@@ -14,7 +14,7 @@ from sqlalchemy import create_engine, text
 from fourok.etl.extract.connectors import land_singer_records
 from fourok.etl.extract.slack_adapter import load_slack_landed_source_records
 from fourok.etl.extract.slack_tap_env import apply_slack_tap_defaults
-from fourok.runtime import mcp_retrieval
+from fourok.retrieval.clients.mcp import server as mcp_retrieval
 from fourok.secrets.env import effective_env
 
 

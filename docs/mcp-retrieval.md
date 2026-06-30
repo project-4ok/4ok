@@ -106,7 +106,7 @@ environment injection for secrets.
 Unit-level contract:
 
 ```bash
-uv run pytest tests/runtime/test_mcp_retrieval.py -q
+uv run pytest tests/retrieval/clients/test_mcp_server.py -q
 ```
 
 MCP SDK registration check:
@@ -114,7 +114,7 @@ MCP SDK registration check:
 ```bash
 uv run python - <<'PY'
 import anyio
-from fourok.runtime.mcp_retrieval import build_mcp_server
+from fourok.retrieval.clients.mcp.server import build_mcp_server
 
 async def main():
     server = build_mcp_server()

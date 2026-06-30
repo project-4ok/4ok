@@ -6,7 +6,7 @@ from pathlib import Path
 import pytest
 
 from fourok.cli import main
-from fourok.runtime.stage1_acceptance import _dagster_gate_report, stage1_acceptance_report
+from fourok.devtools.stage1_acceptance import _dagster_gate_report, stage1_acceptance_report
 
 
 def test_stage1_acceptance_report_requires_all_gate_checks_ok() -> None:

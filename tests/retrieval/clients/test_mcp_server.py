@@ -9,8 +9,8 @@ import pytest
 from fourok.etl.extract.source_records import SourceRecord
 from fourok.governance import GovernedContext, SearchContextResponse, SourceChange
 from fourok.governance.policy import PrincipalContext
+from fourok.retrieval.clients.mcp import server as mcp_retrieval
 from fourok.retrieval.search import SearchResult
-from fourok.runtime import mcp_retrieval
 from fourok.storage.config import RetrievalConfig
 
 

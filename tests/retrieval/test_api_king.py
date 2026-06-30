@@ -138,9 +138,9 @@ def test_cli_and_mcp_clients_are_thin_wrappers_over_retrieval_api(monkeypatch) -
 def test_cli_and_mcp_surfaces_do_not_instantiate_governed_context_directly() -> None:
     checked = [
         ROOT / "src/fourok/retrieval/cli.py",
-        ROOT / "src/fourok/runtime/mcp_retrieval.py",
+        ROOT / "src/fourok/retrieval/clients/mcp/server.py",
         ROOT / "src/fourok/retrieval/clients/cli.py",
-        ROOT / "src/fourok/retrieval/clients/mcp.py",
+        ROOT / "src/fourok/retrieval/clients/mcp/__init__.py",
     ]
     offenders: list[str] = []
     for path in checked:

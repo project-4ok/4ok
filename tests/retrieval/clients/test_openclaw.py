@@ -1,6 +1,6 @@
 from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
-from fourok.runtime.openclaw import (
+from fourok.retrieval.clients.openclaw import (
     OpenClawMessage,
     OpenClawSearchTools,
     call_openclaw_tool,

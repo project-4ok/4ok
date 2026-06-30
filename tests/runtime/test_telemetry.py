@@ -8,11 +8,11 @@ from fourok.etl.extract.source_records import SourceRecord
 from fourok.etl.load.retrieval_records import prepare_retrieval_records
 from fourok.governance import GovernedContext
 from fourok.governance.state import create_governed_context_state
+from fourok.retrieval.clients.mcp.server import search_fourok
+from fourok.retrieval.clients.openclaw import OpenClawMessage, openclaw_messages_to_source_records
 from fourok.retrieval.evidence_pack import build_evidence_pack
 from fourok.retrieval.search import SearchResult
 from fourok.runtime.dashboard import operator_dashboard
-from fourok.runtime.mcp_retrieval import search_fourok
-from fourok.runtime.openclaw import OpenClawMessage, openclaw_messages_to_source_records
 from fourok.runtime.source_imports import import_source_records
 from fourok.runtime.webhooks import WebhookEventInput, enqueue_webhook_event
 
@@ -483,7 +483,10 @@ def test_evidence_pack_build_emits_safe_assembly_span(monkeypatch) -> None:
 
 def test_openclaw_capture_emits_safe_span(monkeypatch) -> None:
     spans: list[dict[str, object]] = []
-    monkeypatch.setattr("fourok.runtime.openclaw.trace.get_tracer", lambda _name: FakeTracer(spans))
+    monkeypatch.setattr(
+        "fourok.retrieval.clients.openclaw.trace.get_tracer",
+        lambda _name: FakeTracer(spans),
+    )
 
     records = openclaw_messages_to_source_records(
         [
