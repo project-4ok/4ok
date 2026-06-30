@@ -15,6 +15,11 @@ from pathlib import Path
 from fourok.devtools.dagster_status import dagster_status_report
 from fourok.devtools.diagnostics import DEFAULT_ERROR_WINDOW_SECONDS, agent_diagnostics
 from fourok.devtools.grafana import DEFAULT_GRAFANA_URL, format_grafana_report, grafana_report
+from fourok.devtools.retrieval_graph import (
+    DEFAULT_OUTPUT_DIR,
+    DEFAULT_SERVE_URL_BASE,
+    retrieval_debug_graph_report,
+)
 
 UV_CACHE_DIR = ".scratch/uv-cache"
 
@@ -205,6 +210,22 @@ def main(argv: Sequence[str] | None = None) -> None:
         "--json", action="store_true", help="Print machine-readable JSON."
     )
 
+    retrieval_graph_parser = subparsers.add_parser(
+        "retrieval-graph-debug",
+        help="Build a local D3 retrieval debug graph artifact for one query.",
+    )
+    retrieval_graph_parser.add_argument("query")
+    retrieval_graph_parser.add_argument("--output-dir", type=Path, default=DEFAULT_OUTPUT_DIR)
+    retrieval_graph_parser.add_argument("--state", type=Path)
+    retrieval_graph_parser.add_argument(
+        "--database-url", default=os.environ.get("FOUROK_DATABASE_URL")
+    )
+    retrieval_graph_parser.add_argument("--config", type=Path)
+    retrieval_graph_parser.add_argument("--final-token-budget", type=int, default=2000)
+    retrieval_graph_parser.add_argument("--wide-token-budget", type=int, default=20000)
+    retrieval_graph_parser.add_argument("--candidate-limit", type=int, default=80)
+    retrieval_graph_parser.add_argument("--serve-url-base", default=DEFAULT_SERVE_URL_BASE)
+
     args = parser.parse_args(argv)
     if args.command == "lint":
         _run_ruff("check")
@@ -275,6 +296,25 @@ def main(argv: Sequence[str] | None = None) -> None:
         else:
             print(format_grafana_report(report))
         raise SystemExit(0 if report["status"] == "ok" else 1)
+    if args.command == "retrieval-graph-debug":
+        print(
+            json.dumps(
+                retrieval_debug_graph_report(
+                    query=args.query,
+                    output_dir=args.output_dir,
+                    state=args.state,
+                    database_url=args.database_url,
+                    config=args.config,
+                    final_token_budget=args.final_token_budget,
+                    wide_token_budget=args.wide_token_budget,
+                    candidate_limit=args.candidate_limit,
+                    serve_url_base=args.serve_url_base,
+                ),
+                indent=2,
+                sort_keys=True,
+            )
+        )
+        return
 
     extra_args = _operator_live_args(args) if args.command == "operator-live" else None
     if extra_args is None:

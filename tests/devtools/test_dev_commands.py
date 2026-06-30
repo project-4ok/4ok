@@ -1,3 +1,4 @@
+import json
 import subprocess
 from pathlib import Path
 
@@ -496,3 +497,48 @@ def test_module_entrypoint_executes_dev_cli() -> None:
 
     assert "format-check" in result.stdout
     assert "test-tracked" in result.stdout
+
+
+def test_retrieval_graph_debug_command_prints_artifact_report(monkeypatch, capsys) -> None:
+    from fourok.devtools import dev
+
+    calls: list[dict[str, object]] = []
+
+    def fake_report(**kwargs):
+        calls.append(kwargs)
+        return {
+            "graph_json": ".local/retrieval-graph-debug/olivia.graph.json",
+            "html": ".local/retrieval-graph-debug/olivia.graph.html",
+            "url": "http://127.0.0.1:8765/olivia.graph.html",
+            "serve_command": "python3 -m http.server 8765 --directory .local/retrieval-graph-debug",
+            "stats": {"query": "olivia", "node_count": 4, "edge_count": 3},
+        }
+
+    monkeypatch.setattr(dev, "retrieval_debug_graph_report", fake_report)
+
+    dev.main(
+        [
+            "retrieval-graph-debug",
+            "olivia",
+            "--output-dir",
+            ".local/retrieval-graph-debug",
+            "--database-url",
+            "sqlite:///state.sqlite",
+        ]
+    )
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["url"] == "http://127.0.0.1:8765/olivia.graph.html"
+    assert calls == [
+        {
+            "query": "olivia",
+            "output_dir": Path(".local/retrieval-graph-debug"),
+            "state": None,
+            "database_url": "sqlite:///state.sqlite",
+            "config": None,
+            "final_token_budget": 2000,
+            "wide_token_budget": 20000,
+            "candidate_limit": 80,
+            "serve_url_base": "http://127.0.0.1:8765",
+        }
+    ]
