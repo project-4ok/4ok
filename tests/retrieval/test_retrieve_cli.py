@@ -792,6 +792,25 @@ def test_retrieve_json_includes_bounded_related_follow_up_hints(
                 thread_ref="linear:issue:apollo-plan",
             ),
             SourceRecord(
+                source_ref="linear:comment:apollo-budget-checklist",
+                source_system="linear",
+                source_id="apollo-budget-checklist",
+                record_type="message",
+                title="Budget approval checklist",
+                body="Budget approval checklist is in the same thread cluster.",
+                occurred_at="2026-06-21T11:00:00+00:00",
+                thread_ref="linear:issue:apollo-plan",
+            ),
+            SourceRecord(
+                source_ref="linear:issue:apollo-legal",
+                source_system="linear",
+                source_id="apollo-legal",
+                record_type="work_item",
+                title="Apollo legal review",
+                body="Legal review follow-up for the apollo rollout zephyr launch.",
+                occurred_at="2026-06-21T10:00:00+00:00",
+            ),
+            SourceRecord(
                 source_ref="linear:issue:generic-unrelated-hub",
                 source_system="linear",
                 source_id="generic-unrelated-hub",
@@ -824,6 +843,16 @@ def test_retrieve_json_includes_bounded_related_follow_up_hints(
         context._engine,
         context._entity_links,
         links=[
+            {
+                "link_ref": "plan->legal",
+                "source_ref": "linear:issue:apollo-plan",
+                "object_ref": "linear:issue:apollo-legal",
+                "relationship_type": "relates_to",
+                "confidence": 1.0,
+                "evidence": {},
+                "reason": "fixture",
+                "status": "linked",
+            },
             {
                 "link_ref": "hub->one",
                 "source_ref": "linear:issue:generic-unrelated-hub",
@@ -870,21 +899,21 @@ def test_retrieve_json_includes_bounded_related_follow_up_hints(
     hints = output["you_could_also_be_interested_in"]
     hint_refs = {hint["source_ref"] for hint in hints}
     assert "linear:issue:apollo-plan" in selected_refs
+    thread_hint_refs = {
+        "linear:comment:apollo-budget",
+        "linear:comment:apollo-budget-checklist",
+    }
     assert "linear:comment:apollo-budget" not in selected_refs
-    assert "linear:comment:apollo-budget" in hint_refs
+    assert "linear:comment:apollo-budget-checklist" not in selected_refs
+    assert len(hint_refs & thread_hint_refs) == 1
+    assert "linear:issue:apollo-legal" in hint_refs
     assert selected_refs.isdisjoint(hint_refs)
     assert "linear:issue:generic-unrelated-hub" not in hint_refs
-    hint = next(hint for hint in hints if hint["source_ref"] == "linear:comment:apollo-budget")
-    assert hint == {
-        "topic": "Budget approval comment",
-        "reason": "related by thread to selected evidence linear:issue:apollo-plan",
-        "source_ref": "linear:comment:apollo-budget",
-        "related_source_ref": "linear:issue:apollo-plan",
-        "source_system": "linear",
-        "record_type": "message",
-        "suggested_follow_up_query": "Budget approval comment",
-        "strength": hint["strength"],
-    }
+    hint = next(hint for hint in hints if hint["source_ref"] in thread_hint_refs)
+    assert hint["reason"] == "related by thread to selected evidence linear:issue:apollo-plan"
+    assert hint["related_source_ref"] == "linear:issue:apollo-plan"
+    assert hint["source_system"] == "linear"
+    assert hint["record_type"] == "message"
     assert 0 < hint["strength"] <= 1
 
 

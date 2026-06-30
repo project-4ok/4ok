@@ -729,13 +729,26 @@ def _related_follow_up_hints(
         if entity_links is not None
         else {}
     )
+    candidate_refs = sorted(selected_ref_by_related)
+    thread_refs = _thread_refs_for_sources(engine, source_records, candidate_refs)
+    graph_neighbors = (
+        _direct_graph_neighbors(engine, entity_links, candidate_refs)
+        if entity_links is not None
+        else {}
+    )
     hints: list[RelatedFollowUpHint] = []
     emitted_refs: set[str] = set()
+    emitted_clusters: set[str] = set()
     for rank, result in enumerate(ranked_results, start=1):
         if result.source_ref in selected_ref_set or result.source_ref in emitted_refs:
             continue
         related_source_ref = selected_ref_by_related.get(result.source_ref)
         if related_source_ref is None:
+            continue
+        cluster_key = _follow_up_cluster_key(result.source_ref, thread_refs)
+        if cluster_key and cluster_key in emitted_clusters:
+            continue
+        if graph_neighbors.get(result.source_ref, set()) & emitted_refs:
             continue
         hints.append(
             RelatedFollowUpHint(
@@ -755,9 +768,46 @@ def _related_follow_up_hints(
             )
         )
         emitted_refs.add(result.source_ref)
+        if cluster_key:
+            emitted_clusters.add(cluster_key)
         if len(hints) >= max_hints:
             break
     return sorted(hints, key=lambda hint: (-hint.strength, hint.topic.casefold()))[:max_hints]
+
+
+def _follow_up_cluster_key(source_ref: str, thread_refs: dict[str, str]) -> str:
+    if thread_ref := thread_refs.get(source_ref):
+        return f"thread:{thread_ref}"
+    return ""
+
+
+def _direct_graph_neighbors(
+    engine: Engine, entity_links, source_refs: list[str]
+) -> dict[str, set[str]]:
+    source_ref_set = set(source_refs)
+    if not source_ref_set:
+        return {}
+    statement = (
+        select(entity_links.c.source_ref, entity_links.c.object_ref)
+        .where(entity_links.c.status.in_(["linked", "accepted"]))
+        .where(entity_links.c.source_ref.in_(bindparam("source_refs", expanding=True)))
+    )
+    reverse_statement = (
+        select(entity_links.c.source_ref, entity_links.c.object_ref)
+        .where(entity_links.c.status.in_(["linked", "accepted"]))
+        .where(entity_links.c.object_ref.in_(bindparam("source_refs", expanding=True)))
+    )
+    neighbors: dict[str, set[str]] = {source_ref: set() for source_ref in source_refs}
+    with engine.connect() as connection:
+        rows = list(connection.execute(statement, {"source_refs": source_refs}).mappings())
+        rows.extend(connection.execute(reverse_statement, {"source_refs": source_refs}).mappings())
+    for row in rows:
+        left = str(row["source_ref"])
+        right = str(row["object_ref"])
+        if left in source_ref_set and right in source_ref_set:
+            neighbors[left].add(right)
+            neighbors[right].add(left)
+    return neighbors
 
 
 def _related_follow_up_reason(
