@@ -59,6 +59,12 @@ Append audit-relevant open questions here. Keep this file short.
   representative attachments before adding it to the default runtime.
 - PII/NLP quality: expand labeled evaluation data before making production
   claims about names, addresses, or sensitive-category filtering.
+- PII masking/tokenization decision (2026-06-29): keep retrieval-layer PII
+  masking in the backlog rather than implementing it now. First improve and
+  validate the core search/ranking/evidence algorithm on raw internal data;
+  only add feature-flagged masking once the search basics are proven, because
+  masking/reveal/token-store behavior adds significant governance, schema,
+  ranking, and UX complexity. Tracked in GitHub issue #2.
 - Entity resolution: keep source identities inspectable; revisit canonical
   entities only after multiple real sources exist.
 - Human review workflow: define a later annotation/review/correction path for
