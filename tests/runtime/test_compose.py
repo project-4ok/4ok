@@ -501,11 +501,17 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     )
     assert inspected_rank_panel["type"] == "bargauge"
     assert inspected_rank_panel["gridPos"] == {"x": 0, "y": 88, "w": 12, "h": 7}
-    assert inspected_rank_panel["targets"][0]["expr"] == (
-        "sum by (rank) (fourok_retrieval_source_inspection_rank_total)"
-    )
-    assert inspected_rank_panel["targets"][0]["instant"] is True
-    assert "agent chose to open" in inspected_rank_panel["description"]
+    rank_bucket_targets = inspected_rank_panel["targets"]
+    assert [target["legendFormat"] for target in rank_bucket_targets] == [
+        "rank 1",
+        "rank 2-3",
+        "rank 4-10",
+        "rank 11+",
+    ]
+    assert inspected_rank_panel["options"]["orientation"] == "vertical"
+    assert all(target["instant"] is True for target in rank_bucket_targets)
+    assert all("sum by (rank)" not in target["expr"] for target in rank_bucket_targets)
+    assert "rank buckets" in inspected_rank_panel["description"]
     average_opened_rank_panel = next(
         panel
         for panel in prometheus_panels
