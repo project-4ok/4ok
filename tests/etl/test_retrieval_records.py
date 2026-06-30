@@ -4,6 +4,7 @@ from sqlalchemy import create_engine
 
 from fourok.etl.load import retrieval_records
 from fourok.etl.load.retrieval_records import RetrievalRecord
+from fourok.retrieval import embeddings
 from fourok.retrieval.vector_search import ChunkVectorIndex
 
 
@@ -60,3 +61,26 @@ def test_vector_index_replace_is_duplicate_safe_for_same_chunk() -> None:
     )
 
     assert index.stored_texts() == ["fresh body"]
+
+
+def test_vector_index_replace_batches_chunk_embedding(monkeypatch) -> None:
+    engine = create_engine("sqlite:///:memory:")
+    calls: list[list[str]] = []
+
+    def fake_embed_texts(texts, *, dimensions=None):
+        calls.append(list(texts))
+        return [[float(index + 1)] * 32 for index, _text in enumerate(texts)]
+
+    monkeypatch.setattr(embeddings, "embed_texts", fake_embed_texts)
+    index = ChunkVectorIndex(engine)
+
+    index.replace(
+        ["source:1", "source:2"],
+        [
+            {"source_ref": "source:1", "chunk_index": 0, "body": "first body"},
+            {"source_ref": "source:2", "chunk_index": 0, "body": "second body"},
+        ],
+    )
+
+    assert calls == [["first body", "second body"]]
+    assert index.stored_texts() == ["first body", "second body"]

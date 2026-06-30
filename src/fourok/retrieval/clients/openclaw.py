@@ -1,11 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
+from typing import Any
 
 from opentelemetry import trace
 
 from fourok.etl.extract.source_records import SourceRecord
 from fourok.governance import GovernedContext
+from fourok.governance.policy import PrincipalContext
 
 
 @dataclass(frozen=True)
@@ -27,6 +29,85 @@ def capture_openclaw_messages(
     records = openclaw_messages_to_source_records(messages)
     context.ingest_source_records(records)
     return records
+
+
+class OpenClawSearchTools:
+    def __init__(self, context: GovernedContext, principal: PrincipalContext) -> None:
+        self._context = context
+        self._principal = principal
+
+    def fourok_search_context(self, query: str, *, limit: int = 5) -> dict[str, object]:
+        _validate_search_args(query, limit)
+        response = self._context.search_context(
+            query,
+            limit=limit,
+            principal=self._principal,
+        )
+        return {
+            "results": [asdict(result) for result in response.results],
+            "query": response.query,
+            "summary": response.summary,
+            "result_candidates": response.result_candidates or [],
+            "evidence_items": response.evidence_items or [],
+            "primary_objects": response.primary_objects or [],
+            "related_objects": response.related_objects or [],
+            "related_object_groups": response.related_object_groups or {},
+            "entities": response.entities or [],
+            "unresolved_candidates": response.unresolved_candidates or [],
+            "limitations": response.limitations or [],
+            "audit_ref": response.audit_ref,
+        }
+
+
+def openclaw_tool_contracts() -> list[dict[str, object]]:
+    return [
+        {
+            "name": "fourok_search_context",
+            "description": (
+                "Search governed company context and return permission-filtered evidence. "
+                "Does not return hidden fields or inject context automatically."
+            ),
+            "input_schema": {
+                "type": "object",
+                "additionalProperties": False,
+                "required": ["query"],
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Search query for governed context evidence.",
+                    },
+                    "limit": {
+                        "type": "integer",
+                        "minimum": 1,
+                        "maximum": 20,
+                        "default": 5,
+                        "description": "Maximum number of primary evidence candidates.",
+                    },
+                },
+            },
+        }
+    ]
+
+
+def call_openclaw_tool(
+    tools: OpenClawSearchTools,
+    name: str,
+    arguments: dict[str, Any],
+) -> dict[str, object]:
+    if name != "fourok_search_context":
+        raise ValueError(f"unsupported OpenClaw fourok tool: {name}")
+    query = arguments.get("query")
+    limit = arguments.get("limit", 5)
+    _validate_search_args(query, limit)
+    return tools.fourok_search_context(str(query), limit=int(limit))
+
+
+def _validate_search_args(query: object, limit: object) -> None:
+    if not isinstance(query, str) or not query.strip():
+        raise ValueError("fourok_search_context.query must be a non-empty string")
+    if not isinstance(limit, int) or limit < 1 or limit > 20:
+        raise ValueError("fourok_search_context.limit must be between 1 and 20")
 
 
 def openclaw_messages_to_source_records(messages: list[OpenClawMessage]) -> list[SourceRecord]:

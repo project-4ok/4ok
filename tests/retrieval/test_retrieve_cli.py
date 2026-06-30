@@ -265,6 +265,7 @@ def test_retrieve_prints_llm_ready_augmentation_block(capsys, monkeypatch, tmp_p
     output = capsys.readouterr().out
     assert output.startswith("fourok RETRIEVAL FOR AGENTS\n")
     assert "How to use this: Answer from these evidence cards only when relevant." in output
+    assert "Open decisive source_ref values with fourok.open" in output
     assert "cancellation invoice follow-up" not in output
     assert "[1] Slack-Live message — #customer-success" in output
     assert "source_ref: slack:message:cancellation" in output

@@ -7,16 +7,27 @@ from pathlib import Path
 
 from fourok.governance import GovernedContext
 from fourok.observability import critical_span, set_safe_span_attributes
+from fourok.retrieval.agent_assets import mcp_agent_instructions
 from fourok.retrieval.clients import mcp as mcp_client
 
 ContextFactory = Callable[..., GovernedContext]
+
+
+def agent_instructions() -> str:
+    return mcp_agent_instructions()
 
 
 def tool_schemas() -> list[dict[str, object]]:
     return [
         {
             "name": "fourok.retrieve",
-            "description": ("Search fourok and return an LLM-ready retrieval context pack."),
+            "description": (
+                "Call before answering questions that may depend on source-backed "
+                "company, project, customer, connector, Slack, Linear, email, CRM, "
+                "or operational context. Returns ranked evidence cards with source_ref "
+                "values. For any decisive source-backed claim, call fourok.open on the "
+                "best source_ref values before summarizing."
+            ),
             "input_schema": {
                 "type": "object",
                 "required": ["query"],
@@ -31,8 +42,10 @@ def tool_schemas() -> list[dict[str, object]]:
         {
             "name": "fourok.open",
             "description": (
-                "Open one retrieved source and log the inspection as an organic "
-                "relevance signal."
+                "Open the full record for a source_ref returned by fourok.retrieve. "
+                "Use this before making detailed claims, quotes, or behavioral "
+                "inferences from retrieved snippets; pass retrieval_event_id and rank "
+                "when available to log organic relevance."
             ),
             "input_schema": {
                 "type": "object",
@@ -210,16 +223,40 @@ def build_mcp_server(
 
     mcp = FastMCP(
         "fourok Retrieval",
+        instructions=agent_instructions(),
         host=host,
         port=port,
         streamable_http_path="/mcp",
     )
 
+    @mcp.resource(
+        "fourok://instructions",
+        name="fourok MCP instructions",
+        description=(
+            "Agent guidance for using fourok retrieval before answering "
+            "source-backed questions."
+        ),
+        mime_type="text/markdown",
+    )
+    def instructions_resource() -> str:
+        return agent_instructions()
+
+    @mcp.prompt(
+        name="fourok-agent-context-flow",
+        description="Instructions for forcing source-backed context enrichment through fourok.",
+    )
+    def agent_context_flow_prompt() -> str:
+        return agent_instructions()
+
     @mcp.tool(name="fourok.retrieve")
     def retrieve_tool(
         query: str,
     ) -> dict[str, object]:
-        """Search fourok and return an LLM-ready retrieval context pack."""
+        """
+        Search fourok. After this returns source_ref values, call fourok.open on
+        decisive sources before making detailed claims, quotes, or behavioral
+        inferences.
+        """
         return search_fourok(query=query)
 
     @mcp.tool(name="fourok.open")
@@ -228,7 +265,10 @@ def build_mcp_server(
         retrieval_event_id: str | None = None,
         rank: int | None = None,
     ) -> dict[str, object]:
-        """Open one retrieved source and log the inspection as an organic relevance signal."""
+        """
+        Open a full retrieved source record. Use this on decisive source_ref values
+        from fourok.retrieve before final summaries or behavioral inferences.
+        """
         return open(
             source_ref=source_ref,
             retrieval_event_id=retrieval_event_id,

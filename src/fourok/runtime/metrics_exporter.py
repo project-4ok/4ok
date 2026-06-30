@@ -16,6 +16,8 @@ from fourok.runtime.metric_helpers import source_latest_record_timestamp_metric 
 from fourok.runtime.retrieval_metrics import (
     embedding_coverage_metrics_connection,
     embedding_coverage_metrics_sqlite,
+    retrieval_inspection_event_metrics_connection,
+    retrieval_inspection_event_metrics_sqlite,
     retrieval_query_event_metrics_connection,
     retrieval_query_event_metrics_sqlite,
 )
@@ -302,6 +304,8 @@ def _state_metrics(state_path: Path) -> list[Metric]:
             metrics.extend(embedding_coverage_metrics_sqlite(connection))
         if _has_table(connection, "retrieval_query_events"):
             metrics.extend(retrieval_query_event_metrics_sqlite(connection))
+        if _has_table(connection, "retrieval_inspection_events"):
+            metrics.extend(retrieval_inspection_event_metrics_sqlite(connection))
         if _has_table(connection, "webhook_events"):
             for row in connection.execute(
                 "select source_system, status, count(*) as count "
@@ -451,6 +455,8 @@ def _sql_metrics(database_url: str) -> list[Metric]:
                 metrics.extend(embedding_coverage_metrics_connection(connection, table_names))
             if "retrieval_query_events" in table_names:
                 metrics.extend(retrieval_query_event_metrics_connection(connection))
+            if "retrieval_inspection_events" in table_names:
+                metrics.extend(retrieval_inspection_event_metrics_connection(connection))
             if "webhook_events" in table_names:
                 for row in connection.execute(
                     text(

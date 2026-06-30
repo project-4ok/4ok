@@ -1,6 +1,8 @@
 from __future__ import annotations
 
 import json
+import re
+from collections.abc import Iterable
 from typing import Any, NotRequired, TypedDict
 
 from sqlalchemy import delete, insert, select
@@ -125,29 +127,72 @@ def entity_links_from_source_records(records: list[SourceRecord]) -> list[Entity
         for record in records
         if record.record_type == "person" and _employee_entity_ref(record)
     }
+    record_by_source_ref = {record.source_ref: record for record in records}
+    comments_by_thread_ref = _comments_by_thread_ref(records)
     links: list[EntityLinkInput] = []
     for record in records:
         for relationship_type, source_id in _source_identity_relationships(record):
             person = person_by_source_id.get(source_id)
             if person is None:
                 continue
-            links.append(
-                {
-                    "link_ref": f"{record.source_ref}->{person.source_ref}:{relationship_type}",
-                    "source_ref": record.source_ref,
-                    "object_ref": person.source_ref,
-                    "relationship_type": relationship_type,
-                    "confidence": 1.0,
-                    "evidence": {
-                        "entity_ref": _employee_entity_ref(person),
-                        "source_identity_ref": source_id,
-                        "source_identity_field": relationship_type,
-                    },
-                    "reason": "deterministic_source_identity",
-                    "status": "linked",
-                }
+            _append_link(
+                links,
+                source_ref=record.source_ref,
+                object_ref=person.source_ref,
+                relationship_type=relationship_type,
+                confidence=1.0,
+                evidence={
+                    "entity_ref": _employee_entity_ref(person),
+                    "source_identity_ref": source_id,
+                    "source_identity_field": relationship_type,
+                },
+                reason="deterministic_source_identity",
             )
-    return links
+        if record.record_type == "message" and record.thread_ref:
+            parent = record_by_source_ref.get(record.thread_ref)
+            if parent is not None and parent.source_ref != record.source_ref:
+                _append_link(
+                    links,
+                    source_ref=record.source_ref,
+                    object_ref=parent.source_ref,
+                    relationship_type="parent_work_item",
+                    confidence=1.0,
+                    evidence={"thread_ref": record.thread_ref},
+                    reason="deterministic_thread_ref",
+                )
+        for mention_link in _full_name_mention_links(record, person_by_source_id.values()):
+            _append_link(
+                links,
+                source_ref=mention_link["source_ref"],
+                object_ref=mention_link["object_ref"],
+                relationship_type=mention_link["relationship_type"],
+                confidence=mention_link["confidence"],
+                evidence=mention_link["evidence"],
+                reason=mention_link["reason"],
+            )
+        for comment in comments_by_thread_ref.get(record.source_ref, ()):
+            commenter = person_by_source_id.get(comment.author_ref)
+            if commenter is not None:
+                _append_link(
+                    links,
+                    source_ref=record.source_ref,
+                    object_ref=commenter.source_ref,
+                    relationship_type="commenter",
+                    confidence=1.0,
+                    evidence={"comment_source_ref": comment.source_ref},
+                    reason="deterministic_thread_comment_author",
+                )
+    for source_ref, object_ref, email in _same_email_identity_matches(records):
+        _append_link(
+            links,
+            source_ref=source_ref,
+            object_ref=object_ref,
+            relationship_type="same_email_identity",
+            confidence=1.0,
+            evidence={"email": email},
+            reason="exact_email_identity_match",
+        )
+    return _dedupe_links(links)
 
 
 def store_entity_links(
@@ -215,6 +260,110 @@ def _source_identity_relationships(record: SourceRecord) -> list[tuple[str, str]
     if isinstance(user_id, str) and user_id and not record.author_ref:
         relationships.append(("author", user_id))
     return relationships
+
+
+def _comments_by_thread_ref(records: list[SourceRecord]) -> dict[str, list[SourceRecord]]:
+    comments_by_thread_ref: dict[str, list[SourceRecord]] = {}
+    for record in records:
+        if record.record_type != "message" or not record.thread_ref:
+            continue
+        comments_by_thread_ref.setdefault(record.thread_ref, []).append(record)
+    return comments_by_thread_ref
+
+
+def _full_name_mention_links(
+    record: SourceRecord, people: Iterable[SourceRecord]
+) -> list[dict[str, Any]]:
+    if record.record_type == "person":
+        return []
+    links: list[dict[str, Any]] = []
+    for person in people:
+        if person.source_system != record.source_system:
+            continue
+        display_name = person.title.strip()
+        if len(display_name.split()) < 2:
+            continue
+        match_field = _matching_text_field(record, display_name)
+        if match_field is None:
+            continue
+        links.append(
+            {
+                "source_ref": record.source_ref,
+                "object_ref": person.source_ref,
+                "relationship_type": "mentioned_person",
+                "confidence": 1.0,
+                "evidence": {"matched_text": display_name, "match_field": match_field},
+                "reason": "deterministic_full_name_mention",
+            }
+        )
+    return links
+
+
+def _matching_text_field(record: SourceRecord, text: str) -> str | None:
+    pattern = re.compile(rf"(?<!\w){re.escape(text)}(?!\w)", re.IGNORECASE)
+    for field, value in (("title", record.title), ("body", record.body)):
+        if value and pattern.search(value):
+            return field
+    return None
+
+
+def _same_email_identity_matches(records: list[SourceRecord]) -> list[tuple[str, str, str]]:
+    people_by_email: dict[str, list[SourceRecord]] = {}
+    for record in records:
+        if record.record_type != "person":
+            continue
+        for email in _person_emails(record):
+            people_by_email.setdefault(email, []).append(record)
+
+    matches: list[tuple[str, str, str]] = []
+    for email, people in people_by_email.items():
+        for source in people:
+            for target in people:
+                if source.source_ref == target.source_ref:
+                    continue
+                if source.source_system == target.source_system:
+                    continue
+                matches.append((source.source_ref, target.source_ref, email))
+    return matches
+
+
+def _person_emails(record: SourceRecord) -> list[str]:
+    emails = []
+    for identity in record.source_identities:
+        if identity.identity_type == "email" and identity.value:
+            emails.append(identity.value.strip().casefold())
+    return sorted(set(emails))
+
+
+def _append_link(
+    links: list[EntityLinkInput],
+    *,
+    source_ref: str,
+    object_ref: str,
+    relationship_type: str,
+    confidence: float,
+    evidence: dict[str, Any],
+    reason: str,
+) -> None:
+    links.append(
+        {
+            "link_ref": f"{source_ref}->{object_ref}:{relationship_type}",
+            "source_ref": source_ref,
+            "object_ref": object_ref,
+            "relationship_type": relationship_type,
+            "confidence": confidence,
+            "evidence": evidence,
+            "reason": reason,
+            "status": "linked",
+        }
+    )
+
+
+def _dedupe_links(links: list[EntityLinkInput]) -> list[EntityLinkInput]:
+    deduped: dict[str, EntityLinkInput] = {}
+    for link in links:
+        deduped.setdefault(link["link_ref"], link)
+    return list(deduped.values())
 
 
 def _employee_entity_ref(record: SourceRecord) -> str:

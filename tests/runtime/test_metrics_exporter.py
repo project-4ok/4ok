@@ -99,6 +99,24 @@ def test_metrics_exporter_renders_dagster_run_and_source_freshness_metrics(tmp_p
                'keyword', 3, 20, 0, 0, 0, 0, 0, 18.0),
               ('retrieval-query:3', '2026-06-09T19:32:00+00:00', 'failed',
                'vector', 5, 40, 0, 0, 0, 0, 0, 3.5);
+            create table retrieval_inspection_events (
+              event_id text primary key,
+              occurred_at text not null,
+              retrieval_query_event_id text not null,
+              source_ref text not null,
+              rank integer,
+              source_system text not null,
+              record_type text not null,
+              human_id text not null,
+              agent_id text not null
+            );
+            insert into retrieval_inspection_events values
+              ('retrieval-inspection:1', '2026-06-09T19:31:10+00:00',
+               'retrieval-query:1', 'linear:1', 1, 'linear', 'work_item', 'human', 'agent'),
+              ('retrieval-inspection:2', '2026-06-09T19:31:12+00:00',
+               'retrieval-query:1', 'slack:1', 4, 'slack', 'message', 'human', 'agent'),
+              ('retrieval-inspection:3', '2026-06-09T19:31:13+00:00',
+               '', 'slack:2', null, 'slack', 'message', 'human', 'agent');
             create table webhook_events (
               event_id text primary key,
               source_system text not null,
@@ -250,6 +268,20 @@ def test_metrics_exporter_renders_dagster_run_and_source_freshness_metrics(tmp_p
         'fourok_retrieval_duration_ms_sum{retriever_set="keyword,vector",status="succeeded"} '
         "42.5" in text
     )
+    assert (
+        'fourok_retrieval_source_inspections_total{record_type="message",source_system="slack"} 2'
+        in text
+    )
+    rank_one_metric = (
+        'fourok_retrieval_source_inspections_rank_one_total'
+        '{record_type="work_item",source_system="linear"} 1'
+    )
+    missing_rank_metric = (
+        'fourok_retrieval_source_inspections_missing_rank_total'
+        '{record_type="message",source_system="slack"} 1'
+    )
+    assert rank_one_metric in text
+    assert missing_rank_metric in text
     assert 'fourok_webhook_events_total{source_system="linear",status="pending"} 1' in text
     assert 'fourok_connector_job_runs_total{connector="linear",status="failed"} 1' in text
     assert 'fourok_connector_latest_run_status{connector="linear",status="failed"} 1' in text

@@ -148,14 +148,26 @@ def test_mcp_tool_schemas_are_discoverable_without_stdio_server() -> None:
     }
     assert tools["fourok.retrieve"]["input_schema"]["required"] == ["query"]
     assert set(tools["fourok.retrieve"]["input_schema"]["properties"]) == {"query"}
+    assert "before answering" in str(tools["fourok.retrieve"]["description"])
+    assert "source-backed" in str(tools["fourok.retrieve"]["description"])
     assert tools["fourok.open"]["input_schema"]["required"] == ["source_ref"]
     assert set(tools["fourok.open"]["input_schema"]["properties"]) == {
         "source_ref",
         "retrieval_event_id",
         "rank",
     }
+    assert "before making detailed claims" in str(tools["fourok.open"]["description"])
     assert tools["fourok.status"]["input_schema"]["properties"] == {}
     assert tools["fourok.onboard"]["input_schema"]["properties"] == {}
+
+
+def test_mcp_server_includes_agent_usage_instructions() -> None:
+    instructions = mcp_retrieval.agent_instructions()
+
+    assert "fourok MCP Server — Instructions" in instructions
+    assert "call `fourok.retrieve` before answering" in instructions
+    assert "call `fourok.open`" in instructions
+    assert "source_ref" in instructions
 
 
 def test_mcp_main_can_run_streamable_http_transport(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -208,6 +220,17 @@ async def test_fastmcp_server_registers_public_tool_names() -> None:
         "fourok.status",
         "fourok.onboard",
     ]
+
+
+@pytest.mark.anyio
+async def test_fastmcp_server_exposes_instruction_resource_and_prompt() -> None:
+    server = mcp_retrieval.build_mcp_server()
+
+    resources = await server.list_resources()
+    prompts = await server.list_prompts()
+
+    assert "fourok://instructions" in [str(resource.uri) for resource in resources]
+    assert "fourok-agent-context-flow" in [prompt.name for prompt in prompts]
 
 
 def test_search_handler_returns_retrieval_augmentation_contract() -> None:

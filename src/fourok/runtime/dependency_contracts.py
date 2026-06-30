@@ -216,15 +216,20 @@ DEPENDENCY_CONTRACTS = (
         ),
     ),
     DependencyContract(
-        name="openclaw-chat-capture-boundary",
+        name="openclaw-plugin-boundary",
         category="agent-integration",
-        active_surface="chat capture adapter",
+        active_surface=(
+            "chat capture adapter, fourok_search_context contract, and local OpenClaw plugin"
+        ),
         status="proved-with-adapter-tests",
         dimensions=REQUIRED_DIMENSIONS,
-        proof_commands=("uv run pytest tests/retrieval/clients/test_openclaw.py -q",),
+        proof_commands=(
+            "uv run pytest tests/retrieval/clients/test_openclaw.py "
+            "tests/runtime/test_openclaw_plugin_package.py -q",
+        ),
         notes=(
-            "This proves the fourok-side adapter for chat capture. "
-            "OpenClaw runtime wiring remains a deployment smoke check."
+            "This proves the fourok-side adapter and the local plugin package shape. "
+            "OpenClaw runtime loading remains a deployment smoke check."
         ),
     ),
 )

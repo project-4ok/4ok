@@ -1,8 +1,9 @@
-from fourok.etl.extract.source_records import SourceRecord
+from fourok.etl.extract.source_records import SourceIdentity, SourceRecord
 from fourok.etl.load.context_objects import (
     canonical_object_from_source_record,
     canonical_object_rows,
     entity_link_rows,
+    entity_links_from_source_records,
     object_type_for_record_type,
     store_canonical_objects,
     store_entity_links,
@@ -123,3 +124,126 @@ def test_canonical_object_preserves_source_record_metadata() -> None:
         },
         "lifecycle_state": "restricted",
     }
+
+
+def test_entity_links_include_thread_commenters_and_full_name_mentions() -> None:
+    records = [
+        _person_record(
+            source_ref="linear:user:olivia",
+            source_system="linear",
+            source_id="olivia",
+            title="Olivia Smith",
+            email="olivia@example.com",
+        ),
+        _person_record(
+            source_ref="linear:user:robin",
+            source_system="linear",
+            source_id="robin",
+            title="Robin Scharf",
+            email="robin@example.com",
+        ),
+        SourceRecord(
+            source_ref="linear:issue:OPS-1",
+            source_system="linear",
+            source_id="OPS-1",
+            record_type="work_item",
+            title="Ask Robin Scharf to move the meeting",
+            body="Olivia Smith needs Robin Scharf to move the renewal meeting.",
+            author_ref="olivia",
+            thread_ref="linear:issue:OPS-1",
+        ),
+        SourceRecord(
+            source_ref="linear:comment:comment-1",
+            source_system="linear",
+            source_id="comment-1",
+            record_type="message",
+            title="Comment on OPS-1",
+            body="Robin Scharf confirmed the meeting can move.",
+            author_ref="olivia",
+            thread_ref="linear:issue:OPS-1",
+        ),
+    ]
+
+    links = _links_by_ref(entity_links_from_source_records(records))
+
+    assert (
+        links["linear:comment:comment-1->linear:issue:OPS-1:parent_work_item"]["relationship_type"]
+        == "parent_work_item"
+    )
+    assert (
+        links["linear:issue:OPS-1->linear:user:olivia:commenter"]["relationship_type"]
+        == "commenter"
+    )
+    assert (
+        links["linear:issue:OPS-1->linear:user:robin:mentioned_person"].get("reason")
+        == "deterministic_full_name_mention"
+    )
+    assert links["linear:comment:comment-1->linear:user:robin:mentioned_person"].get(
+        "evidence"
+    ) == {"matched_text": "Robin Scharf", "match_field": "body"}
+
+
+def test_entity_links_include_cross_source_exact_email_identity_matches() -> None:
+    records = [
+        _person_record(
+            source_ref="twenty:person:olivia",
+            source_system="twenty",
+            source_id="twenty-olivia",
+            title="Olivia Smith",
+            email="olivia@example.com",
+        ),
+        _person_record(
+            source_ref="linear:user:olivia",
+            source_system="linear",
+            source_id="linear-olivia",
+            title="Olivia Smith",
+            email="olivia@example.com",
+        ),
+        _person_record(
+            source_ref="linear:user:other",
+            source_system="linear",
+            source_id="linear-other",
+            title="Other Person",
+            email="other@example.com",
+        ),
+    ]
+
+    links = _links_by_ref(entity_links_from_source_records(records))
+
+    assert links["twenty:person:olivia->linear:user:olivia:same_email_identity"] == {
+        "link_ref": "twenty:person:olivia->linear:user:olivia:same_email_identity",
+        "source_ref": "twenty:person:olivia",
+        "object_ref": "linear:user:olivia",
+        "relationship_type": "same_email_identity",
+        "confidence": 1.0,
+        "evidence": {"email": "olivia@example.com"},
+        "reason": "exact_email_identity_match",
+        "status": "linked",
+    }
+
+
+def _person_record(
+    *, source_ref: str, source_system: str, source_id: str, title: str, email: str
+) -> SourceRecord:
+    return SourceRecord(
+        source_ref=source_ref,
+        source_system=source_system,
+        source_id=source_id,
+        record_type="person",
+        title=title,
+        body=f"{title} {email}",
+        identity_refs=(f"{source_system}:email:{email}",),
+        source_identities=(
+            SourceIdentity(
+                source_system=source_system,
+                identity_ref=f"{source_system}:email:{email}",
+                identity_type="email",
+                value=email,
+                display_name=title,
+            ),
+        ),
+    )
+
+
+def _links_by_ref(links):
+    return {link["link_ref"]: link for link in links}

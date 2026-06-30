@@ -41,11 +41,15 @@ def chunk_text(text: str, *, max_words: int = 90, overlap_words: int = 15) -> li
 
 
 def embed_text(text: str, *, dimensions: int | None = None) -> list[float]:
+    return embed_texts([text], dimensions=dimensions)[0]
+
+
+def embed_texts(texts: list[str], *, dimensions: int | None = None) -> list[list[float]]:
     provider = embedding_provider()
     resolved_dimensions = dimensions or embedding_dimensions()
     if provider == "openai":
-        return _openai_embed_text(text, dimensions=resolved_dimensions)
-    return _hash_embed_text(text, dimensions=resolved_dimensions)
+        return _openai_embed_texts(texts, dimensions=resolved_dimensions)
+    return [_hash_embed_text(text, dimensions=resolved_dimensions) for text in texts]
 
 
 def embedding_provider() -> str:
@@ -91,6 +95,10 @@ def _hash_embed_text(text: str, *, dimensions: int) -> list[float]:
 
 
 def _openai_embed_text(text: str, *, dimensions: int) -> list[float]:
+    return _openai_embed_texts([text], dimensions=dimensions)[0]
+
+
+def _openai_embed_texts(texts: list[str], *, dimensions: int) -> list[list[float]]:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise RuntimeError("OPENAI_API_KEY is required when FOUROK_EMBEDDING_PROVIDER=openai")
@@ -98,7 +106,7 @@ def _openai_embed_text(text: str, *, dimensions: int) -> list[float]:
     endpoint = os.environ.get("FOUROK_OPENAI_EMBEDDING_URL", "https://api.openai.com/v1/embeddings")
     payload = {
         "model": model,
-        "input": text,
+        "input": texts,
         "dimensions": dimensions,
     }
     request = urllib.request.Request(
@@ -112,25 +120,39 @@ def _openai_embed_text(text: str, *, dimensions: int) -> list[float]:
     )
     with _urlopen(request, timeout=30) as response:
         body = json.loads(response.read().decode("utf-8"))
-    embedding = _extract_openai_embedding(body)
-    if len(embedding) != dimensions:
+    embeddings = _extract_openai_embeddings(body)
+    if len(embeddings) != len(texts):
         raise RuntimeError(
-            f"OpenAI embedding returned {len(embedding)} dimensions; expected {dimensions}"
+            f"OpenAI embedding returned {len(embeddings)} items; expected {len(texts)}"
         )
-    return embedding
+    for embedding in embeddings:
+        if len(embedding) != dimensions:
+            raise RuntimeError(
+                f"OpenAI embedding returned {len(embedding)} dimensions; expected {dimensions}"
+            )
+    return embeddings
 
 
 def _extract_openai_embedding(body: dict[str, Any]) -> list[float]:
+    embeddings = _extract_openai_embeddings(body)
+    if not embeddings:
+        raise RuntimeError("OpenAI embedding response did not include data")
+    return embeddings[0]
+
+
+def _extract_openai_embeddings(body: dict[str, Any]) -> list[list[float]]:
     data = body.get("data")
     if not isinstance(data, list) or not data:
         raise RuntimeError("OpenAI embedding response did not include data")
-    first = data[0]
-    if not isinstance(first, dict):
-        raise RuntimeError("OpenAI embedding response data item was not an object")
-    embedding = first.get("embedding")
-    if not isinstance(embedding, list):
-        raise RuntimeError("OpenAI embedding response did not include embedding")
-    return [float(value) for value in embedding]
+    embeddings = []
+    for item in data:
+        if not isinstance(item, dict):
+            raise RuntimeError("OpenAI embedding response data item was not an object")
+        embedding = item.get("embedding")
+        if not isinstance(embedding, list):
+            raise RuntimeError("OpenAI embedding response did not include embedding")
+        embeddings.append([float(value) for value in embedding])
+    return embeddings
 
 
 def _terms(text: str) -> list[str]:

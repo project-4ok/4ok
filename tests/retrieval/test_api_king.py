@@ -154,6 +154,8 @@ def test_cli_and_mcp_surfaces_do_not_instantiate_governed_context_directly() -> 
 
 def test_retrieval_cli_adapter_is_domain_owned() -> None:
     assert (ROOT / "src/fourok/retrieval/cli.py").exists()
+    assert (ROOT / "src/fourok/retrieval/clients/mcp/server.py").exists()
+    assert not (ROOT / "src/fourok/runtime/mcp_retrieval.py").exists()
     assert not (ROOT / "src/fourok/cli_parts/parser_search.py").exists()
     assert not (ROOT / "src/fourok/cli_parts/commands_search.py").exists()
 

@@ -12,6 +12,8 @@ A new user should learn the CLI in one minute:
 fourok onboard
 fourok status
 fourok retrieve "What do we know about the renewal?"
+fourok open SOURCE_REF
+fourok skill
 ```
 
 Everything else is either an admin task or a developer/operator task.
@@ -41,7 +43,45 @@ Responsibilities:
 
 Decision: use `retrieve`, not `ask`, as the product command. `ask`, `search`, and `search-state` are internal/admin/debug surfaces unless later proven necessary for clients.
 
-### 2. `fourok status`
+### 2. `fourok open`
+
+Daily agent/client follow-up command.
+
+Use after `fourok retrieve` when a human or agent needs to inspect one evidence item before making a detailed claim.
+
+Example:
+
+```bash
+fourok open slack:message:123 --retrieval-event-id retrieval-query:abc --rank 1
+```
+
+Responsibilities:
+
+- return the source-backed context for one `source_ref`
+- log the organic inspection/usefulness signal when retrieve metadata is provided
+- keep runtime/database plumbing hidden from public help
+
+### 3. `fourok skill`
+
+Agent/client packaging command.
+
+Use when an agent host such as OpenClaw needs the packaged fourok retrieval skill and MCP instruction guidance.
+
+Example:
+
+```bash
+fourok skill
+fourok skill --instructions
+fourok skill --json
+```
+
+Responsibilities:
+
+- print packaged `SKILL.md` by default
+- print MCP agent instructions with `--instructions`
+- print a machine-readable skill manifest for agent hubs with `--json`
+
+### 4. `fourok status`
 
 Daily user/client readiness command.
 
@@ -75,7 +115,7 @@ Try:
   fourok retrieve "What changed this week?"
 ```
 
-### 3. `fourok onboard`
+### 5. `fourok onboard`
 
 Guided setup/onboarding command.
 
@@ -167,6 +207,8 @@ Governed company context retrieval for AI agents.
 
 Commands:
   retrieve   Retrieve source-backed company context.
+  open       Open one retrieved source and log inspection.
+  skill      Print the packaged agent retrieval skill.
   status     Show whether fourok is ready to retrieve context.
   onboard    Set up or verify a local fourok environment.
   admin      Administrative commands for operators.

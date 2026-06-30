@@ -312,8 +312,9 @@ def render_augmentation_block(response: RetrievalAugmentationResponse) -> str:
         "",
         (
             "How to use this: Answer from these evidence cards only when relevant. "
-            "Cite source_ref values for factual claims. "
-            "If the evidence is weak or incomplete, say so."
+            "Cite source_ref values for factual claims. Open decisive source_ref "
+            "values with fourok.open before detailed claims, quotes, or behavioral "
+            "inferences. If the evidence is weak or incomplete, say so."
         ),
         "",
     ]

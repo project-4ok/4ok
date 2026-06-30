@@ -10,8 +10,8 @@ from fourok.runtime.parser import add_runtime_commands
 from fourok.runtime.webhooks_cli import add_webhook_commands
 from fourok.storage.cli import add_backup_commands
 
-PUBLIC_COMMANDS = {"retrieve", "open", "status", "onboard", "admin"}
-PUBLIC_COMMAND_HINT = "retrieve, open, status, onboard, admin"
+PUBLIC_COMMANDS = {"retrieve", "open", "skill", "status", "onboard", "admin"}
+PUBLIC_COMMAND_HINT = "retrieve, open, skill, status, onboard, admin"
 
 
 class FourokArgumentParser(argparse.ArgumentParser):

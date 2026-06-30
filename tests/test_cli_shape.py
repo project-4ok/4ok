@@ -11,6 +11,8 @@ def test_public_help_shows_small_client_surface() -> None:
     help_text = build_parser().format_help()
 
     assert "retrieve" in help_text
+    assert "open" in help_text
+    assert "skill" in help_text
     assert "status" in help_text
     assert "onboard" in help_text
     assert "admin" in help_text
@@ -27,7 +29,7 @@ def test_invalid_public_command_hints_only_public_surface(capsys) -> None:
 
     error = capsys.readouterr().err
     assert exc.value.code == 2
-    assert "choose from retrieve, status, onboard, admin" in error
+    assert "choose from retrieve, open, skill, status, onboard, admin" in error
     assert "search-state" not in error
     assert "runtime-monitor" not in error
 
@@ -72,6 +74,34 @@ def test_retrieve_help_stays_client_facing(capsys) -> None:
     assert "--state" not in output
     assert "--candidate-limit" not in output
     assert "--retrievers" not in output
+
+
+def test_skill_command_prints_packaged_agent_skill(capsys, monkeypatch) -> None:
+    monkeypatch.setattr("sys.argv", ["fourok", "skill"])
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "name: fourok-retrieval" in output
+    assert "# fourok Retrieval" in output
+    assert "fourok retrieve" in output
+
+
+def test_skill_json_includes_mcp_instructions_for_agent_hubs(capsys, monkeypatch) -> None:
+    monkeypatch.setattr("sys.argv", ["fourok", "skill", "--json"])
+
+    main()
+
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["name"] == "fourok-retrieval"
+    assert "# fourok Retrieval" in payload["skill_md"]
+    assert "call `fourok.retrieve` before answering" in payload["mcp_instructions"]
+    assert payload["recommended_tools"] == [
+        "fourok.retrieve",
+        "fourok.open",
+        "fourok.status",
+        "fourok.onboard",
+    ]
 
 
 def test_status_prints_client_safe_summary(capsys, monkeypatch) -> None:

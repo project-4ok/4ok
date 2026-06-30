@@ -10,6 +10,11 @@ from fourok.cli_parts.shared import DEFAULT_STATE, _principal_from_args
 from fourok.etl.extract.context_snapshot import load_context_snapshot_source_records
 from fourok.etl.extract.email_parser import load_email_dir_with_report
 from fourok.governance import GovernedContext
+from fourok.retrieval.agent_assets import (
+    mcp_agent_instructions,
+    retrieval_skill_md,
+    skill_manifest,
+)
 from fourok.retrieval.clients import cli as retrieval_client
 from fourok.retrieval.context_eval import evaluate_governed_context_retrieval
 from fourok.runtime.cli import health_database_url
@@ -148,6 +153,22 @@ def add_search_commands(subparsers, *, public: bool = False) -> None:
         help=argparse.SUPPRESS
         if public
         else "SQLAlchemy database URL. Defaults to SQLite --state when unset.",
+    )
+
+    skill_parser = subparsers.add_parser(
+        "skill",
+        help="Print the packaged agent retrieval skill.",
+        description="Print the packaged fourok retrieval skill for agents and OpenClaw clients.",
+    )
+    skill_parser.add_argument(
+        "--instructions",
+        action="store_true",
+        help="Print MCP agent instructions instead of SKILL.md.",
+    )
+    skill_parser.add_argument(
+        "--json",
+        action="store_true",
+        help="Print a machine-readable skill manifest for agent hubs.",
     )
 
     ask_parser = subparsers.add_parser(
@@ -307,6 +328,15 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
         except ValueError as exc:
             raise SystemExit(str(exc)) from exc
         print(json.dumps(response, indent=2))
+        return True
+
+    if args.command == "skill":
+        if args.json:
+            print(json.dumps(skill_manifest(), indent=2))
+        elif args.instructions:
+            print(mcp_agent_instructions(), end="")
+        else:
+            print(retrieval_skill_md(), end="")
         return True
 
     if args.command == "ask":

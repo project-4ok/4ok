@@ -7,6 +7,7 @@ from dataclasses import dataclass
 from sqlalchemy import bindparam, inspect, text
 from sqlalchemy.engine import Engine
 
+from fourok.retrieval import embeddings
 from fourok.retrieval.embeddings import (
     cosine_similarity,
     embed_text,
@@ -143,8 +144,8 @@ class ChunkVectorIndex:
             )
 
     def _insert_chunks(self, connection, chunks: list[dict[str, object]]) -> None:
-        for chunk in chunks:
-            embedding = embed_text(str(chunk["body"]))
+        chunk_embeddings = embeddings.embed_texts([str(chunk["body"]) for chunk in chunks])
+        for chunk, embedding in zip(chunks, chunk_embeddings, strict=True):
             if self._engine.dialect.name == "postgresql":
                 connection.execute(
                     text(
