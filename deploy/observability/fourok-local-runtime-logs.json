@@ -2933,7 +2933,7 @@
       "id": 46,
       "type": "timeseries",
       "title": "[Retrieval] Average opened source rank",
-      "description": "Average rank of opened retrieval sources, grouped by source system and record type. Lower is better.",
+      "description": "Average original rank among sources the agent opened via inspect_source, split by source system and record type. Lower is better; this is the organic relevance metric for whether useful sources rank near the top.",
       "datasource": {
         "type": "prometheus",
         "uid": "prometheus"
@@ -2951,7 +2951,7 @@
             "uid": "prometheus"
           },
           "editorMode": "code",
-          "expr": "sum by (source_system, record_type) (fourok_retrieval_source_inspection_rank_sum) / clamp_min(sum by (source_system, record_type) (fourok_retrieval_source_inspections_total), 1)",
+          "expr": "sum by (source_system, record_type) (fourok_retrieval_source_inspection_rank_sum) / clamp_min(sum by (source_system, record_type) (fourok_retrieval_source_inspection_rank_total), 1)",
           "legendFormat": "{{source_system}} {{record_type}}",
           "range": true,
           "refId": "A"

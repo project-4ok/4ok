@@ -513,6 +513,10 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
         "fourok_retrieval_source_inspection_rank_sum"
         in average_opened_rank_panel["targets"][0]["expr"]
     )
+    assert "fourok_retrieval_source_inspection_rank_total" in average_opened_rank_panel[
+        "targets"
+    ][0]["expr"]
+    assert "agent opened via inspect_source" in average_opened_rank_panel["description"]
     positions = {panel["title"]: panel["gridPos"]["y"] for panel in dashboard_data["panels"]}
     non_success_title = "[Pipeline] Non-success Dagster stages (latest run)"
     assert "[Pipeline] Dagster lineage health map" in positions
