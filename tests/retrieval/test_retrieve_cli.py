@@ -580,6 +580,45 @@ def test_retrieve_preserves_evidence_paragraph_boundaries(
     assert "\n\nSecond paragraph keeps the concrete next action separate." in output
 
 
+def test_retrieve_renders_escaped_newlines_as_readable_text(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:issue:escaped-newlines",
+                source_system="linear",
+                source_id="escaped-newlines",
+                record_type="work_item",
+                title="Escaped newline note",
+                body="escaped newline evidence first line\\n\\nsecond line action item",
+                occurred_at="2026-06-24T09:00:00+00:00",
+            )
+        ]
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "escaped newline evidence",
+            "--state",
+            str(state),
+            "--retrievers",
+            "keyword",
+        ],
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "\\n" not in output
+    assert "evidence:\nescaped newline evidence first line" in output
+    assert "\n\nsecond line action item" in output
+
+
 def test_retrieve_centers_evidence_snippet_on_query_terms(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
