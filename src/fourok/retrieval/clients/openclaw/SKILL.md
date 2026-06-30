@@ -1,5 +1,5 @@
 ---
-name: fourok-retrieval
+name: fourok-openclaw
 description: Source-backed company context retrieval for OpenClaw agents via the fourok CLI.
 version: 1.0.0
 author: fourok

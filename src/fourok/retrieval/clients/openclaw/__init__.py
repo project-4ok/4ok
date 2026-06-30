@@ -12,7 +12,7 @@ from fourok.governance.policy import PrincipalContext
 from fourok.retrieval.api import RetrievalAPI
 
 CLIENT_CAPABILITIES = ("retrieve", "open", "status", "onboard")
-PACKAGE_NAME = "fourok-retrieval"
+PACKAGE_NAME = "fourok-openclaw"
 
 
 def client_capabilities() -> tuple[str, ...]:

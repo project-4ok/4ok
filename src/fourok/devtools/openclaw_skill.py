@@ -10,8 +10,8 @@ from pathlib import Path
 from fourok.retrieval.clients import cli as cli_client
 from fourok.retrieval.clients import openclaw
 
-ARCHIVE_NAME = "openclaw-skill-fourok-retrieval.tar.gz"
-PACKAGE_DIR = "fourok-retrieval"
+ARCHIVE_NAME = "fourok-openclaw.tar.gz"
+PACKAGE_DIR = "fourok-openclaw"
 PACKAGE_PATH = Path("src/fourok/retrieval/clients/openclaw")
 REQUIRED_FILES = ("README.md", "SKILL.md", "instructions.md", "openclaw-skill.json")
 

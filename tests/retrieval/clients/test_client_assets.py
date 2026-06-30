@@ -30,7 +30,7 @@ def test_openclaw_client_assets_are_colocated_with_client_adapter() -> None:
 
     assert "# fourok Retrieval" in skill
     assert "fourok retrieve" in instructions
-    assert manifest["name"] == "fourok-retrieval"
+    assert manifest["name"] == "fourok-openclaw"
     assert manifest["transport"] == "cli"
     assert manifest["entrypoint"] == "SKILL.md"
     assert manifest["instructions"] == "instructions.md"

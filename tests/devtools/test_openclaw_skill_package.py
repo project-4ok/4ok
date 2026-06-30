@@ -28,16 +28,16 @@ def test_validate_openclaw_skill_package_reports_publishable_cli_skill() -> None
 def test_build_openclaw_skill_archive_contains_only_client_assets(tmp_path: Path) -> None:
     archive_path = build_openclaw_skill_archive(output_dir=tmp_path)
 
-    assert archive_path == tmp_path / "openclaw-skill-fourok-retrieval.tar.gz"
+    assert archive_path == tmp_path / "fourok-openclaw.tar.gz"
     assert archive_path.exists()
     with tarfile.open(archive_path, "r:gz") as archive:
         names = sorted(member.name for member in archive.getmembers())
 
     assert names == [
-        "fourok-retrieval/README.md",
-        "fourok-retrieval/SKILL.md",
-        "fourok-retrieval/instructions.md",
-        "fourok-retrieval/openclaw-skill.json",
+        "fourok-openclaw/README.md",
+        "fourok-openclaw/SKILL.md",
+        "fourok-openclaw/instructions.md",
+        "fourok-openclaw/openclaw-skill.json",
     ]
     assert all("docker" not in name.casefold() for name in names)
 
