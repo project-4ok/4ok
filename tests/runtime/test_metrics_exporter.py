@@ -282,6 +282,18 @@ def test_metrics_exporter_renders_dagster_run_and_source_freshness_metrics(tmp_p
     )
     assert rank_one_metric in text
     assert missing_rank_metric in text
+    assert (
+        'fourok_retrieval_source_inspection_rank_sum'
+        '{record_type="work_item",source_system="linear"} 1' in text
+    )
+    assert (
+        'fourok_retrieval_source_inspection_rank_total'
+        '{rank="1",record_type="work_item",source_system="linear"} 1' in text
+    )
+    assert (
+        'fourok_retrieval_source_inspection_rank_total'
+        '{rank="4",record_type="message",source_system="slack"} 1' in text
+    )
     assert 'fourok_webhook_events_total{source_system="linear",status="pending"} 1' in text
     assert 'fourok_connector_job_runs_total{connector="linear",status="failed"} 1' in text
     assert 'fourok_connector_latest_run_status{connector="linear",status="failed"} 1' in text

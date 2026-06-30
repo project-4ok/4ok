@@ -98,12 +98,25 @@ def retrieval_inspection_event_metrics_sqlite(connection: sqlite3.Connection) ->
           record_type,
           count(*) as inspection_count,
           sum(case when rank = 1 then 1 else 0 end) as rank_one_count,
-          sum(case when rank is null then 1 else 0 end) as missing_rank_count
+          sum(case when rank is null then 1 else 0 end) as missing_rank_count,
+          sum(case when rank is not null then rank else 0 end) as rank_sum
         from retrieval_inspection_events
         group by source_system, record_type
         """
     )
-    return _retrieval_inspection_event_metrics_from_rows(rows)
+    rank_rows = connection.execute(
+        """
+        select
+          source_system,
+          record_type,
+          rank,
+          count(*) as rank_count
+        from retrieval_inspection_events
+        where rank is not null
+        group by source_system, record_type, rank
+        """
+    )
+    return _retrieval_inspection_event_metrics_from_rows(rows, rank_rows=rank_rows)
 
 
 def retrieval_query_event_metrics_connection(connection) -> list[Metric]:
@@ -141,13 +154,28 @@ def retrieval_inspection_event_metrics_connection(connection) -> list[Metric]:
               record_type,
               count(*) as inspection_count,
               sum(case when rank = 1 then 1 else 0 end) as rank_one_count,
-              sum(case when rank is null then 1 else 0 end) as missing_rank_count
+              sum(case when rank is null then 1 else 0 end) as missing_rank_count,
+              sum(case when rank is not null then rank else 0 end) as rank_sum
             from retrieval_inspection_events
             group by source_system, record_type
             """
         )
     ).mappings()
-    return _retrieval_inspection_event_metrics_from_rows(rows)
+    rank_rows = connection.execute(
+        text(
+            """
+            select
+              source_system,
+              record_type,
+              rank,
+              count(*) as rank_count
+            from retrieval_inspection_events
+            where rank is not null
+            group by source_system, record_type, rank
+            """
+        )
+    ).mappings()
+    return _retrieval_inspection_event_metrics_from_rows(rows, rank_rows=rank_rows)
 
 
 def _embedding_coverage_metrics(*, total: float, embedded: float) -> list[Metric]:
@@ -208,7 +236,7 @@ def _sqlite_columns(connection: sqlite3.Connection, table_name: str) -> set[str]
     return {str(row["name"]) for row in connection.execute(f"pragma table_info({table_name})")}
 
 
-def _retrieval_inspection_event_metrics_from_rows(rows) -> list[Metric]:
+def _retrieval_inspection_event_metrics_from_rows(rows, *, rank_rows=()) -> list[Metric]:
     metrics: list[Metric] = []
     for row in rows:
         labels = {
@@ -234,6 +262,26 @@ def _retrieval_inspection_event_metrics_from_rows(rows) -> list[Metric]:
                 "fourok_retrieval_source_inspections_missing_rank_total",
                 labels,
                 float(row["missing_rank_count"] or 0),
+            )
+        )
+        metrics.append(
+            (
+                "fourok_retrieval_source_inspection_rank_sum",
+                labels,
+                float(row["rank_sum"] or 0),
+            )
+        )
+    for row in rank_rows:
+        labels = {
+            "source_system": str(row["source_system"]),
+            "record_type": str(row["record_type"]),
+            "rank": str(row["rank"]),
+        }
+        metrics.append(
+            (
+                "fourok_retrieval_source_inspection_rank_total",
+                labels,
+                float(row["rank_count"] or 0),
             )
         )
     return metrics

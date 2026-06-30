@@ -374,6 +374,8 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
     assert any("fourok_retrieval_pre_rerank_candidates_sum" in expr for expr in prometheus_exprs)
     assert any("fourok_retrieval_zero_result_requests_total" in expr for expr in prometheus_exprs)
     assert any("fourok_retrieval_duration_ms_sum" in expr for expr in prometheus_exprs)
+    assert any("fourok_retrieval_source_inspection_rank_total" in expr for expr in prometheus_exprs)
+    assert any("fourok_retrieval_source_inspection_rank_sum" in expr for expr in prometheus_exprs)
     assert any("otelcol_receiver_accepted_spans_total" in expr for expr in prometheus_exprs)
     panel_titles = {panel["title"] for panel in prometheus_panels}
     embedding_deployment_panel = next(
@@ -473,6 +475,8 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
         "[Retrieval] Candidates found before reranking",
         "[Retrieval] Zero-result requests",
         "[Retrieval] Average duration (ms)",
+        "[Retrieval] Opened source rank distribution",
+        "[Retrieval] Average opened source rank",
     ]:
         assert title in panel_titles
     for title in [
@@ -490,6 +494,25 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
         if panel["title"] == "[Retrieval] Candidates found before reranking"
     )
     assert "before reranking" in retrieval_candidates_panel["description"]
+    inspected_rank_panel = next(
+        panel
+        for panel in prometheus_panels
+        if panel["title"] == "[Retrieval] Opened source rank distribution"
+    )
+    assert inspected_rank_panel["type"] == "barchart"
+    assert inspected_rank_panel["targets"][0]["expr"] == (
+        "sum by (rank) (fourok_retrieval_source_inspection_rank_total)"
+    )
+    assert "agent chose to open" in inspected_rank_panel["description"]
+    average_opened_rank_panel = next(
+        panel
+        for panel in prometheus_panels
+        if panel["title"] == "[Retrieval] Average opened source rank"
+    )
+    assert (
+        "fourok_retrieval_source_inspection_rank_sum"
+        in average_opened_rank_panel["targets"][0]["expr"]
+    )
     positions = {panel["title"]: panel["gridPos"]["y"] for panel in dashboard_data["panels"]}
     non_success_title = "[Pipeline] Non-success Dagster stages (latest run)"
     assert "[Pipeline] Dagster lineage health map" in positions

@@ -2360,7 +2360,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 88,
+        "y": 95,
         "w": 8,
         "h": 7
       },
@@ -2434,7 +2434,7 @@
       },
       "gridPos": {
         "x": 8,
-        "y": 88,
+        "y": 95,
         "w": 8,
         "h": 7
       },
@@ -2500,7 +2500,7 @@
       },
       "gridPos": {
         "x": 16,
-        "y": 88,
+        "y": 95,
         "w": 8,
         "h": 7
       },
@@ -2559,7 +2559,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 95,
+        "y": 102,
         "w": 12,
         "h": 7
       },
@@ -2598,7 +2598,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 95,
+        "y": 102,
         "w": 12,
         "h": 7
       },
@@ -2637,7 +2637,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 102,
+        "y": 109,
         "w": 24,
         "h": 8
       },
@@ -2752,7 +2752,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 110,
+        "y": 117,
         "w": 12,
         "h": 8
       },
@@ -2789,7 +2789,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 110,
+        "y": 117,
         "w": 12,
         "h": 8
       },
@@ -2826,7 +2826,7 @@
       },
       "gridPos": {
         "x": 0,
-        "y": 118,
+        "y": 125,
         "w": 12,
         "h": 8
       },
@@ -2863,7 +2863,7 @@
       },
       "gridPos": {
         "x": 12,
-        "y": 118,
+        "y": 125,
         "w": 12,
         "h": 8
       },
@@ -2894,6 +2894,74 @@
       "title": "[Logs] Last 5 fourok Docker logs",
       "type": "logs",
       "description": "Tail of all logs for this compose project, limited to 5 rows."
+    },
+    {
+      "id": 45,
+      "type": "barchart",
+      "title": "[Retrieval] Opened source rank distribution",
+      "description": "Distribution of the retrieval result rank that a human or agent chose to open via inspection; lower ranks mean retrieved evidence is being selected earlier.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 0,
+        "y": 133
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (rank) (fourok_retrieval_source_inspection_rank_total)",
+          "legendFormat": "rank {{rank}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
+    },
+    {
+      "id": 46,
+      "type": "timeseries",
+      "title": "[Retrieval] Average opened source rank",
+      "description": "Average rank of opened retrieval sources, grouped by source system and record type. Lower is better.",
+      "datasource": {
+        "type": "prometheus",
+        "uid": "prometheus"
+      },
+      "gridPos": {
+        "h": 8,
+        "w": 12,
+        "x": 12,
+        "y": 133
+      },
+      "targets": [
+        {
+          "datasource": {
+            "type": "prometheus",
+            "uid": "prometheus"
+          },
+          "editorMode": "code",
+          "expr": "sum by (source_system, record_type) (fourok_retrieval_source_inspection_rank_sum) / clamp_min(sum by (source_system, record_type) (fourok_retrieval_source_inspections_total), 1)",
+          "legendFormat": "{{source_system}} {{record_type}}",
+          "range": true,
+          "refId": "A"
+        }
+      ],
+      "fieldConfig": {
+        "defaults": {},
+        "overrides": []
+      },
+      "options": {}
     }
   ],
   "refresh": "10s",
