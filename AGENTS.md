@@ -111,6 +111,17 @@ If two agents need the same lane, shrink the slice or serialize. Schema/storage 
 - Multiple agents may work in the same checkout. Other agents' modified or
   untracked files must not block committing a verified slice: stage only the
   files you touched, commit them atomically, and push immediately.
+- Expect unrelated workspace changes from sibling agents. Do not stop just
+  because the checkout is dirty; ignore unrelated WIP unless it overlaps or
+  blocks your proof.
+- Never delete, rename, stage, or commit unexpected files. If unexpected files
+  block the work, ask; otherwise leave them alone.
+- User says `commit`: commit your intended changes only. Stage only intended
+  files/hunks and inspect the staged diff before committing.
+- User says `commit all`: commit all current changes, but split them into
+  coherent grouped chunks rather than one mixed commit.
+- User says `push`: you may `git pull --rebase` first, then push.
+- User says `ship it`: commit intended changes, `git pull --rebase`, then push.
 - Use `git diff --stat` as a size trigger: when the uncommitted diff grows beyond roughly 200 changed lines, stop and consider whether a verified atomic commit should be made before continuing.
 - Commit immediately after verification when a slice changes behavior, docs, dependencies, schema, fixtures, or workflow.
 - Push each committed slice after local verification unless the user explicitly
