@@ -23,7 +23,6 @@ already has:
 - customer namespace layout at `clusters/prod/customers/fourok`
 - existing customer workload groups under:
   - `clusters/prod/customers/fourok/etl`
-  - `clusters/prod/customers/fourok/openviking`
   - `clusters/prod/customers/fourok/n8n`
 - external secret manager operator-based secret sync patterns
 
@@ -129,8 +128,7 @@ Expected first-pass NetworkPolicy posture:
 - private/admin-only ingress for Dagster UI only if explicitly approved
 
 The infra repo already uses `NetworkPolicy` under
-`clusters/prod/customers/fourok/etl`, `clusters/prod/customers/fourok/openviking`,
-and `clusters/prod/customers/fourok/n8n`.
+`clusters/prod/customers/fourok/etl` and `clusters/prod/customers/fourok/n8n`.
 
 ## Secrets
 

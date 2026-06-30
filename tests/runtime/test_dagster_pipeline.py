@@ -1,12 +1,10 @@
 import importlib.util
-import json
 import shutil
 from pathlib import Path
 from typing import Any
 
 import pytest
 
-from fourok.etl.extract.openviking_sessions import write_openviking_session_messages_jsonl
 from fourok.etl.extract.sync_jobs import connector_job_runs, start_connector_job
 from fourok.governance.state import create_governed_context_state
 from fourok.runtime.source_imports import SourceRecordImportReport
@@ -47,6 +45,50 @@ _safe_output_tail: Any = _module._safe_output_tail
 _meltano_failure_detail: Any = _module._meltano_failure_detail
 
 
+def test_connector_env_resource_prefers_dotenv_over_empty_compose_env(
+    monkeypatch, tmp_path: Path
+) -> None:
+    dotenv = tmp_path / ".env"
+    dotenv.write_text(
+        'GOOGLE_WORKSPACE_DRIVE_IDS=drive-1\nTAP_SLACK_SELECTED_CHANNELS=["C0ASNARACMT"]\n',
+        encoding="utf-8",
+    )
+    monkeypatch.setenv("GOOGLE_WORKSPACE_DRIVE_IDS", "")
+    monkeypatch.setenv("TAP_SLACK_SELECTED_CHANNELS", "")
+
+    env = _module.ConnectorEnvResource(dotenv_path=str(dotenv)).secret_env()
+
+    assert env["GOOGLE_WORKSPACE_DRIVE_IDS"] == "drive-1"
+    assert env["TAP_SLACK_SELECTED_CHANNELS"] == '["C0ASNARACMT"]'
+
+
+def test_connector_env_resource_drops_empty_compose_only_values(monkeypatch) -> None:
+    monkeypatch.setenv("TAP_SLACK_SELECTED_CHANNELS", "")
+
+    env = _module.ConnectorEnvResource(dotenv_path="/does/not/exist").secret_env()
+
+    assert "TAP_SLACK_SELECTED_CHANNELS" not in env
+
+
+def test_connector_env_resource_drops_empty_dotenv_values(tmp_path: Path) -> None:
+    dotenv = tmp_path / ".env"
+    dotenv.write_text("TAP_SLACK_SELECTED_CHANNELS=\n", encoding="utf-8")
+
+    env = _module.ConnectorEnvResource(dotenv_path=str(dotenv)).secret_env()
+
+    assert "TAP_SLACK_SELECTED_CHANNELS" not in env
+
+
+def test_meltano_environment_ignores_empty_process_values_before_slack_defaults(
+    monkeypatch, tmp_path: Path
+) -> None:
+    monkeypatch.setenv("TAP_SLACK_SELECTED_CHANNELS", "")
+
+    env = _meltano_environment(landing_dir=tmp_path, secret_env={"SLACK_BOT_TOKEN": "x"})
+
+    assert env["TAP_SLACK_SELECTED_CHANNELS"] == '["C0ASNARACMT"]'
+
+
 def test_dagster_definitions_expose_only_operator_product_lineage_assets() -> None:
     asset_names = {key.to_user_string() for key in defs.resolve_asset_graph().get_all_asset_keys()}
 
@@ -59,7 +101,6 @@ def test_dagster_definitions_expose_only_operator_product_lineage_assets() -> No
         "fourok_linear_live_source_records_from_raw_landing",
         "meltano_google_drive_live_raw_landing",
         "fourok_google_drive_live_source_records_from_raw_landing",
-        "fourok_openviking_live_source_records_from_sessions",
         "fourok_webhook_backlog",
         "fourok_canonical_objects_and_entity_links",
         "fourok_retrieval_records",
@@ -83,8 +124,10 @@ def test_dagster_definitions_expose_only_operator_product_lineage_assets() -> No
     assert asset_names.isdisjoint(obsolete_or_fixture_assets)
 
 
-def test_dagster_check_script_tracks_live_asset_graph_without_running_openviking() -> None:
-    assert "fourok_openviking_live_source_records_from_sessions" in _check_module.EXPECTED_ASSETS
+def test_dagster_check_script_has_no_openviking_sessions_mount_asset() -> None:
+    assert (
+        "fourok_openviking_live_source_records_from_sessions" not in _check_module.EXPECTED_ASSETS
+    )
     assert "fourok_openviking_live_source_records_from_sessions" not in _live_connector_asset_names(
         "all"
     )
@@ -123,7 +166,6 @@ def test_dagster_definitions_expose_recurring_live_ingestion_hooks() -> None:
     job_names = {job.name for job in defs.resolve_all_job_defs()}
     schedule_names = {schedule.name for schedule in defs.schedules or []}
     sensor_names = {sensor.name for sensor in defs.sensors or []}
-    job_names = {job.name for job in defs.get_job_defs()}
     assert "fourok_hourly_live_backfill" in job_names
     assert "gcb_hourly_live_backfill" in job_names
     assert "fourok_process_webhook_backlog" in job_names
@@ -149,9 +191,7 @@ def test_dagster_hourly_schedule_selects_only_configured_live_sources(tmp_path: 
     assert "meltano_google_drive_live_raw_landing" not in selected
     assert "fourok_openviking_live_source_records_from_sessions" not in selected
 
-    sessions = tmp_path / "sessions"
-    sessions.mkdir()
-    assert _configured_live_sources({"OPENVIKING_SESSIONS_DIR": str(sessions)}) == ("openviking",)
+    assert _configured_live_sources({"OPENVIKING_SESSIONS_DIR": str(tmp_path)}) == ()
 
 
 def test_dagster_hourly_schedule_reads_current_dotenv_for_source_selection(
@@ -232,7 +272,7 @@ def test_dagster_hourly_live_backfill_rebuilds_retrieval_and_operator_counts() -
     node_names = {node.name for node in job.all_node_defs}
 
     assert "fourok_webhook_backlog" in node_names
-    assert "fourok_openviking_live_source_records_from_sessions" in node_names
+    assert "fourok_openviking_live_source_records_from_sessions" not in node_names
     assert "fourok_canonical_objects_and_entity_links" in node_names
     assert "fourok_retrieval_records" in node_names
     assert "fourok_operator_dashboard" in node_names
@@ -252,7 +292,6 @@ def test_dagster_hourly_live_backfill_rebuilds_retrieval_and_operator_counts() -
         "fourok_twenty_live_source_records_from_raw_landing",
         "fourok_linear_live_source_records_from_raw_landing",
         "fourok_google_drive_live_source_records_from_raw_landing",
-        "fourok_openviking_live_source_records_from_sessions",
     }
 
     retrieval_upstream_node_names = {
@@ -263,41 +302,6 @@ def test_dagster_hourly_live_backfill_rebuilds_retrieval_and_operator_counts() -
         for output in outputs
     }
     assert retrieval_upstream_node_names == {"fourok_canonical_objects_and_entity_links"}
-
-
-def test_dagster_normalizes_openviking_sessions_for_live_import(tmp_path: Path) -> None:
-    sessions = tmp_path / "sessions"
-    sessions.mkdir()
-    (sessions / "session-1-topic-123.jsonl").write_text(
-        "\n".join(
-            [
-                json.dumps({"type": "session", "id": "session-1"}),
-                json.dumps(
-                    {
-                        "type": "message",
-                        "id": "msg-1",
-                        "timestamp": "2026-06-03T08:00:23.292Z",
-                        "message": {
-                            "role": "user",
-                            "senderName": "Simon",
-                            "content": "What are my priorities today?",
-                        },
-                    }
-                ),
-            ]
-        ),
-        encoding="utf-8",
-    )
-    messages = tmp_path / "messages.jsonl"
-
-    count = write_openviking_session_messages_jsonl(sessions, messages)
-
-    assert count == 1
-    [row] = [json.loads(line) for line in messages.read_text(encoding="utf-8").splitlines()]
-    assert row["conversation_id"] == "session-1-topic-123"
-    assert row["message_id"] == "msg-1"
-    assert row["message"]["content"] == "What are my priorities today?"
-    assert row["permission_refs"] == ["openviking:conversation:session-1-topic-123"]
 
 
 def test_dagster_hourly_backfill_partial_failure_tolerant() -> None:
@@ -330,7 +334,6 @@ def test_dagster_hourly_backfill_partial_failure_tolerant() -> None:
         "fourok_twenty_live_source_records_from_raw_landing",
         "fourok_linear_live_source_records_from_raw_landing",
         "fourok_google_drive_live_source_records_from_raw_landing",
-        "fourok_openviking_live_source_records_from_sessions",
     }
     assert retrieval_upstream_node_names == {"fourok_canonical_objects_and_entity_links"}
 

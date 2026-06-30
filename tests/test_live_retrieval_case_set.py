@@ -10,14 +10,10 @@ from fourok.etl.extract.connectors import (
     load_slack_source_records,
     load_twenty_source_records,
 )
-from fourok.etl.extract.openviking_adapter import (
-    load_openviking_messages_jsonl_source_records,
-)
 from fourok.governance import GovernedContext
 from fourok.retrieval.live_retrieval_case_set import (
     DEFAULT_GOOGLE_DRIVE_FIXTURE,
     DEFAULT_LINEAR_FIXTURE,
-    DEFAULT_OPENVIKING_FIXTURE,
     DEFAULT_SLACK_FIXTURE,
     DEFAULT_TWENTY_FIXTURE,
 )
@@ -29,7 +25,6 @@ SEEDED_CASES = (
 )
 SLACK_FIXTURE = REPO_ROOT / DEFAULT_SLACK_FIXTURE
 DRIVE_FIXTURE = REPO_ROOT / DEFAULT_GOOGLE_DRIVE_FIXTURE
-OPENVIKING_FIXTURE = REPO_ROOT / DEFAULT_OPENVIKING_FIXTURE
 LINEAR_FIXTURE = REPO_ROOT / DEFAULT_LINEAR_FIXTURE
 TWENTY_FIXTURE = REPO_ROOT / DEFAULT_TWENTY_FIXTURE
 
@@ -111,20 +106,19 @@ def test_live_retrieval_case_set_passes_with_seeded_fixtures(
 
     assert output["status"] == "ok"
     assert output["summary"] == {
-        "cases": 5,
-        "passed": 5,
+        "cases": 4,
+        "passed": 4,
         "failed": 0,
     }
     case_ids = [item["id"] for item in output["cases"]]
     assert case_ids == [
         "slack-cancellation-invoice",
         "google-drive-metadata-only",
-        "openviking-launch-checklist",
         "linear-issue-cancellation-summary",
         "twenty-company-alpha",
     ]
     assert all(item["passed"] for item in output["cases"])
-    assert output["seed_report"]["record_count"] == 11
+    assert output["seed_report"]["record_count"] == 8
     assert report_path.exists()
     report_text = report_path.read_text(encoding="utf-8")
     assert "# Live Retrieval Case Set Check Report" in report_text
@@ -141,14 +135,12 @@ def test_live_retrieval_case_set_uses_runtime_database_when_configured(
         json.dumps(
             [
                 {
-                    "id": "openviking-runtime",
-                    "query": "Alpine Robotics launch checklist",
-                    "expected_source_ref_prefix": (
-                        "openviking:conversation:conv-product:session:sess-alpha:message:m-001"
-                    ),
-                    "expected_source_system": "openviking",
-                    "expected_record_type": "message",
-                    "expected_permission_refs": ["openviking:conversation:conv-product"],
+                    "id": "linear-runtime",
+                    "query": "Prepare Alpha cancellation summary",
+                    "expected_source_ref_prefix": ("linear:issue:OPS-123"),
+                    "expected_source_system": "linear",
+                    "expected_record_type": "work_item",
+                    "expected_permission_refs": ["linear:team:team-ops"],
                 }
             ],
             indent=2,
@@ -160,8 +152,7 @@ def test_live_retrieval_case_set_uses_runtime_database_when_configured(
     database_url = f"sqlite:///{database_path}"
     context = GovernedContext(database_url=database_url)
     context.ingest_source_records(
-        load_openviking_messages_jsonl_source_records(OPENVIKING_FIXTURE)
-        + load_slack_source_records(SLACK_FIXTURE)
+        load_slack_source_records(SLACK_FIXTURE)
         + load_google_drive_source_records(DRIVE_FIXTURE)
         + load_linear_source_records(LINEAR_FIXTURE)
         + load_twenty_source_records(TWENTY_FIXTURE)

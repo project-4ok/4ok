@@ -26,8 +26,6 @@ from dagster import (
 )
 
 from fourok.etl.extract.connectors import load_landed_source_records
-from fourok.etl.extract.openviking_adapter import load_openviking_messages_jsonl_source_records
-from fourok.etl.extract.openviking_sessions import write_openviking_session_messages_jsonl
 from fourok.etl.extract.slack_adapter import load_slack_landed_source_records
 from fourok.etl.extract.slack_tap_env import apply_slack_tap_defaults
 from fourok.etl.extract.sync_jobs import complete_connector_job, try_start_connector_job
@@ -287,43 +285,11 @@ def fourok_google_drive_live_source_records_from_raw_landing(
     )
 
 
-@asset
-def fourok_openviking_live_source_records_from_sessions(
-    context,
-    raw_landing: RawLandingResource,
-    fourok_runtime: FourokRuntimeResource,
-) -> MaterializeResult[Any]:
-    connector_name = "openviking-live"
-    sessions_dir = Path(os.environ.get("OPENVIKING_SESSIONS_DIR", "/var/lib/openclaw/sessions"))
-    landing_dir = raw_landing.root / "openviking_live"
-    landing_dir.mkdir(parents=True, exist_ok=True)
-    messages_path = landing_dir / "messages.jsonl"
-    normalized_count = write_openviking_session_messages_jsonl(sessions_dir, messages_path)
-    records = load_openviking_messages_jsonl_source_records(messages_path)
-    _result, report = _import_source_records(records=records, fourok_runtime=fourok_runtime)
-    _record_live_connector_success(
-        _governed_state(fourok_runtime),
-        connector_name=connector_name,
-        report=report,
-        landing_dir=landing_dir,
-        dagster_run_id=context.run_id,
-    )
-    return _source_record_materialization(
-        report,
-        metadata={
-            "sessions_dir": MetadataValue.path(sessions_dir),
-            "messages_path": MetadataValue.path(messages_path),
-            "normalized_message_count": normalized_count,
-        },
-    )
-
-
 _LIVE_SOURCE_RECORD_IMPORT_ASSETS = [
     fourok_slack_live_source_records_from_raw_landing,
     fourok_twenty_live_source_records_from_raw_landing,
     fourok_linear_live_source_records_from_raw_landing,
     fourok_google_drive_live_source_records_from_raw_landing,
-    fourok_openviking_live_source_records_from_sessions,
 ]
 
 _LIVE_RAW_LANDING_ASSETS = [
@@ -350,7 +316,6 @@ _CONNECTOR_ASSET_KEYS = {
         "meltano_google_drive_live_raw_landing",
         "fourok_google_drive_live_source_records_from_raw_landing",
     ),
-    "openviking": ("fourok_openviking_live_source_records_from_sessions",),
 }
 
 _SHARED_BACKFILL_ASSET_KEYS = (
@@ -755,7 +720,6 @@ defs = Definitions(
         fourok_linear_live_source_records_from_raw_landing,
         meltano_google_drive_live_raw_landing,
         fourok_google_drive_live_source_records_from_raw_landing,
-        fourok_openviking_live_source_records_from_sessions,
         fourok_webhook_backlog,
         fourok_canonical_objects_and_entity_links,
         fourok_retrieval_records,
@@ -815,9 +779,6 @@ def _configured_live_sources(env: dict[str, str]) -> tuple[str, ...]:
         "GOOGLE_WORKSPACE_OAUTH_REFRESH_TOKEN",
     ):
         sources.append("google_drive")
-    openviking_sessions_dir = env.get("OPENVIKING_SESSIONS_DIR", "").strip()
-    if openviking_sessions_dir and Path(openviking_sessions_dir).exists():
-        sources.append("openviking")
     return tuple(sources)
 
 
@@ -864,11 +825,15 @@ def _landed_stream_counts(landing_dir: Path) -> dict[str, int]:
 def _meltano_environment(*, landing_dir: Path, secret_env: dict[str, str]) -> dict[str, str]:
     return apply_slack_tap_defaults(
         {
-            **os.environ,
+            **_non_empty_env(os.environ),
             **_singer_secret_aliases(secret_env),
             "TARGET_FOUROK_RAW_JSONL_LANDING_DIR": str(landing_dir),
         }
     )
+
+
+def _non_empty_env(env) -> dict[str, str]:
+    return {key: value for key, value in env.items() if value}
 
 
 def _singer_secret_aliases(secret_env: dict[str, str]) -> dict[str, str]:

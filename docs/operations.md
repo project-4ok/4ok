@@ -122,50 +122,6 @@ payloads or credentials. Use `--source slack`, `--source twenty`,
 debugging. Add `--verify-live-db` when the target runtime database should show
 live source/retrieval row deltas during the proof.
 
-## OpenViking Conversation Backfill
-
-OpenViking captured conversations are imported from a project-local ignored
-`messages.jsonl` export. Never commit the export or print message bodies in
-operator evidence.
-
-Current production fourok gateway source:
-
-```text
-prod-customer-fourok-gateway-01.tail04ba66.ts.net:/srv/openclaw-data/agents/main/sessions/*.jsonl
-```
-
-The export used for the Stage 1 proof normalized non-trajectory OpenClaw session
-`message` events into `.local/openviking/messages.jsonl`, keeping only `user`
-and `assistant` roles and mapping them to the OpenViking backfill contract:
-conversation/session/thread IDs, message ID/order, role/speaker, timestamp,
-permission refs, source path, and raw metadata. It intentionally excluded
-`toolResult` messages and trajectory traces.
-
-Safe local proof commands:
-
-```bash
-uv run fourok backfill-openviking-messages \
-  .local/openviking/messages.jsonl \
-  --database-url "$FOUROK_DATABASE_URL" \
-  > .local/openviking/backfill-runtime-db-report.json
-
-uv run fourok operator-status \
-  --database-url "$FOUROK_DATABASE_URL" \
-  > .local/openviking/operator-status-after-openviking.json
-
-uv run fourok search-state OpenClaw \
-  --database-url "$FOUROK_DATABASE_URL" \
-  --role customer:fourok \
-  --limit 10 \
-  > .local/openviking/search-openclaw-customer-role-results.json
-```
-
-Expected safe evidence fields: export path, byte count, SHA-256, line count,
-conversation count, role counts, timestamp range, backfill `record_count`,
-`source_ref_count`, `source_systems`, `record_types`, `retrieval_unit_count`,
-operator `imported_items_by_source.openviking`, and retrieval source refs. Do
-not include raw `content`, `body`, or `text` values in reports.
-
 Check freshness and idempotency status for every recurring live source:
 
 ```bash

@@ -117,11 +117,10 @@ Append audit-relevant open questions here. Keep this file short.
   reload, indicating it was mounted from a different checkout or stale runtime
   state. Rebuild/restart the observability profile from this branch before
   treating the canonical `fourok-local-runtime-logs` UID as live-updated.
-- Live retrieval case-set proof gap: runtime run of the approved case set returns
-  one pass (`openviking-launch-checklist`) and four failures (Slack, Drive,
-  Linear, Twenty) due stale source-ref/text assumptions, so this remains a
-  functional blocker until the fixture and/or runtime source assumptions are
-  refreshed.
+- Live retrieval case-set proof gap: runtime run of the approved case set had
+  stale source-ref/text assumptions for Slack, Drive, Linear, and Twenty, so
+  refresh the fixture and/or runtime source assumptions before treating it as a
+  release gate.
 
 ## Approved
 

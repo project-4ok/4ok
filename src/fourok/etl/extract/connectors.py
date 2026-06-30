@@ -225,6 +225,8 @@ def load_landed_source_records(
     landing_path: Path, *, stream: str = "email_messages"
 ) -> list[SourceRecord]:
     record_path = landing_path / f"{stream}.jsonl"
+    if not record_path.exists():
+        return []
     records = []
     for line_number, line in enumerate(
         record_path.read_text(encoding="utf-8").splitlines(), start=1

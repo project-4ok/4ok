@@ -23,11 +23,6 @@ class RerankRule:
 def default_rerank_rules() -> tuple[RerankRule, ...]:
     return (
         RerankRule(
-            name="penalize_openviking_tool_noise",
-            multiplier=0.2,
-            predicate=_is_openviking_tool_noise,
-        ),
-        RerankRule(
             name="boost_linear_work_item_for_current_priority_query",
             multiplier=1.8,
             additive=0.01,
@@ -74,22 +69,6 @@ class RetrievalReranker:
         updated["rerank_score"] = round(score, 6)
         updated["rerank_reasons"] = tuple(reasons) if reasons else ("specific source excerpt",)
         return updated
-
-
-def _is_openviking_tool_noise(row: CandidateRow, query: str) -> bool:
-    if str(row.get("source_system", "")).casefold() != "openviking":
-        return False
-    haystack = " ".join(
-        str(row.get(key, "")) for key in ("title", "snippet", "record_type")
-    ).casefold()
-    noise_markers = (
-        "toolresult",
-        "<skill>",
-        "</skill>",
-        "installed linear cli",
-        "location>/app/skills",
-    )
-    return any(marker in haystack for marker in noise_markers)
 
 
 def _is_current_priority_linear_work_item(row: CandidateRow, query: str) -> bool:

@@ -11,7 +11,6 @@ from fourok.etl.extract.connectors import (
     load_slack_source_records,
     load_twenty_source_records,
 )
-from fourok.etl.extract.openviking_adapter import load_openviking_messages_jsonl_source_records
 from fourok.etl.extract.source_records import SourceRecord
 from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
@@ -23,7 +22,6 @@ DEFAULT_SLACK_FIXTURE = Path("tests/fixtures/connectors/singer_slack_messages.js
 DEFAULT_GOOGLE_DRIVE_FIXTURE = Path(
     "tests/fixtures/connectors/singer_google_drive_metadata_only.jsonl"
 )
-DEFAULT_OPENVIKING_FIXTURE = Path("tests/fixtures/openviking/messages_variants.jsonl")
 DEFAULT_LINEAR_FIXTURE = Path("tests/fixtures/connectors/singer_linear_work_items.jsonl")
 DEFAULT_TWENTY_FIXTURE = Path("tests/fixtures/connectors/singer_twenty_crm.jsonl")
 
@@ -256,7 +254,6 @@ def _load_live_retrieval_fixtures() -> list[SourceRecord]:
     records: list[SourceRecord] = []
     records.extend(load_slack_source_records(DEFAULT_SLACK_FIXTURE))
     records.extend(load_google_drive_source_records(DEFAULT_GOOGLE_DRIVE_FIXTURE))
-    records.extend(load_openviking_messages_jsonl_source_records(DEFAULT_OPENVIKING_FIXTURE))
     records.extend(load_linear_source_records(DEFAULT_LINEAR_FIXTURE))
     records.extend(load_twenty_source_records(DEFAULT_TWENTY_FIXTURE))
     return records

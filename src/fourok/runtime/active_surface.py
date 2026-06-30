@@ -11,7 +11,6 @@ ACTIVE_CLI_COMMANDS = frozenset(
         "audit",
         "audit-summary",
         "backup-state",
-        "backfill-openviking-messages",
         "connector-checkpoint",
         "connector-jobs",
         "dashboard",

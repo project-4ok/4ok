@@ -50,24 +50,6 @@ def add_import_commands(subparsers) -> None:
     ingest_pdf_parser.add_argument("--source-url", default="")
     ingest_pdf_parser.add_argument("--permission-ref", action="append", default=[])
 
-    backfill_openviking_parser = subparsers.add_parser(
-        "backfill-openviking-messages",
-        help="Backfill OpenViking messages.jsonl captured conversations into governed state.",
-    )
-    backfill_openviking_parser.add_argument("messages_file", type=Path)
-    backfill_openviking_parser.set_defaults(state_explicit=False)
-    backfill_openviking_parser.add_argument(
-        "--state",
-        type=Path,
-        default=DEFAULT_STATE,
-        action=StoreExplicitState,
-    )
-    backfill_openviking_parser.add_argument(
-        "--database-url",
-        help="SQLAlchemy database URL. Defaults to FOUROK_DATABASE_URL unless --state is explicit.",
-    )
-    backfill_openviking_parser.add_argument("--config", type=Path)
-
     import_context_fixture_parser = subparsers.add_parser(
         "import-context-fixture",
         help="Import a test-only deterministic context snapshot into governed state.",

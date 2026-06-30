@@ -19,7 +19,6 @@ EXPECTED_ASSETS = {
     "fourok_canonical_objects_and_entity_links",
     "fourok_google_drive_live_source_records_from_raw_landing",
     "fourok_linear_live_source_records_from_raw_landing",
-    "fourok_openviking_live_source_records_from_sessions",
     "fourok_operator_dashboard",
     "fourok_retrieval_records",
     "fourok_slack_live_source_records_from_raw_landing",

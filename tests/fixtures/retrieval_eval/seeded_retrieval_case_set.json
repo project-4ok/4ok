@@ -5,7 +5,9 @@
     "expected_source_ref_prefix": "slack:message:C123456:1717236000.000000",
     "expected_source_system": "slack",
     "expected_record_type": "message",
-    "expected_permission_refs": ["slack:channel:C123456"]
+    "expected_permission_refs": [
+      "slack:channel:C123456"
+    ]
   },
   {
     "id": "google-drive-metadata-only",
@@ -13,15 +15,9 @@
     "expected_source_ref_prefix": "google_drive:file:drive-metadata-only-snapshot",
     "expected_source_system": "google_drive",
     "expected_record_type": "document",
-    "expected_permission_refs": ["google_drive:permission:domain:beta.example"]
-  },
-  {
-    "id": "openviking-launch-checklist",
-    "query": "Alpine Robotics launch checklist",
-    "expected_source_ref_prefix": "openviking:conversation:conv-product:session:sess-alpha:message:m-001",
-    "expected_source_system": "openviking",
-    "expected_record_type": "message",
-    "expected_permission_refs": ["openviking:conversation:conv-product"]
+    "expected_permission_refs": [
+      "google_drive:permission:domain:beta.example"
+    ]
   },
   {
     "id": "linear-issue-cancellation-summary",
@@ -29,7 +25,9 @@
     "expected_source_ref_prefix": "linear:issue:OPS-123",
     "expected_source_system": "linear",
     "expected_record_type": "work_item",
-    "expected_permission_refs": ["linear:team:team-ops"]
+    "expected_permission_refs": [
+      "linear:team:team-ops"
+    ]
   },
   {
     "id": "twenty-company-alpha",

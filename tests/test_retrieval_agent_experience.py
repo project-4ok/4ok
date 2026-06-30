@@ -114,22 +114,8 @@ def test_retrieval_notes_summarize_successful_connector_import_age(
     assert "slack succeeded just now" in block
 
 
-def test_default_reranker_demotes_tool_noise_and_boosts_current_work_items() -> None:
+def test_default_reranker_boosts_current_work_items() -> None:
     rows = [
-        {
-            "source_ref": "openviking:conversation:tool-noise:message:1",
-            "source_system": "openviking",
-            "record_type": "message",
-            "title": "OpenViking toolResult message",
-            "snippet": (
-                "<skill><name>linear</name><description>installed Linear CLI</description></skill>"
-            ),
-            "occurred_at": "2026-06-15T12:00:00Z",
-            "score": 0.05,
-            "retrievers": {"keyword"},
-            "unit_index": 0,
-            "permission_refs": (),
-        },
         {
             "source_ref": "linear:issue:fourok-84",
             "source_system": "linear",
@@ -145,6 +131,18 @@ def test_default_reranker_demotes_tool_noise_and_boosts_current_work_items() -> 
             "unit_index": 0,
             "permission_refs": (),
         },
+        {
+            "source_ref": "slack:message:priorities:1",
+            "source_system": "slack",
+            "record_type": "message",
+            "title": "General current-priority chatter",
+            "snippet": "A generic mention of current priorities without a concrete work item.",
+            "occurred_at": "2026-06-15T12:00:00Z",
+            "score": 0.05,
+            "retrievers": {"keyword"},
+            "unit_index": 0,
+            "permission_refs": (),
+        },
     ]
 
     ranked = RetrievalReranker(default_rerank_rules()).rerank(
@@ -154,7 +152,6 @@ def test_default_reranker_demotes_tool_noise_and_boosts_current_work_items() -> 
     assert ranked[0]["source_ref"] == "linear:issue:fourok-84"
     assert ranked[0]["rerank_score"] > ranked[1]["rerank_score"]
     assert "boost_linear_work_item_for_current_priority_query" in ranked[0]["rerank_reasons"]
-    assert "penalize_openviking_tool_noise" in ranked[1]["rerank_reasons"]
 
 
 def test_reranker_boosts_person_title_token_match_over_loose_work_item_match() -> None:

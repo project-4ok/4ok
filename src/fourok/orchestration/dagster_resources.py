@@ -5,7 +5,7 @@ from pathlib import Path
 
 from dagster import ConfigurableResource
 
-from fourok.secrets.env import effective_env
+from fourok.secrets.env import load_dotenv
 
 
 class RawLandingResource(ConfigurableResource):
@@ -39,8 +39,14 @@ class ConnectorEnvResource(ConfigurableResource):
 
     def secret_env(self) -> dict[str, str]:
         if not self.load_dotenv:
-            return dict(os.environ)
-        return effective_env(dotenv_path=self.dotenv_path)
+            return _non_empty_env(os.environ)
+        env = _non_empty_env(load_dotenv(self.dotenv_path))
+        env.update(_non_empty_env(os.environ))
+        return env
+
+
+def _non_empty_env(env) -> dict[str, str]:
+    return {key: value for key, value in env.items() if value}
 
 
 def build_default_resources() -> dict[str, ConfigurableResource]:

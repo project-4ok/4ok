@@ -5,7 +5,9 @@
     "expected_source_ref_prefix": "slack:message:C0ASNARACMT:1781768854.209579",
     "expected_source_system": "slack",
     "expected_record_type": "message",
-    "expected_permission_refs": ["slack:channel:C0ASNARACMT"]
+    "expected_permission_refs": [
+      "slack:channel:C0ASNARACMT"
+    ]
   },
   {
     "id": "google-drive-letter-of-intent",
@@ -13,15 +15,9 @@
     "expected_source_ref_prefix": "google_drive:file:1OxsH8MoJYVtudzlNFfJvRUSoXajH0urTBcn46HP_qXw",
     "expected_source_system": "google_drive",
     "expected_record_type": "document",
-    "expected_permission_refs": ["operator"]
-  },
-  {
-    "id": "openviking-priorities-today",
-    "query": "What are my priorities today Baby Jules",
-    "expected_source_ref_prefix": "openviking:conversation:8d7b6d0c-045d-4c67-ad0c-9dc6e3577496-topic-1780473372.177839:session:8d7b6d0c-045d-4c67-ad0c-9dc6e3577496-topic-1780473372.177839:message:fa33bab5-0dbd-4cfc-8bbf-fb2cfe3a6fec",
-    "expected_source_system": "openviking",
-    "expected_record_type": "message",
-    "expected_permission_refs": ["openviking:conversation:8d7b6d0c-045d-4c67-ad0c-9dc6e3577496-topic-1780473372.177839"]
+    "expected_permission_refs": [
+      "operator"
+    ]
   },
   {
     "id": "linear-mahir-maximilian-outreach",
@@ -29,7 +25,9 @@
     "expected_source_ref_prefix": "linear:issue:4OK-697",
     "expected_source_system": "linear",
     "expected_record_type": "work_item",
-    "expected_permission_refs": ["linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"]
+    "expected_permission_refs": [
+      "linear:team:09358ba1-9a6d-4550-9437-8e9daf18f93d"
+    ]
   },
   {
     "id": "twenty-mahir-isikli",

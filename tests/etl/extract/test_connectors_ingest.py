@@ -219,6 +219,10 @@ def test_slack_raw_landing_can_be_reloaded_into_source_records() -> None:
     ]
 
 
+def test_missing_landed_stream_returns_no_source_records(tmp_path: Path) -> None:
+    assert load_landed_source_records(tmp_path, stream="google_drive_files") == []
+
+
 def test_slack_adapter_rejects_malformed_payload_before_source_records() -> None:
     with pytest.raises(
         ValueError,

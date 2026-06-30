@@ -20,7 +20,6 @@ from fourok.cli_parts.runtime_helpers import (
 from fourok.etl.extract.connectors import land_singer_records, load_gmail_source_records
 from fourok.etl.extract.context_snapshot import load_context_snapshot_source_records
 from fourok.etl.extract.document_extraction import DocumentConversionError, pdf_source_record
-from fourok.etl.extract.openviking_adapter import load_openviking_messages_jsonl_source_records
 from fourok.etl.extract.sync_jobs import connector_checkpoint, connector_job_runs
 from fourok.runtime.operator_live import host_database_url, operator_environment
 from fourok.runtime.recurring_live_ingestion import (
@@ -91,26 +90,6 @@ def dispatch_import_commands(args: argparse.Namespace) -> bool:
                     "raw_ref": record.raw_ref,
                     "text_length": len(record.body),
                     "ocr_used": False,
-                },
-                indent=2,
-                sort_keys=True,
-            )
-        )
-        return True
-
-    if args.command == "backfill-openviking-messages":
-        try:
-            records = load_openviking_messages_jsonl_source_records(args.messages_file)
-        except ValueError as exc:
-            raise SystemExit(str(exc)) from exc
-        args.database_url = _database_url_unless_explicit_state(args)
-        context = _governed_context_from_args(args)
-        report = import_source_records(context, records)
-        print(
-            json.dumps(
-                {
-                    "input": str(args.messages_file),
-                    **report.to_dict(),
                 },
                 indent=2,
                 sort_keys=True,
