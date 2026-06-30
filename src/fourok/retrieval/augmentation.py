@@ -44,10 +44,23 @@ class RetrievalCandidate:
 
 
 @dataclass(frozen=True)
+class RelatedFollowUpHint:
+    topic: str
+    reason: str
+    source_ref: str
+    related_source_ref: str
+    source_system: str
+    record_type: str
+    suggested_follow_up_query: str
+    strength: float
+
+
+@dataclass(frozen=True)
 class RetrievalAugmentationResponse:
     status: str
     results: list[RetrievalCandidate]
     limitations: list[str]
+    you_could_also_be_interested_in: list[RelatedFollowUpHint] = field(default_factory=list)
     token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET
     estimated_tokens: int = 0
     candidate_count: int = 0
@@ -77,6 +90,19 @@ class RetrievalAugmentationResponse:
                     "retrieval_event_id": self.retrieval_event_id,
                 }
                 for index, result in enumerate(self.results, start=1)
+            ],
+            "you_could_also_be_interested_in": [
+                {
+                    "topic": hint.topic,
+                    "reason": hint.reason,
+                    "source_ref": hint.source_ref,
+                    "related_source_ref": hint.related_source_ref,
+                    "source_system": hint.source_system,
+                    "record_type": hint.record_type,
+                    "suggested_follow_up_query": hint.suggested_follow_up_query,
+                    "strength": hint.strength,
+                }
+                for hint in self.you_could_also_be_interested_in
             ],
             "limitations": self.limitations,
             "token_budget": self.token_budget,
@@ -240,6 +266,14 @@ def retrieve_augmentation(
             results = _select_results_for_token_budget(ranked_results, token_budget=token_budget)
             span.set_attribute("fourok.retrieve.returned_results", len(results))
             span.set_attribute("fourok.retrieve.token_budget", token_budget)
+        related_follow_up_hints = _related_follow_up_hints(
+            engine,
+            source_records,
+            ranked_results,
+            results,
+            canonical_objects=canonical_objects,
+            entity_links=entity_links,
+        )
         searched = " and ".join(name for name in retrievers)
         if results:
             limitations.append(f"Searched {searched} candidates.")
@@ -256,6 +290,7 @@ def retrieve_augmentation(
             status="ok",
             results=results,
             limitations=limitations,
+            you_could_also_be_interested_in=related_follow_up_hints,
             token_budget=token_budget,
             estimated_tokens=_estimated_result_tokens(results),
             candidate_count=len(ranked_results),
@@ -281,6 +316,7 @@ def retrieve_augmentation(
             status=response.status,
             results=response.results,
             limitations=response.limitations,
+            you_could_also_be_interested_in=response.you_could_also_be_interested_in,
             token_budget=response.token_budget,
             estimated_tokens=response.estimated_tokens,
             candidate_count=response.candidate_count,
@@ -342,6 +378,10 @@ def render_augmentation_block(response: RetrievalAugmentationResponse) -> str:
         lines.append("")
         for index, result in enumerate(response.results, start=1):
             lines.extend(_result_card_lines(index, result))
+        if response.you_could_also_be_interested_in:
+            lines.append("You could also be interested in:")
+            for index, hint in enumerate(response.you_could_also_be_interested_in, start=1):
+                lines.extend(_follow_up_hint_lines(index, hint))
     lines.append("Retrieval notes:")
     lines.extend(f"- {limitation}" for limitation in response.limitations)
     return "\n".join(lines).rstrip() + "\n"
@@ -988,6 +1028,103 @@ def _candidate_for_source_ref(
     )
 
 
+def _related_follow_up_hints(
+    engine: Engine,
+    source_records,
+    ranked_results: list[RetrievalCandidate],
+    selected_results: list[RetrievalCandidate],
+    *,
+    canonical_objects=None,
+    entity_links=None,
+    max_hints: int = 5,
+) -> list[RelatedFollowUpHint]:
+    if not ranked_results or not selected_results or max_hints < 1:
+        return []
+    selected_refs = [result.source_ref for result in selected_results]
+    selected_ref_set = set(selected_refs)
+    related_refs_by_selected = _direct_context_source_ref_map(
+        engine,
+        source_records,
+        selected_refs,
+        canonical_objects=canonical_objects,
+        entity_links=entity_links,
+    )
+    selected_ref_by_related: dict[str, str] = {}
+    for selected_ref, related_refs in related_refs_by_selected.items():
+        for related_ref in related_refs:
+            if related_ref in selected_ref_set:
+                continue
+            selected_ref_by_related.setdefault(related_ref, selected_ref)
+    if not selected_ref_by_related:
+        return []
+    link_counts = (
+        _graph_link_counts(engine, entity_links, sorted(selected_ref_by_related))
+        if entity_links is not None
+        else {}
+    )
+    hints: list[RelatedFollowUpHint] = []
+    emitted_refs: set[str] = set()
+    for rank, result in enumerate(ranked_results, start=1):
+        if result.source_ref in selected_ref_set or result.source_ref in emitted_refs:
+            continue
+        related_source_ref = selected_ref_by_related.get(result.source_ref)
+        if related_source_ref is None:
+            continue
+        hints.append(
+            RelatedFollowUpHint(
+                topic=result.title or result.source_ref,
+                reason=_related_follow_up_reason(
+                    engine,
+                    source_records,
+                    result.source_ref,
+                    related_source_ref,
+                ),
+                source_ref=result.source_ref,
+                related_source_ref=related_source_ref,
+                source_system=result.source_system,
+                record_type=result.record_type,
+                suggested_follow_up_query=result.title or result.source_ref,
+                strength=_related_follow_up_strength(rank, link_counts.get(result.source_ref, 0)),
+            )
+        )
+        emitted_refs.add(result.source_ref)
+        if len(hints) >= max_hints:
+            break
+    return sorted(hints, key=lambda hint: (-hint.strength, hint.topic.casefold()))[:max_hints]
+
+
+def _related_follow_up_reason(
+    engine: Engine,
+    source_records,
+    source_ref: str,
+    related_source_ref: str,
+) -> str:
+    threads = _thread_refs_for_sources(engine, source_records, [source_ref, related_source_ref])
+    if threads.get(source_ref) and threads.get(source_ref) == threads.get(related_source_ref):
+        return f"related by thread to selected evidence {related_source_ref}"
+    return f"directly related to selected evidence {related_source_ref}"
+
+
+def _thread_refs_for_sources(
+    engine: Engine, source_records, source_refs: list[str]
+) -> dict[str, str]:
+    if not source_refs:
+        return {}
+    statement = select(source_records.c.source_ref, source_records.c.thread_ref).where(
+        source_records.c.source_ref.in_(bindparam("source_refs", expanding=True))
+    )
+    with engine.connect() as connection:
+        return {
+            str(row["source_ref"]): str(row["thread_ref"])
+            for row in connection.execute(statement, {"source_refs": source_refs}).mappings()
+            if row["thread_ref"]
+        }
+
+
+def _related_follow_up_strength(rank: int, link_count: int) -> float:
+    return round(min(1.0, 0.35 + (1.0 / max(rank, 1)) + _graph_link_boost(link_count)), 3)
+
+
 def _select_results_for_token_budget(
     results: list[RetrievalCandidate], *, token_budget: int
 ) -> list[RetrievalCandidate]:
@@ -1020,6 +1157,19 @@ def _result_card_lines(index: int, result: RetrievalCandidate) -> list[str]:
         f"why_relevant: {why_relevant}",
         f"date: {_source_date_label(result.occurred_at)}",
         *_evidence_card_lines(result.snippet),
+        "",
+    ]
+
+
+def _follow_up_hint_lines(index: int, hint: RelatedFollowUpHint) -> list[str]:
+    return [
+        f"({index}) {hint.topic} — related lead, not evidence",
+        f"source_ref: {hint.source_ref}",
+        f"related_source_ref: {hint.related_source_ref}",
+        f"reason: {hint.reason}",
+        f"source_type: {hint.source_system}/{hint.record_type}",
+        f"follow_up_query: {hint.suggested_follow_up_query}",
+        f"strength: {hint.strength:.3f}",
         "",
     ]
 

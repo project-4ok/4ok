@@ -1037,6 +1037,183 @@ def test_retrieve_does_not_fan_out_from_weak_identity_seed(
     assert "linear:issue:unrelated" not in source_refs
 
 
+def test_retrieve_json_includes_bounded_related_follow_up_hints(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:issue:apollo-plan",
+                source_system="linear",
+                source_id="apollo-plan",
+                record_type="work_item",
+                title="Apollo rollout plan",
+                body="apollo rollout zephyr evidence for the launch owner decision.",
+                occurred_at="2026-06-20T12:00:00+00:00",
+                thread_ref="linear:issue:apollo-plan",
+            ),
+            SourceRecord(
+                source_ref="linear:comment:apollo-budget",
+                source_system="linear",
+                source_id="apollo-budget",
+                record_type="message",
+                title="Budget approval comment",
+                body="Budget approval follow-up should be checked after launch owner evidence.",
+                occurred_at="2026-06-21T12:00:00+00:00",
+                thread_ref="linear:issue:apollo-plan",
+            ),
+            SourceRecord(
+                source_ref="linear:issue:generic-unrelated-hub",
+                source_system="linear",
+                source_id="generic-unrelated-hub",
+                record_type="work_item",
+                title="Generic unrelated hub",
+                body="generic hub with many unrelated links.",
+                occurred_at="2026-06-19T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:issue:other-1",
+                source_system="linear",
+                source_id="other-1",
+                record_type="work_item",
+                title="Other linked one",
+                body="Other linked work.",
+                occurred_at="2026-06-18T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:issue:other-2",
+                source_system="linear",
+                source_id="other-2",
+                record_type="work_item",
+                title="Other linked two",
+                body="Other linked work.",
+                occurred_at="2026-06-17T12:00:00+00:00",
+            ),
+        ]
+    )
+    store_entity_links(
+        context._engine,
+        context._entity_links,
+        links=[
+            {
+                "link_ref": "hub->one",
+                "source_ref": "linear:issue:generic-unrelated-hub",
+                "object_ref": "linear:issue:other-1",
+                "relationship_type": "relates_to",
+                "confidence": 1.0,
+                "evidence": {},
+                "reason": "fixture",
+                "status": "linked",
+            },
+            {
+                "link_ref": "hub->two",
+                "source_ref": "linear:issue:generic-unrelated-hub",
+                "object_ref": "linear:issue:other-2",
+                "relationship_type": "relates_to",
+                "confidence": 1.0,
+                "evidence": {},
+                "reason": "fixture",
+                "status": "linked",
+            },
+        ],
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "apollo rollout zephyr",
+            "--state",
+            str(state),
+            "--format",
+            "json",
+            "--retrievers",
+            "keyword",
+            "--token-budget",
+            "80",
+        ],
+    )
+
+    main()
+
+    output = json.loads(capsys.readouterr().out)
+    selected_refs = {result["source_ref"] for result in output["results"]}
+    hints = output["you_could_also_be_interested_in"]
+    hint_refs = {hint["source_ref"] for hint in hints}
+    assert "linear:issue:apollo-plan" in selected_refs
+    assert "linear:comment:apollo-budget" not in selected_refs
+    assert "linear:comment:apollo-budget" in hint_refs
+    assert selected_refs.isdisjoint(hint_refs)
+    assert "linear:issue:generic-unrelated-hub" not in hint_refs
+    hint = next(hint for hint in hints if hint["source_ref"] == "linear:comment:apollo-budget")
+    assert hint == {
+        "topic": "Budget approval comment",
+        "reason": "related by thread to selected evidence linear:issue:apollo-plan",
+        "source_ref": "linear:comment:apollo-budget",
+        "related_source_ref": "linear:issue:apollo-plan",
+        "source_system": "linear",
+        "record_type": "message",
+        "suggested_follow_up_query": "Budget approval comment",
+        "strength": hint["strength"],
+    }
+    assert 0 < hint["strength"] <= 1
+
+
+def test_retrieve_block_renders_related_follow_up_hints(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:issue:atlas-plan",
+                source_system="linear",
+                source_id="atlas-plan",
+                record_type="work_item",
+                title="Atlas rollout plan",
+                body="atlas rollout zephyr evidence for the launch owner decision.",
+                occurred_at="2026-06-20T12:00:00+00:00",
+                thread_ref="linear:issue:atlas-plan",
+            ),
+            SourceRecord(
+                source_ref="linear:comment:atlas-budget",
+                source_system="linear",
+                source_id="atlas-budget",
+                record_type="message",
+                title="Budget approval comment",
+                body="Budget approval follow-up should be checked after launch owner evidence.",
+                occurred_at="2026-06-21T12:00:00+00:00",
+                thread_ref="linear:issue:atlas-plan",
+            ),
+        ]
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "atlas rollout zephyr",
+            "--state",
+            str(state),
+            "--retrievers",
+            "keyword",
+            "--token-budget",
+            "80",
+        ],
+    )
+
+    main()
+
+    output = capsys.readouterr().out
+    assert "You could also be interested in:" in output
+    assert "related lead, not evidence" in output
+    assert "Budget approval comment" in output
+    assert "follow_up_query: Budget approval comment" in output
+
+
 def test_retrieve_uses_graph_link_count_as_general_rerank_signal(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
