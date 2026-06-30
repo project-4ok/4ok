@@ -116,10 +116,10 @@ def test_goal_alignment_audit_catches_completed_goal_with_active_plan_queue(
     )
 
 
-def test_goal_alignment_audit_catches_deferred_import_in_active_module(tmp_path: Path) -> None:
+def test_goal_alignment_audit_allows_imports_with_no_deferred_module_list(tmp_path: Path) -> None:
     _write_minimal_repo(tmp_path)
     (tmp_path / "src/fourok/cli.py").write_text(
-        "from fourok.etl.transform.pii import PresidioPiiDetector\n"
+        "from legacy.experimental.surface import DeferredFeature\n"
         'subparsers.add_parser("search", help="active")\n',
         encoding="utf-8",
     )
@@ -127,10 +127,7 @@ def test_goal_alignment_audit_catches_deferred_import_in_active_module(tmp_path:
     report = audit_goal_alignment(tmp_path)
 
     failed = {check["name"]: check for check in report["checks"] if check["status"] != "ok"}
-    assert report["status"] == "failed"
-    assert failed["active_imports_exclude_deferred_modules"]["reason"] == (
-        "src/fourok/cli.py: fourok.etl.transform.pii"
-    )
+    assert "active_imports_exclude_deferred_modules" not in failed
 
 
 def test_goal_alignment_audit_catches_systemd_embedded_runtime_password(

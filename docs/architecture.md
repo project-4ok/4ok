@@ -259,10 +259,9 @@ fanout, delayed retries, or backpressure require it.
 ## Deferred Governance
 
 PII masking, tokenization, and reveal are intentionally not active in the
-current runtime. Existing deferred modules such as
-`fourok.governance.deferred_reveal_policy`, `fourok.governance.reveal`,
-`fourok.governance.token_store`, and `fourok.etl.transform.pii` are experimental and
-must not be presented as the current product surface.
+current runtime. Deferred scaffolding for PII masking/tokenization and reveal was
+removed from the active codebase; revisit this only from the backlog after search
+quality is proven.
 
 Production still needs a defended governance design:
 

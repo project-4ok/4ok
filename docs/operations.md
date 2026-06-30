@@ -248,17 +248,14 @@ The first OpenClaw integration boundary is local and explicit:
 
 - adapt captured OpenClaw turns with `openclaw_messages_to_source_records`
 - or call `capture_openclaw_messages` to adapt and ingest in one step
-- implement RAG as a before-prompt hook, not as an instruction for the agent to
-  call the fourok CLI
-- keep optional explicit tools such as `fourok_search_context` for follow-up/debugging
+- keep retrieval follow-up through normal fourok commands and existing agent
+  workflows, not plugin-level explicit search tools
 - do not expose reveal in this stage
 
-The product path is: user message -> OpenClaw plugin hook -> permitted fourok
-retrieval -> short source summary injected into the agent input. The summary must
-include source refs and limitations, preserve the full evidence pack for
-follow-up inspection, and stay independently disableable from chat capture. It
-must not inject raw source bodies, secrets, credentials, hidden metadata, or
-reveal-only fields.
+The product path is: user message -> fourok capture -> indexed retrieval. Keep
+retrieval results available for follow-up through normal review commands and
+workflow UX. Do not add an OpenClaw plugin RAG hook or explicit OpenClaw search
+tool until the default `fourok retrieve` output is strong enough to use manually.
 
 CLI checks are operator/dev smoke equivalents only, for example:
 

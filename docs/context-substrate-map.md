@@ -90,12 +90,12 @@ contribute to identity merging when the evidence type is strong enough.
 | Neo4j | Explicit entity graph, graph traversal, custom modeling, relationship queries | We build extraction, linking, indexing, governance, and retrieval orchestration ourselves | Good if we need maximum control |
 | LlamaIndex | Parsing, source nodes, retriever composition, citation-oriented synthesis, property graph helpers | Not a governed context substrate alone; entity resolution and permissions are custom | Useful orchestration/retrieval library |
 | LangGraph | Agent/workflow orchestration and stateful tool flows | Not source/evidence storage or entity linking | Useful for agent-side query workflow later |
-| Honcho | User/agent/participant memory, peer representations, conversation continuity | Peer/session scoping fights company-wide evidence discovery; no native entity discovery; source provenance is not the main abstraction | Future retrieval-fusion sidecar for agent long-term memory, not primary company brain |
+| Honcho | User/agent/participant memory, peer representations, conversation continuity | Peer/session scoping fights company-wide evidence discovery; no native entity discovery; source provenance is not the main abstraction | Not in active retrieval scope; source-record retrieval comes first |
 | OpenViking | Resource-centric context filesystem, URIs, hierarchical retrieval | Entity linking and governance still ours; less clearly a temporal entity/fact graph | Optional docs/resource layer to revisit |
 | Microsoft GraphRAG | Batch corpus summarization, themes, communities, broad sensemaking | Less suited to live day-2 enterprise records, permissions, and precise evidence lifecycle | Possible secondary analysis layer |
 | Meltano/Singer | Connector execution, state/checkpoint patterns, existing taps | Source permissions and rich domain semantics often incomplete | Use where connector output is sufficient |
 | external secret manager | Secret retrieval and runtime credential management | Product auth/policy still separate | Use for runtime connector credentials |
-| Presidio | PII recognizers and tokenization pipeline support | Domain-specific detection quality still needs tests | Current PII baseline |
+| Presidio | PII recognizers and tokenization pipeline support | Adds masking/reveal complexity before search quality is proven | Backlog only; not an active dependency |
 | Docling/unstructured | Document/PDF parsing and OCR pipeline candidates | Large footprint and extraction quality need isolated validation | Containerized experiments only for now |
 
 ## What Existing Tools Can Own
@@ -106,7 +106,6 @@ Likely outsource:
 - secret delivery through external secret manager
 - graph storage/traversal through Neo4j or another source-record-compatible graph layer
 - retrieval orchestration pieces through LlamaIndex where useful
-- PII detection baseline through Presidio
 - agent workflow orchestration through LangGraph if needed
 
 ## What We Still Need To Own
@@ -119,7 +118,6 @@ Product-owned surface:
 - confidence thresholds and human review workflow
 - governed retrieval API contract
 - evidence pack shape and citation rules
-- PII tokenization and reveal workflow
 - deletion/restriction propagation across derived layers
 - operations, backup/restore, scheduler, and deployment shape
 
@@ -139,7 +137,7 @@ connectors
   -> hybrid retrieval
   -> evidence pack
   -> answer synthesis
-  -> reveal policy and audit
+  -> audit
 ```
 
 For now:
@@ -147,8 +145,8 @@ For now:
 - stop designing company context around Honcho peers
 - compare entity linking, source provenance, and retrieval quality using the
   source-record-first retrieval path
-- keep future Honcho work as a retrieval-fusion feature: a short memory section
-  may be appended to retrieval responses after governed evidence is assembled
+- keep Honcho/memory fusion out of active retrieval until source-backed search
+  quality is proven
 
 Current retrieval evidence:
 

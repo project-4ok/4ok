@@ -58,16 +58,7 @@ ACTIVE_CLI_COMMANDS = frozenset(
 
 HIDDEN_EXPERIMENT_COMMANDS = frozenset()
 
-DEFERRED_MODULE_PREFIXES = frozenset(
-    {
-        "fourok.governance.deferred_reveal_policy",
-        "fourok.governance.reveal",
-        "fourok.governance.token_store",
-        "fourok.evaluation",
-        "fourok.etl.transform.pii",
-        "fourok.etl.transform.tokens",
-    }
-)
+DEFERRED_MODULE_PREFIXES = frozenset({})
 
 
 def active_import_paths(project_root: Path) -> tuple[Path, ...]:

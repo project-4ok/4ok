@@ -93,7 +93,6 @@ def runtime_service_boundaries() -> list[RuntimeServiceBoundary]:
                 not_yet=(
                     "real SSO groups",
                     "source-permission policy import",
-                    "PII/token reveal policy",
                 ),
             ),
             RuntimeServiceBoundary(

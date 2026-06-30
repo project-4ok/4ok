@@ -165,40 +165,6 @@ query
 - no metadata-only cards when underlying source text exists;
 - empty/person-name misses include answerability, scope, freshness, and did-you-mean diagnostics.
 
-### Stage 8 — Honcho memory fusion spike
-
-**Objective:** Add agent long-term memory as a small, optional section fused into
-the retrieval response after governed evidence retrieval, without making Honcho
-the source of truth or reviving the old source-sync implementation.
-
-**Lowest-effort shape:** keep `fourok retrieve` source-record-first, then append a
-short `Memory` section populated by a Honcho search for the same user turn. The
-section should be capped separately from evidence, cite that it is memory rather
-than source evidence, and never satisfy evidence requirements by itself.
-
-**Open questions to investigate:**
-- If Honcho is used only through MCP, it can answer/search only the history that
-  the host client or Honcho integration has already written. MCP tools do not
-  automatically receive full session history; the agent host must either write
-  turns to Honcho or pass enough current-session context when calling the tool.
-- The easiest fill path is agent-conversation continuity: let the agent runtime's
-  Honcho integration record user/AI turns and retrieve peer/session/workspace
-  memory at query time.
-- Source-system data should not be bulk-filled through Honcho first. If we later
-  add structured external events, write only deliberate high-salience memory
-  events derived from governed source records, with source refs in metadata and
-  idempotent write receipts.
-
-**Acceptance for the spike:**
-- JSON output includes an optional `memory` object with status, query, source
-  (`honcho`), bounded items, and limitations.
-- Block output includes at most a short `Memory` section after source evidence.
-- Missing/unavailable Honcho is a visible limitation, not a retrieval failure.
-- Tests prove that evidence retrieval still passes when memory is unavailable and
-  that memory text cannot replace source-backed evidence.
-
----
-
 ## Borrowed best practices
 
 Adopt now:

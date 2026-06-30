@@ -164,8 +164,8 @@ flowchart TD
 - OpenClaw chat capture is implemented as a fourok-side adapter that turns chat
   messages into `Message` source records. It strips untrusted control metadata
   from retrieval text and preserves source provenance. The next product path is
-  an OpenClaw plugin RAG hook that injects a short permission-aware source
-  summary before prompt assembly; explicit search tools remain secondary.
+  retrieval through existing search and workflow surfaces using captured
+  evidence records.
 - Scheduled imports are implemented through `run-imports`, connector job state,
   checkpoints, retry planning, and systemd/cron-oriented Compose commands.
 - Dependency contract spikes are implemented as an executable registry via

@@ -53,7 +53,7 @@ Current covered dependencies:
 - Singer/Meltano-style connector boundary
 - text-layer PDF extraction with `pypdf`
 - local OpenTelemetry LGTM backend
-- OpenClaw plugin boundary
+- OpenClaw chat-capture boundary
 
 The command reports proof commands for each dependency. A new integration should
 not be added to the active runtime until this registry shows which executable
@@ -70,7 +70,7 @@ Docker Compose acceptance proof.
 
 ## OpenClaw Integration
 
-First-stage OpenClaw integration has two narrow contracts.
+First-stage OpenClaw integration uses a single active capture contract.
 
 Chat capture:
 
@@ -86,42 +86,12 @@ Chat capture:
   shaped like `openclaw:session:<session_id>:message:<message_index>:raw`
 - import through the same governed SourceRecord pipeline
 
-OpenClaw plugin RAG hook:
+Follow-up usage:
 
-- primary product path is not agent-initiated CLI use
-- optional and explicitly enabled per OpenClaw runtime or agent
-- runs before prompt assembly, after the user turn is known
-- retrieves permitted fourok evidence through the in-process/plugin integration or
-  internal service boundary, not by asking the agent to call `fourok`
-- injects a short source summary into the agent input: source refs, source URLs
-  when available, timestamps, limitations, and audit refs
-- keeps the injected summary capped and purpose-built for the current user turn;
-  no broad context dump
-- never injects raw source bodies, secrets, credentials, hidden metadata, or
-  reveal-only fields
-- preserves the full evidence pack for follow-up inspection instead of
-  flattening everything into the prompt
-- records which source refs were injected and keeps normal search/source-access
-  audit behavior
-- can be disabled independently from chat capture and explicit search tools
-- does not depend on Honcho or `.reference` runtime code
-
-Optional explicit tool surface:
-
-`fourok_search_context(query, limit?)`
-
-- returns the same evidence-pack shape as `search_context`
-- publish the schema from `openclaw_tool_contracts()`
-- dispatch calls through `call_openclaw_tool(...)`
-- remains available for follow-up/debugging, but is not the main RAG path
-- does not expose reveal
-
-Local plugin package:
-
-- A future OpenClaw plugin package should declare the RAG hook capability plus
-  optional `fourok_search_context` and `fourok_health` tools. The plugin must
-  not use the fourok CLI as the production product path; CLI checks are
-  operator/dev smoke equivalents only.
+- adapt captured OpenClaw turns with `openclaw_messages_to_source_records`
+- or call `capture_openclaw_messages` to adapt and ingest in one step
+- preserve existing `search_context` as the human-facing entry point for follow-up
+- do not expose reveal in this stage
 
 ## Source Record
 

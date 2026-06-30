@@ -39,7 +39,6 @@ def test_runtime_service_boundaries_cover_current_operational_surface() -> None:
     policy_engine = by_name["policy-engine"]
     assert "source retrieval authorization" in policy_engine.responsibilities
     assert "field reveal authorization" not in policy_engine.responsibilities
-    assert "PII/token reveal policy" in policy_engine.not_yet
 
     metadata_database = by_name["metadata-database"]
     assert "live restore-drill evidence" not in metadata_database.not_yet

@@ -26,7 +26,7 @@ def test_dependency_contracts_cover_required_spike_dimensions() -> None:
         "twenty-live-custom-singer-tap",
         "pypdf",
         "opentelemetry-lgtm",
-        "openclaw-plugin-boundary",
+        "openclaw-chat-capture-boundary",
     } <= set(contracts)
 
     for contract in contracts.values():

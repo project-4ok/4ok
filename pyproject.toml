@@ -11,7 +11,6 @@ dependencies = [
     "opentelemetry-instrumentation-sqlalchemy>=0.60b0",
     "opentelemetry-sdk>=1.39.0",
     "pgvector>=0.4.0",
-    "presidio-analyzer>=2.2.360",
     "psycopg[binary]>=3.2",
     "pypdf>=6.13.0",
     "pyyaml>=6.0",
