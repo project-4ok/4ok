@@ -42,13 +42,20 @@ jobs:
           enable-cache: true
 
       - name: Run fast tests
-        run: uv run pytest tests/retrieval/test_retrieve_cli.py tests/runtime/test_deploy_artifacts.py -q
+        run: uv run pytest tests/retrieval/test_retrieve_cli.py tests/runtime/test_deploy_artifacts.py tests/retrieval/clients/test_client_assets.py tests/devtools/test_openclaw_skill_package.py -q
 
       - name: Build CLI wheel
         run: |
           set -euo pipefail
           uv build --wheel
           sha256sum dist/fourok-*.whl > dist/fourok.sha256
+
+      - name: Build OpenClaw skill artifact
+        run: |
+          set -euo pipefail
+          uv run fourok-dev validate-openclaw-skill
+          uv run fourok-dev build-openclaw-skill
+          sha256sum dist/openclaw-skill-fourok-retrieval.tar.gz > dist/openclaw-skill-fourok-retrieval.sha256
 
       - name: Log in to GHCR
         uses: docker/login-action@v4
@@ -125,6 +132,8 @@ jobs:
             runtime-manifest.json
             dist/fourok-*.whl
             dist/fourok.sha256
+            dist/openclaw-skill-fourok-retrieval.tar.gz
+            dist/openclaw-skill-fourok-retrieval.sha256
 
       - name: Publish release assets
         if: startsWith(github.ref, 'refs/tags/v')
@@ -134,3 +143,5 @@ jobs:
             runtime-manifest.json
             dist/fourok-*.whl
             dist/fourok.sha256
+            dist/openclaw-skill-fourok-retrieval.tar.gz
+            dist/openclaw-skill-fourok-retrieval.sha256

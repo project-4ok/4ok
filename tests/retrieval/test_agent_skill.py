@@ -6,7 +6,7 @@ from pathlib import Path
 import yaml
 
 ROOT = Path(__file__).resolve().parents[2]
-SKILL_PATH = ROOT / "src/fourok/retrieval/SKILL.md"
+SKILL_PATH = ROOT / "src/fourok/retrieval/clients/cli/SKILL.md"
 
 
 def test_retrieval_agent_skill_is_valid_and_cli_first() -> None:
@@ -16,14 +16,14 @@ def test_retrieval_agent_skill_is_valid_and_cli_first() -> None:
     frontmatter_text, body = skill[4:].split("\n---\n", 1)
     frontmatter = yaml.safe_load(frontmatter_text)
     assert frontmatter["name"] == "fourok-retrieval"
-    assert frontmatter["description"].startswith("Use when")
+    assert frontmatter["description"].startswith("Use the fourok CLI")
     assert len(frontmatter["description"]) <= 1024
-    assert 'uv run fourok retrieve "<query>" --format json' in body
-    assert "uv run fourok operator-status --format json" in body
-    assert "search_fourok" in body
+    assert 'fourok retrieve "<query>" --json' in body
+    assert "fourok status" in body
+    assert "fourok open <source_ref>" in body
     assert "source_ref" in body
     assert "audit_ref" in body
-    assert re.search(r"Prefer MCP.*?otherwise use CLI", body, re.DOTALL)
+    assert re.search(r"source-backed.*?evidence", body, re.DOTALL)
 
 
 def test_retrieval_agent_skill_is_plain_repo_artifact_not_cli_surface() -> None:

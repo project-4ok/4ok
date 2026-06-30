@@ -8,6 +8,12 @@ from fourok.governance.policy import PrincipalContext
 from fourok.retrieval.api import RetrievalAPI
 from fourok.retrieval.augmentation import DEFAULT_RETRIEVAL_TOKEN_BUDGET
 
+CLIENT_CAPABILITIES = ("retrieve", "open", "status", "onboard")
+
+
+def client_capabilities() -> tuple[str, ...]:
+    return CLIENT_CAPABILITIES
+
 
 def search_fixture(
     *,

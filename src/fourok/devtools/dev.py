@@ -79,6 +79,10 @@ def build_plan(action: str, extra_args: Sequence[str]) -> list[DevStep]:
         return [_operator_live(extra_args)]
     if action == "warm-docker":
         return [_pull_observability(), _pull_pipeline()]
+    if action == "validate-openclaw-skill":
+        return [_validate_openclaw_skill()]
+    if action == "build-openclaw-skill":
+        return [_build_openclaw_skill()]
     raise ValueError(f"unknown dev action: {action}")
 
 
@@ -121,6 +125,8 @@ def main(argv: Sequence[str] | None = None) -> None:
         "pipeline-ps",
         "operator-live",
         "warm-docker",
+        "validate-openclaw-skill",
+        "build-openclaw-skill",
     ):
         command_parser = subparsers.add_parser(command)
         if command != "operator-live":
@@ -555,6 +561,20 @@ def _operator_live(extra_args: Sequence[str]) -> DevStep:
             *tuple(extra_args),
         ),
         env=_compose_local_env(),
+    )
+
+
+def _validate_openclaw_skill() -> DevStep:
+    return DevStep(
+        "validate-openclaw-skill",
+        ("uv", "run", "python", "-m", "fourok.devtools.openclaw_skill", "validate"),
+    )
+
+
+def _build_openclaw_skill() -> DevStep:
+    return DevStep(
+        "build-openclaw-skill",
+        ("uv", "run", "python", "-m", "fourok.devtools.openclaw_skill", "build"),
     )
 
 

@@ -1,6 +1,7 @@
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass
+import importlib.resources
+from dataclasses import dataclass
 from typing import Any
 
 from opentelemetry import trace
@@ -8,6 +9,61 @@ from opentelemetry import trace
 from fourok.etl.extract.source_records import SourceRecord
 from fourok.governance import GovernedContext
 from fourok.governance.policy import PrincipalContext
+from fourok.retrieval.api import RetrievalAPI
+
+CLIENT_CAPABILITIES = ("retrieve", "open", "status", "onboard")
+PACKAGE_NAME = "fourok-retrieval"
+
+
+def client_capabilities() -> tuple[str, ...]:
+    return CLIENT_CAPABILITIES
+
+
+def skill_markdown() -> str:
+    return _resource_text("SKILL.md")
+
+
+def instructions_markdown() -> str:
+    return _resource_text("instructions.md")
+
+
+def readme_markdown() -> str:
+    return _resource_text("README.md")
+
+
+def skill_manifest() -> dict[str, object]:
+    return {
+        "name": PACKAGE_NAME,
+        "display_name": "fourok Retrieval",
+        "description": (
+            "Source-backed company context retrieval for OpenClaw agents via the fourok CLI."
+        ),
+        "version": "0.1.0",
+        "license": "MIT",
+        "transport": "cli",
+        "entrypoint": "SKILL.md",
+        "instructions": "instructions.md",
+        "capabilities": list(CLIENT_CAPABILITIES),
+        "required_commands": ["fourok"],
+        "recommended_commands": [
+            "fourok status",
+            "fourok retrieve <query> --json",
+            "fourok open <source_ref>",
+        ],
+        "source_path": "src/fourok/retrieval/clients/openclaw",
+    }
+
+
+def package_files() -> dict[str, str]:
+    return {
+        "README.md": readme_markdown(),
+        "SKILL.md": skill_markdown(),
+        "instructions.md": instructions_markdown(),
+    }
+
+
+def _resource_text(name: str) -> str:
+    return importlib.resources.files(__package__).joinpath(name).read_text(encoding="utf-8")
 
 
 @dataclass(frozen=True)
@@ -33,30 +89,18 @@ def capture_openclaw_messages(
 
 class OpenClawSearchTools:
     def __init__(self, context: GovernedContext, principal: PrincipalContext) -> None:
-        self._context = context
+        self._api = RetrievalAPI(context_factory=lambda *_args, **_kwargs: context)
         self._principal = principal
 
     def fourok_search_context(self, query: str, *, limit: int = 5) -> dict[str, object]:
         _validate_search_args(query, limit)
-        response = self._context.search_context(
+        return self._api.search_evidence(
             query,
             limit=limit,
-            principal=self._principal,
+            roles=self._principal.roles,
+            human_id=self._principal.human_id,
+            agent_id=self._principal.agent_id,
         )
-        return {
-            "results": [asdict(result) for result in response.results],
-            "query": response.query,
-            "summary": response.summary,
-            "result_candidates": response.result_candidates or [],
-            "evidence_items": response.evidence_items or [],
-            "primary_objects": response.primary_objects or [],
-            "related_objects": response.related_objects or [],
-            "related_object_groups": response.related_object_groups or {},
-            "entities": response.entities or [],
-            "unresolved_candidates": response.unresolved_candidates or [],
-            "limitations": response.limitations or [],
-            "audit_ref": response.audit_ref,
-        }
 
 
 def openclaw_tool_contracts() -> list[dict[str, object]]:

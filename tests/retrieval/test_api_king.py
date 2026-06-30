@@ -139,8 +139,9 @@ def test_cli_and_mcp_surfaces_do_not_instantiate_governed_context_directly() -> 
     checked = [
         ROOT / "src/fourok/retrieval/cli.py",
         ROOT / "src/fourok/retrieval/clients/mcp/server.py",
-        ROOT / "src/fourok/retrieval/clients/cli.py",
+        ROOT / "src/fourok/retrieval/clients/cli/__init__.py",
         ROOT / "src/fourok/retrieval/clients/mcp/__init__.py",
+        ROOT / "src/fourok/retrieval/clients/openclaw/__init__.py",
     ]
     offenders: list[str] = []
     for path in checked:

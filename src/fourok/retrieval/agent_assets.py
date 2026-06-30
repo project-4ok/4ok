@@ -11,8 +11,10 @@ RECOMMENDED_MCP_TOOLS = (
 
 
 def retrieval_skill_md() -> str:
-    return importlib.resources.files("fourok.retrieval").joinpath("SKILL.md").read_text(
-        encoding="utf-8"
+    return (
+        importlib.resources.files("fourok.retrieval.clients.cli")
+        .joinpath("SKILL.md")
+        .read_text(encoding="utf-8")
     )
 
 
