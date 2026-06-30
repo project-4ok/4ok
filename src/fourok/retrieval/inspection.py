@@ -36,12 +36,19 @@ def inspect_source(
             "source_ref": normalized_ref,
             "lifecycle_state": record.get("lifecycle_state") or "",
         }
+    inferred_rank = rank
+    if inferred_rank is None and retrieval_event_id:
+        inferred_rank = _retrieval_result_rank(
+            engine,
+            retrieval_event_id=retrieval_event_id,
+            source_ref=normalized_ref,
+        )
 
     inspection_event_id = _record_retrieval_inspection_event(
         engine,
         retrieval_event_id=retrieval_event_id or "",
         source_ref=normalized_ref,
-        rank=rank,
+        rank=inferred_rank,
         source_system=str(record.get("source_system") or ""),
         record_type=str(record.get("record_type") or ""),
         principal=principal or PrincipalContext.local_default(),
@@ -59,7 +66,37 @@ def inspect_source(
         "thread_ref": record.get("thread_ref") or "",
         "text": record.get("retrieval_text") or "",
         "inspection_event_id": inspection_event_id,
+        "rank": inferred_rank,
     }
+
+
+def _retrieval_result_rank(
+    engine: Engine,
+    *,
+    retrieval_event_id: str,
+    source_ref: str,
+) -> int | None:
+    try:
+        with engine.connect() as connection:
+            row = connection.execute(
+                text(
+                    """
+                    SELECT rank
+                    FROM retrieval_result_events
+                    WHERE retrieval_query_event_id = :retrieval_event_id
+                      AND source_ref = :source_ref
+                    """
+                ),
+                {
+                    "retrieval_event_id": retrieval_event_id,
+                    "source_ref": source_ref,
+                },
+            ).mappings().first()
+    except Exception:
+        return None
+    if row is None or row["rank"] is None:
+        return None
+    return int(row["rank"])
 
 
 def _record_retrieval_inspection_event(

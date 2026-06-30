@@ -136,11 +136,7 @@ def add_search_commands(subparsers, *, public: bool = False) -> None:
         "--retrieval-event-id",
         help="Optional retrieval event id from the retrieve call that returned this source.",
     )
-    open_parser.add_argument(
-        "--rank",
-        type=int,
-        help="Optional one-based rank of the source in the original retrieve results.",
-    )
+
     open_parser.add_argument(
         "--state",
         type=Path,
@@ -321,7 +317,6 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
             response = retrieval_client.open(
                 args.source_ref,
                 retrieval_event_id=args.retrieval_event_id,
-                rank=args.rank,
                 state=args.state,
                 database_url=database_url,
             )

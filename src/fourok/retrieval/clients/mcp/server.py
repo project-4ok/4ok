@@ -44,8 +44,8 @@ def tool_schemas() -> list[dict[str, object]]:
             "description": (
                 "Open the full record for a source_ref returned by fourok.retrieve. "
                 "Use this before making detailed claims, quotes, or behavioral "
-                "inferences from retrieved snippets; pass retrieval_event_id and rank "
-                "when available to log organic relevance."
+                "inferences from retrieved snippets; pass retrieval_event_id when "
+                "available so fourok can infer organic relevance from the returned source."
             ),
             "input_schema": {
                 "type": "object",
@@ -59,12 +59,6 @@ def tool_schemas() -> list[dict[str, object]]:
                         "type": "string",
                         "description": (
                             "Optional retrieval event id from the search that returned this source."
-                        ),
-                    },
-                    "rank": {
-                        "type": "integer",
-                        "description": (
-                            "Optional one-based rank of the source in the original result list."
                         ),
                     },
                 },
@@ -139,7 +133,6 @@ def open(
     source_ref: str,
     *,
     retrieval_event_id: str | None = None,
-    rank: int | None = None,
     state: str | Path | None = None,
     database_url: str | None = None,
     config: str | Path | None = None,
@@ -157,13 +150,11 @@ def open(
             span,
             {
                 "fourok.source_ref.length": len(normalized_ref),
-                "fourok.search.result_rank": rank or 0,
             },
         )
         response = mcp_client.open(
             normalized_ref,
             retrieval_event_id=retrieval_event_id,
-            rank=rank,
             state=state,
             database_url=database_url,
             config=config,
@@ -263,7 +254,6 @@ def build_mcp_server(
     def open_tool(
         source_ref: str,
         retrieval_event_id: str | None = None,
-        rank: int | None = None,
     ) -> dict[str, object]:
         """
         Open a full retrieved source record. Use this on decisive source_ref values
@@ -272,7 +262,6 @@ def build_mcp_server(
         return open(
             source_ref=source_ref,
             retrieval_event_id=retrieval_event_id,
-            rank=rank,
         )
 
     @mcp.tool(name="fourok.status")

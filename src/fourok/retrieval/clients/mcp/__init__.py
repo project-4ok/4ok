@@ -48,7 +48,6 @@ def open(
     source_ref: str,
     *,
     retrieval_event_id: str | None = None,
-    rank: int | None = None,
     state: str | Path | None = None,
     database_url: str | None = None,
     config: str | Path | None = None,
@@ -59,4 +58,4 @@ def open(
         database_url=database_url,
         config=config,
         context_factory=context_factory,
-    ).open(source_ref, retrieval_event_id=retrieval_event_id, rank=rank)
+    ).open(source_ref, retrieval_event_id=retrieval_event_id)

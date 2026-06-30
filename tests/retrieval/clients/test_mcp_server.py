@@ -124,7 +124,7 @@ class FakeContext:
     ) -> dict[str, object]:
         assert source_ref == "slack:message:1"
         assert retrieval_event_id == "retrieval-query:abc"
-        assert rank == 1
+        assert rank is None
         assert principal == PrincipalContext.local_default()
         return {
             "status": "ok",
@@ -154,9 +154,9 @@ def test_mcp_tool_schemas_are_discoverable_without_stdio_server() -> None:
     assert set(tools["fourok.open"]["input_schema"]["properties"]) == {
         "source_ref",
         "retrieval_event_id",
-        "rank",
     }
     assert "before making detailed claims" in str(tools["fourok.open"]["description"])
+    assert "rank" not in str(tools["fourok.open"]["description"]).casefold()
     assert tools["fourok.status"]["input_schema"]["properties"] == {}
     assert tools["fourok.onboard"]["input_schema"]["properties"] == {}
 
@@ -294,7 +294,6 @@ def test_open_handler_returns_source_and_logs_organic_signal() -> None:
     response = mcp_retrieval.open(
         source_ref="slack:message:1",
         retrieval_event_id="retrieval-query:abc",
-        rank=1,
         state="state.sqlite",
         context_factory=FakeContext,
     )
@@ -343,7 +342,6 @@ async def test_mcp_open_tool_returns_source_context(
         assert kwargs == {
             "source_ref": "linear:issue:1",
             "retrieval_event_id": "retrieval-query:abc",
-            "rank": 2,
         }
         return {
             "status": "ok",
@@ -360,7 +358,6 @@ async def test_mcp_open_tool_returns_source_context(
         {
             "source_ref": "linear:issue:1",
             "retrieval_event_id": "retrieval-query:abc",
-            "rank": 2,
         },
     )
 
@@ -490,11 +487,37 @@ def test_open_persists_retrieval_inspection_event(tmp_path: Path) -> None:
                 """
             )
         )
+        connection.execute(
+            text(
+                """
+                create table retrieval_result_events (
+                    retrieval_query_event_id text not null,
+                    rank integer not null,
+                    source_ref text not null,
+                    source_system text not null,
+                    record_type text not null,
+                    score real not null,
+                    retrievers_json text not null,
+                    rerank_reasons_json text not null,
+                    primary key (retrieval_query_event_id, source_ref)
+                )
+                """
+            )
+        )
+        connection.execute(
+            text(
+                """
+                insert into retrieval_result_events values (
+                    'retrieval-query:organic', 3, 'linear:issue:organic-signal',
+                    'linear', 'work_item', 1.0, '["keyword"]', '[]'
+                )
+                """
+            )
+        )
 
     response = mcp_retrieval.open(
         source_ref="linear:issue:organic-signal",
         retrieval_event_id="retrieval-query:organic",
-        rank=3,
         state=str(state_path),
     )
 

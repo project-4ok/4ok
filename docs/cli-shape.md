@@ -52,7 +52,7 @@ Use after `fourok retrieve` when a human or agent needs to inspect one evidence 
 Example:
 
 ```bash
-fourok open slack:message:123 --retrieval-event-id retrieval-query:abc --rank 1
+fourok open slack:message:123 --retrieval-event-id retrieval-query:abc
 ```
 
 Responsibilities:

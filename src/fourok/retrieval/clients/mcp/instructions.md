@@ -5,7 +5,7 @@ Use fourok as the source-backed context layer for company, project, customer, co
 ## Required agent flow
 
 1. For source-backed company-context questions, call `fourok.retrieve` before answering with a short evidence-shaped query.
-2. If retrieved results look relevant, call `fourok.open` on the best `source_ref` values before making detailed claims or quoting specifics. Pass `retrieval_event_id` and `rank` when the retrieve response provides them so fourok can learn organic relevance signals.
+2. If retrieved results look relevant, call `fourok.open` on the best `source_ref` values before making detailed claims or quoting specifics. Pass `retrieval_event_id` when the retrieve response provides it so fourok can infer the opened rank and learn organic relevance signals.
 3. Ground the response in returned evidence. Cite durable refs such as `source_ref`, `audit_ref`, and `inspection_event_id` when making evidence-backed claims.
 4. If retrieval returns no useful results, say "No retrieved evidence matched" rather than claiming the fact does not exist. Then call `fourok.status` if setup or freshness may be the issue.
 5. Use `fourok.onboard` only for setup/repair guidance, not as a substitute for retrieval.

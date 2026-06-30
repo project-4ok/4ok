@@ -273,6 +273,7 @@ def retrieve_augmentation(
             returned_results=len(results),
             duration_ms=_elapsed_ms(started),
         )
+        _record_retrieval_result_events(engine, retrieval_event_id, results)
         root_span.set_attribute("fourok.retrieve.status", "succeeded")
         root_span.set_attribute("fourok.retrieve.returned_results", len(results))
         root_span.set_attribute("fourok.retrieve.candidate_count", len(ranked_results))
@@ -1294,6 +1295,65 @@ def _record_retrieval_query_event(
         # Retrieval observability must never break user-facing retrieval.
         return ""
     return event_id
+
+
+def _record_retrieval_result_events(
+    engine: Engine,
+    retrieval_event_id: str,
+    results: list[RetrievalCandidate],
+) -> None:
+    if not retrieval_event_id or not results:
+        return
+    try:
+        with engine.begin() as connection:
+            connection.execute(
+                text(
+                    """
+                    CREATE TABLE IF NOT EXISTS retrieval_result_events (
+                        retrieval_query_event_id TEXT NOT NULL,
+                        rank INTEGER NOT NULL,
+                        source_ref TEXT NOT NULL,
+                        source_system TEXT NOT NULL,
+                        record_type TEXT NOT NULL,
+                        score REAL NOT NULL,
+                        retrievers_json TEXT NOT NULL,
+                        rerank_reasons_json TEXT NOT NULL,
+                        PRIMARY KEY (retrieval_query_event_id, source_ref)
+                    )
+                    """
+                )
+            )
+            connection.execute(
+                text(
+                    """
+                    INSERT INTO retrieval_result_events (
+                        retrieval_query_event_id, rank, source_ref, source_system,
+                        record_type, score, retrievers_json, rerank_reasons_json
+                    ) VALUES (
+                        :retrieval_query_event_id, :rank, :source_ref, :source_system,
+                        :record_type, :score, :retrievers_json, :rerank_reasons_json
+                    )
+                    """
+                ),
+                [
+                    {
+                        "retrieval_query_event_id": retrieval_event_id,
+                        "rank": rank,
+                        "source_ref": result.source_ref,
+                        "source_system": result.source_system,
+                        "record_type": result.record_type,
+                        "score": result.score,
+                        "retrievers_json": json.dumps(list(result.retrievers), sort_keys=True),
+                        "rerank_reasons_json": json.dumps(
+                            list(result.rerank_reasons), sort_keys=True
+                        ),
+                    }
+                    for rank, result in enumerate(results, start=1)
+                ],
+            )
+    except Exception:
+        # Retrieval-result telemetry must never break user-facing retrieval.
+        return
 
 
 def _snippet_without_title_prefix(text_value: str, title: str, source_ref: str = "") -> str:

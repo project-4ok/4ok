@@ -392,6 +392,9 @@ def test_retrieve_records_privacy_safe_request_observability(
     with sqlite3.connect(state) as connection:
         connection.row_factory = sqlite3.Row
         row = connection.execute("select * from retrieval_query_events").fetchone()
+        result_rows = connection.execute(
+            "select * from retrieval_result_events order by rank"
+        ).fetchall()
     assert row is not None
     assert row["status"] == "succeeded"
     assert row["retriever_set"] == "keyword,vector"
@@ -401,6 +404,60 @@ def test_retrieve_records_privacy_safe_request_observability(
     assert row["distinct_sources"] >= 1
     assert row["duration_ms"] >= 0
     assert "query" not in row.keys()
+    assert result_rows
+    assert result_rows[0]["retrieval_query_event_id"] == row["event_id"]
+    assert result_rows[0]["rank"] == 1
+    assert result_rows[0]["source_ref"] == "slack:message:cancellation"
+    assert result_rows[0]["source_system"] == "slack-live"
+    assert result_rows[0]["record_type"] == "message"
+    assert "query" not in result_rows[0].keys()
+
+
+def test_open_infers_retrieval_rank_from_event_id(capsys, monkeypatch, tmp_path: Path) -> None:
+    state = tmp_path / "state.sqlite"
+    _seed_state(state)
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "cancellation invoice follow-up",
+            "--state",
+            str(state),
+            "--format",
+            "json",
+        ],
+    )
+
+    main()
+    retrieve_output = json.loads(capsys.readouterr().out)
+    result = retrieve_output["results"][0]
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "open",
+            result["source_ref"],
+            "--retrieval-event-id",
+            retrieve_output["retrieval_event_id"],
+            "--state",
+            str(state),
+        ],
+    )
+
+    main()
+    open_output = json.loads(capsys.readouterr().out)
+
+    assert open_output["status"] == "ok"
+    with sqlite3.connect(state) as connection:
+        connection.row_factory = sqlite3.Row
+        inspection_row = connection.execute(
+            "select * from retrieval_inspection_events"
+        ).fetchone()
+    assert inspection_row is not None
+    assert inspection_row["retrieval_query_event_id"] == retrieve_output["retrieval_event_id"]
+    assert inspection_row["source_ref"] == result["source_ref"]
+    assert inspection_row["rank"] == result["rank"]
 
 
 def test_retrieve_vector_snippet_does_not_repeat_title(capsys, monkeypatch, tmp_path: Path) -> None:

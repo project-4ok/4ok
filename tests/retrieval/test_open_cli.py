@@ -34,8 +34,6 @@ def test_open_cli_uses_retrieval_api(capsys, monkeypatch) -> None:
             "linear:issue:1",
             "--retrieval-event-id",
             "retrieval-query:abc",
-            "--rank",
-            "2",
         ],
     )
 
@@ -51,7 +49,6 @@ def test_open_cli_uses_retrieval_api(capsys, monkeypatch) -> None:
     assert observed == {
         "source_ref": "linear:issue:1",
         "retrieval_event_id": "retrieval-query:abc",
-        "rank": 2,
         "state": DEFAULT_STATE,
         "database_url": None,
     }
