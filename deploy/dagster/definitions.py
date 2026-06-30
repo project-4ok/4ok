@@ -677,6 +677,20 @@ fourok_hourly_live_backfill = define_asset_job(
     executor_def=in_process_executor,
 )
 
+gcb_hourly_live_backfill = define_asset_job(
+    "gcb_hourly_live_backfill",
+    selection=AssetSelection.assets(
+        *_LIVE_RAW_LANDING_ASSETS,
+        *_LIVE_SOURCE_RECORD_IMPORT_ASSETS,
+        fourok_webhook_backlog,
+        fourok_canonical_objects_and_entity_links,
+        fourok_retrieval_records,
+        fourok_operator_dashboard,
+        fourok_audit_metadata,
+    ),
+    executor_def=in_process_executor,
+)
+
 fourok_process_webhook_backlog = define_asset_job(
     "fourok_process_webhook_backlog",
     selection=AssetSelection.assets(
@@ -748,7 +762,7 @@ defs = Definitions(
         fourok_operator_dashboard,
         fourok_audit_metadata,
     ],
-    jobs=[fourok_hourly_live_backfill, fourok_process_webhook_backlog],
+    jobs=[fourok_hourly_live_backfill, gcb_hourly_live_backfill, fourok_process_webhook_backlog],
     schedules=[fourok_hourly_live_backfill_schedule],
     sensors=[fourok_webhook_backlog_sensor],
     resources=build_default_resources(),

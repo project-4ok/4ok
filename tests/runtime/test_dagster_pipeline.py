@@ -123,8 +123,9 @@ def test_dagster_definitions_expose_recurring_live_ingestion_hooks() -> None:
     job_names = {job.name for job in defs.resolve_all_job_defs()}
     schedule_names = {schedule.name for schedule in defs.schedules or []}
     sensor_names = {sensor.name for sensor in defs.sensors or []}
-
+    job_names = {job.name for job in defs.get_job_defs()}
     assert "fourok_hourly_live_backfill" in job_names
+    assert "gcb_hourly_live_backfill" in job_names
     assert "fourok_process_webhook_backlog" in job_names
     assert schedule_names == {"fourok_hourly_live_backfill_schedule"}
     assert sensor_names == {"fourok_webhook_backlog_sensor"}
