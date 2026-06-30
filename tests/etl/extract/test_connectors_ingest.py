@@ -173,6 +173,27 @@ def test_singer_raw_landing_can_be_reloaded_into_email_messages(tmp_path: Path) 
     assert [record.thread_ref for record in source_records] == ["thread-001", "thread-002"]
 
 
+def test_raw_landing_replaces_previous_stream_files_per_run(tmp_path: Path) -> None:
+    stale_singer = tmp_path / "stale.singer.jsonl"
+    stale_singer.write_text(
+        '{"type":"RECORD","stream":"email_messages","record":{"id":"stale","body":"stale"}}\n',
+        encoding="utf-8",
+    )
+    fresh_singer = tmp_path / "fresh.singer.jsonl"
+    fresh_singer.write_text(
+        '{"type":"RECORD","stream":"email_messages","record":{"id":"fresh","body":"fresh"}}\n',
+        encoding="utf-8",
+    )
+    landing_dir = tmp_path / "landing"
+
+    land_singer_records(stale_singer, landing_dir)
+    report = land_singer_records(fresh_singer, landing_dir)
+    records = load_landed_source_records(landing_dir)
+
+    assert report.record_count == 1
+    assert [record.source_ref for record in records] == ["singer:email_messages:fresh"]
+
+
 def test_slack_singer_messages_feed_source_record_adapter() -> None:
     source_records = load_slack_source_records(SINGER_SLACK_MESSAGES)
 

@@ -13,9 +13,7 @@ DriveApi = Callable[[str, str, dict[str, object]], dict[str, object] | str]
 
 TOKEN_URL = "https://oauth2.googleapis.com/token"
 DRIVE_API_URL = "https://www.googleapis.com/drive/v3"
-GOOGLE_DOC_MIME_TYPE = "application/vnd.google-apps.document"
 GOOGLE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
-TEXT_MIME_TYPES = {"text/plain", "text/markdown"}
 GOOGLE_DRIVE_PAGE_SIZE = 100
 
 
@@ -209,7 +207,6 @@ def _list_paged_files(api: DriveApi, *, drive_id: str, parent_id: str) -> list[d
 def _file_record(file: dict[str, Any], api: DriveApi) -> dict[str, Any]:
     file_id = _string(file.get("id"))
     mime_type = _string(file.get("mimeType"))
-    text, export_status = _file_text(file_id=file_id, mime_type=mime_type, api=api)
     return {
         "id": file_id,
         "name": _string(file.get("name")),
@@ -223,36 +220,10 @@ def _file_record(file: dict[str, Any], api: DriveApi) -> dict[str, Any]:
         "folder_path": _string(file.get("folder_path")),
         "parent_refs": _string_list(file.get("parent_refs")),
         "trashed": file.get("trashed") is True,
-        "text": text,
-        "content_status": "extracted" if text else "metadata_only",
-        "export_status": export_status,
+        "text": "",
+        "content_status": "metadata_only",
+        "export_status": "not_exported",
     }
-
-
-def _file_text(*, file_id: str, mime_type: str, api: DriveApi) -> tuple[str, str]:
-    if not file_id:
-        return "", "missing_file_id"
-    if mime_type == GOOGLE_DOC_MIME_TYPE:
-        try:
-            result = api("GET", f"files/{file_id}/export", {"mimeType": "text/plain"})
-        except Exception:
-            return "", "export_unavailable"
-        return (
-            (result, "exported_text")
-            if isinstance(result, str) and result
-            else ("", "export_unavailable")
-        )
-    if mime_type in TEXT_MIME_TYPES:
-        try:
-            result = api("GET", f"files/{file_id}", {"alt": "media"})
-        except Exception:
-            return "", "download_unavailable"
-        return (
-            (result, "downloaded_text")
-            if isinstance(result, str) and result
-            else ("", "download_unavailable")
-        )
-    return "", "unsupported_mime_type"
 
 
 def _max_modified_time(records: list[dict[str, Any]]) -> str:

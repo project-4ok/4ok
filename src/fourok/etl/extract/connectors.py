@@ -68,6 +68,11 @@ def land_singer_lines(lines: Iterable[str], landing_dir: Path) -> LandingReport:
 
 def _land_singer_lines(lines: Iterable[str], landing_dir: Path) -> LandingReport:
     landing_dir.mkdir(parents=True, exist_ok=True)
+    for path in landing_dir.glob("*.jsonl"):
+        path.unlink()
+    state_file = landing_dir / "state.json"
+    if state_file.exists():
+        state_file.unlink()
     streams: dict[str, int] = {}
     state_messages = 0
     schema_messages = 0

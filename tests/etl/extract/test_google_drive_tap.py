@@ -28,8 +28,6 @@ def test_google_drive_tap_emits_files_and_state() -> None:
                     }
                 ]
             }
-        if path == "files/doc-1/export":
-            return "Alpha contract notes"
         raise AssertionError(path)
 
     messages = run_google_drive_tap(
@@ -39,9 +37,9 @@ def test_google_drive_tap_emits_files_and_state() -> None:
 
     assert [message["type"] for message in messages] == ["SCHEMA", "RECORD", "STATE"]
     assert messages[1]["stream"] == "google_drive_files"
-    assert messages[1]["record"]["text"] == "Alpha contract notes"
-    assert messages[1]["record"]["content_status"] == "extracted"
-    assert messages[1]["record"]["export_status"] == "exported_text"
+    assert messages[1]["record"]["text"] == ""
+    assert messages[1]["record"]["content_status"] == "metadata_only"
+    assert messages[1]["record"]["export_status"] == "not_exported"
     assert messages[-1]["value"] == {
         "bookmarks": {"google_drive_files": {"modifiedTime": "2026-06-03T09:00:00Z"}}
     }
@@ -79,7 +77,7 @@ def test_google_drive_tap_output_feeds_existing_source_record_adapter(tmp_path: 
                     }
                 ]
             }
-        return "Alpha contract notes"
+        raise AssertionError((method, path, params))
 
     messages = run_google_drive_tap(
         GoogleDriveTapConfig(access_token="token", drive_ids=()),
@@ -96,7 +94,32 @@ def test_google_drive_tap_output_feeds_existing_source_record_adapter(tmp_path: 
 
     assert report.streams == {"google_drive_files": 1}
     assert records[0].source_ref == "google_drive:file:doc-1"
-    assert records[0].body == "Alpha contract notes"
+    assert records[0].body.startswith("Google Drive metadata-only file")
+    assert records[0].metadata["export_status"] == "not_exported"
+
+
+def test_google_drive_tap_does_not_block_raw_landing_on_document_export() -> None:
+    def fake_api(method: str, path: str, params: dict[str, object]) -> dict[str, object] | str:
+        if path == "files":
+            return {
+                "files": [
+                    {
+                        "id": "doc-1",
+                        "name": "Alpha notes",
+                        "mimeType": "application/vnd.google-apps.document",
+                        "modifiedTime": "2026-06-03T09:00:00Z",
+                    }
+                ]
+            }
+        raise AssertionError(f"raw landing must not call slow content export: {path}")
+
+    messages = run_google_drive_tap(
+        GoogleDriveTapConfig(access_token="token", drive_ids=("drive-1",)),
+        api=fake_api,
+    )
+
+    assert messages[1]["record"]["content_status"] == "metadata_only"
+    assert messages[1]["record"]["export_status"] == "not_exported"
 
 
 def test_google_drive_tap_emits_unsupported_image_metadata_without_body_download() -> None:
@@ -143,7 +166,7 @@ def test_google_drive_tap_emits_unsupported_image_metadata_without_body_download
         "trashed": False,
         "text": "",
         "content_status": "metadata_only",
-        "export_status": "unsupported_mime_type",
+        "export_status": "not_exported",
     }
     assert [call[1] for call in calls] == ["files"]
 
@@ -179,9 +202,6 @@ def test_google_drive_tap_discovers_my_drive_recursively_and_exports_meet_transc
                     }
                 ]
             }
-        if path == "files/transcript-doc/export":
-            assert params == {"mimeType": "text/plain"}
-            return "Meeting transcript text exported from Google Docs."
         raise AssertionError((method, path, params))
 
     messages = run_google_drive_tap(
@@ -204,9 +224,9 @@ def test_google_drive_tap_discovers_my_drive_recursively_and_exports_meet_transc
             "folder_path": "My Drive/Meet Recordings",
             "parent_refs": ["google_drive:folder:meet-folder"],
             "trashed": False,
-            "text": "Meeting transcript text exported from Google Docs.",
-            "content_status": "extracted",
-            "export_status": "exported_text",
+            "text": "",
+            "content_status": "metadata_only",
+            "export_status": "not_exported",
         }
     ]
     assert [call[1]["q"] for call in calls if call[0] == "files"] == [
@@ -246,7 +266,7 @@ def test_google_drive_tap_keeps_metadata_only_file_when_content_unavailable() ->
     assert records[0]["id"] == "image-1"
     assert records[0]["text"] == ""
     assert records[0]["content_status"] == "metadata_only"
-    assert records[0]["export_status"] == "unsupported_mime_type"
+    assert records[0]["export_status"] == "not_exported"
     assert records[0]["folder_path"] == "My Drive/Assets"
 
 
