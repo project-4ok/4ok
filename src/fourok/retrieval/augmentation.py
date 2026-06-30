@@ -888,13 +888,12 @@ def _follow_up_hint_lines(index: int, hint: RelatedFollowUpHint) -> list[str]:
 
 def _evidence_card_lines(snippet: str) -> list[str]:
     snippet = _display_snippet(snippet)
-    if "\n" not in snippet:
-        return [f"evidence: {snippet}"]
-    return ["evidence:", *snippet.splitlines()]
+    return [f"evidence: {snippet}"]
 
 
 def _display_snippet(snippet: str) -> str:
-    return snippet.replace("\\r\\n", "\n").replace("\\n", "\n").replace("\\t", " ")
+    normalized = snippet.replace("\\r\\n", " ").replace("\\n", " ").replace("\\t", " ")
+    return " ".join(normalized.split())
 
 
 def _source_date_label(value: str, *, now: datetime | None = None) -> str:

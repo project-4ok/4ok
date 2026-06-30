@@ -539,7 +539,7 @@ def test_retrieve_removes_source_id_and_title_prefix_from_evidence(
     assert "evidence: 4OK-385 LinkedIn outreach draft" not in output
 
 
-def test_retrieve_preserves_evidence_paragraph_boundaries(
+def test_retrieve_collapses_evidence_paragraph_boundaries(
     capsys, monkeypatch, tmp_path: Path
 ) -> None:
     state = tmp_path / "state.sqlite"
@@ -576,8 +576,10 @@ def test_retrieve_preserves_evidence_paragraph_boundaries(
     main()
 
     output = capsys.readouterr().out
-    assert "evidence:\nFirst paragraph says retrieval paragraph context is important." in output
-    assert "\n\nSecond paragraph keeps the concrete next action separate." in output
+    assert "evidence: First paragraph says retrieval paragraph context is important." in output
+    assert "Second paragraph keeps the concrete next action separate." in output
+    assert "evidence:\nFirst paragraph" not in output
+    assert "\n\nSecond paragraph" not in output
 
 
 def test_retrieve_renders_escaped_newlines_as_readable_text(
@@ -615,8 +617,10 @@ def test_retrieve_renders_escaped_newlines_as_readable_text(
 
     output = capsys.readouterr().out
     assert "\\n" not in output
-    assert "evidence:\nescaped newline evidence first line" in output
-    assert "\n\nsecond line action item" in output
+    assert "evidence: escaped newline evidence first line" in output
+    assert "second line action item" in output
+    assert "evidence:\nescaped newline evidence first line" not in output
+    assert "\n\nsecond line action item" not in output
 
 
 def test_retrieve_centers_evidence_snippet_on_query_terms(
