@@ -499,16 +499,21 @@ def test_observability_files_define_fourok_log_dashboard_and_docker_labels() -> 
         for panel in prometheus_panels
         if panel["title"] == "[Retrieval] Opened source rank distribution"
     )
-    assert inspected_rank_panel["type"] == "barchart"
+    assert inspected_rank_panel["type"] == "bargauge"
+    assert inspected_rank_panel["gridPos"] == {"x": 0, "y": 88, "w": 12, "h": 7}
     assert inspected_rank_panel["targets"][0]["expr"] == (
         "sum by (rank) (fourok_retrieval_source_inspection_rank_total)"
     )
+    assert inspected_rank_panel["targets"][0]["instant"] is True
     assert "agent chose to open" in inspected_rank_panel["description"]
     average_opened_rank_panel = next(
         panel
         for panel in prometheus_panels
         if panel["title"] == "[Retrieval] Average opened source rank"
     )
+    assert average_opened_rank_panel["type"] == "stat"
+    assert average_opened_rank_panel["gridPos"] == {"x": 12, "y": 88, "w": 12, "h": 7}
+    assert average_opened_rank_panel["targets"][0]["instant"] is True
     assert (
         "fourok_retrieval_source_inspection_rank_sum"
         in average_opened_rank_panel["targets"][0]["expr"]
