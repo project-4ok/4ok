@@ -139,6 +139,11 @@ def test_write_retrieval_debug_artifacts_creates_json_and_html(tmp_path: Path) -
     assert "Akzidenz-Grotesk" in html
     assert "stroke-dasharray" not in html
     assert "dashed" not in html.casefold()
+    assert "Retrieval focus" in html
+    assert "Context/entity graph" in html
+    assert "Other candidates" in html
+    assert "Linear/source candidates" not in html
+    assert "DB entity links" not in html
     assert "/api/retrieval-graph?query=" in html
     assert "d3@7" in html
     assert report["url"] == "http://127.0.0.1:8765/olivia-allen.graph.html"

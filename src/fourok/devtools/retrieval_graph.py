@@ -560,7 +560,7 @@ document.getElementById('queryForm').addEventListener('submit', event => {{
   const query = document.getElementById('queryInput').value.trim();
   if (query) graphQuery(query);
 }});
-function initLegend() {{ const legend = document.getElementById('legend'); [['query','#1800ad'], ['Linear/source candidates','#1800ad'], ['Twenty','#f0353b'], ['identity/entity','#f0353b'], ['retrieval direct-context edges','#1800ad'], ['DB entity links','#f0353b']].forEach(([k,v]) => legend.insertAdjacentHTML('beforeend', `<span class=\"dot\" style=\"background:${{v}}\"></span><span>${{k}}</span>`)); }}
+function initLegend() {{ const legend = document.getElementById('legend'); [['Retrieval focus','#1800ad'], ['Context/entity graph','#f0353b'], ['Other candidates','#26211e']].forEach(([k,v]) => legend.insertAdjacentHTML('beforeend', `<span class=\"dot\" style=\"background:${{v}}\"></span><span>${{k}}</span>`)); }}
 ['hideOutside','showLabels','showEdgeLabels'].forEach(id => document.getElementById(id).addEventListener('change', render));
 window.addEventListener('resize', render); initLegend(); render();
 </script>
