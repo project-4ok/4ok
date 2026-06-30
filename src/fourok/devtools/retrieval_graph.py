@@ -451,28 +451,39 @@ def _html(query: str, graph: dict[str, Any]) -> str:
 <title>fourok retrieval analysis dashboard</title>
 <script src=\"https://cdn.jsdelivr.net/npm/d3@7\"></script>
 <style>
-  :root {{ color-scheme: light; }}
-  body {{ margin:0; background:#f6f4f1; color:#25211f; font:14px/1.45 Inter, ui-sans-serif, system-ui, sans-serif; }}
-  #app {{ display:grid; grid-template-columns: 1fr 430px; height:100vh; }}
-  #graph {{ width:100%; height:100%; background:radial-gradient(circle at 30% 20%, rgba(29,0,216,.08), transparent 28%), #f7f5f2; }}
-  aside {{ border-left:1px solid #d8d1ca; background:rgba(250,249,247,.96); padding:18px; overflow:auto; box-shadow:-12px 0 28px rgba(37,33,31,.06); }}
-  h1 {{ margin:0 0 8px; font-size:20px; line-height:1.05; letter-spacing:-.03em; }}
-  h2 {{ margin:18px 0 8px; font-size:11px; color:#1d05b9; text-transform:uppercase; letter-spacing:.18em; }}
-  form {{ display:flex; gap:8px; margin:12px 0 4px; }}
-  input {{ flex:1; border:1px solid #cfc7bf; border-radius:10px; padding:9px 10px; background:white; color:#25211f; }}
-  button {{ border:0; border-radius:10px; padding:9px 12px; background:#1d05b9; color:white; font-weight:700; }}
-  .controls label {{ display:block; margin:8px 0; }}
-  .legend {{ display:grid; grid-template-columns: 14px 1fr; gap:6px 8px; align-items:center; }}
-  .dot {{ width:11px; height:11px; border-radius:50%; }}
-  pre {{ white-space:pre-wrap; background:white; border:1px solid #d8d1ca; border-radius:14px; padding:12px; color:#3f3833; }}
-  .muted {{ color:#6d6660; }}
-  .pill {{ display:inline-block; margin:2px 3px 2px 0; padding:2px 7px; border-radius:999px; background:#eee9ff; color:#1d05b9; font-size:12px; }}
-  .node text {{ fill:#25211f; paint-order:stroke; stroke:#f7f5f2; stroke-width:5px; stroke-linejoin:round; font-size:11px; pointer-events:none; }}
-  .link {{ stroke:#928a84; stroke-opacity:.38; }}
-  .link.direct {{ stroke:#1d05b9; stroke-opacity:.82; }}
-  .link.entity {{ stroke:#15936b; stroke-opacity:.68; stroke-dasharray:4 3; }}
-  .link.vector {{ stroke:#7c3aed; stroke-opacity:.65; }}
-  .link-label {{ fill:#57504a; font-size:10px; pointer-events:none; opacity:.85; paint-order:stroke; stroke:#f7f5f2; stroke-width:3px; }}
+  :root {{
+    color-scheme: light;
+    --primary: #f3f3f2;
+    --accent-1: #1800ad;
+    --accent-2: #f0353b;
+    --font-color: #26211e;
+    --title-font: "Akzidenz-Grotesk Black", "Akzidenz Grotesk Black", "Arial Black", sans-serif;
+    --body-font: "Akzidenz-Grotesk Light", "Akzidenz Grotesk Light", "Akzidenz-Grotesk", "Helvetica Neue", Arial, sans-serif;
+    --title-size: clamp(42px, 5vw, 120px);
+    --body-size: clamp(16px, 1.9vw, 45px);
+  }}
+  * {{ box-sizing: border-box; }}
+  body {{ margin:0; background:var(--primary); color:var(--font-color); font-family:var(--body-font); font-weight:300; }}
+  #app {{ display:grid; grid-template-columns: minmax(0, 1fr) minmax(460px, 34vw); height:100vh; }}
+  #graph {{ width:100%; height:100%; background:linear-gradient(135deg, rgba(24,0,173,.10), transparent 30%), var(--primary); }}
+  aside {{ border-left:3px solid var(--font-color); background:var(--primary); padding:28px; overflow:auto; }}
+  h1 {{ margin:0 0 14px; color:var(--font-color); font-family:var(--title-font); font-size:var(--title-size); line-height:.84; letter-spacing:-.075em; text-transform:uppercase; }}
+  h2 {{ margin:28px 0 10px; color:var(--accent-1); font-family:var(--title-font); font-size:14px; line-height:1; text-transform:uppercase; letter-spacing:.16em; }}
+  form {{ display:flex; gap:10px; margin:20px 0 6px; }}
+  input {{ flex:1; border:2px solid var(--font-color); border-radius:0; padding:12px 13px; background:var(--primary); color:var(--font-color); font-family:var(--body-font); font-size:16px; font-weight:300; }}
+  button {{ border:2px solid var(--accent-1); border-radius:0; padding:12px 14px; background:var(--accent-1); color:var(--primary); font-family:var(--title-font); font-size:13px; text-transform:uppercase; letter-spacing:.05em; }}
+  .controls label {{ display:block; margin:10px 0; font-size:15px; }}
+  .legend {{ display:grid; grid-template-columns: 18px 1fr; gap:8px 10px; align-items:center; font-size:15px; }}
+  .dot {{ width:14px; height:14px; border-radius:50%; }}
+  pre {{ white-space:pre-wrap; background:transparent; border:2px solid var(--font-color); border-radius:0; padding:14px; color:var(--font-color); font:12px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; }}
+  .muted {{ color:rgba(38,33,30,.72); font-size:15px; line-height:1.35; }}
+  .pill {{ display:inline-block; margin:3px 4px 3px 0; padding:3px 8px; border:1px solid var(--accent-1); border-radius:999px; color:var(--accent-1); font-size:12px; }}
+  .node text {{ fill:var(--font-color); paint-order:stroke; stroke:var(--primary); stroke-width:5px; stroke-linejoin:round; font-family:var(--body-font); font-size:12px; font-weight:300; pointer-events:none; }}
+  .link {{ stroke:rgba(38,33,30,.36); stroke-opacity:1; }}
+  .link.direct {{ stroke:var(--accent-1); stroke-opacity:.86; }}
+  .link.entity {{ stroke:var(--accent-2); stroke-opacity:.78; }}
+  .link.vector {{ stroke:var(--accent-1); stroke-opacity:.56; }}
+  .link-label {{ fill:var(--font-color); font-size:10px; pointer-events:none; opacity:.82; paint-order:stroke; stroke:var(--primary); stroke-width:3px; }}
 </style>
 </head>
 <body>
@@ -524,7 +535,7 @@ function render() {{
   const link = g.append('g').selectAll('line').data(data.links).join('line').attr('class', d => 'link ' + (d.rel === 'direct_context_for' ? 'direct' : d.rel === 'entity_link' ? 'entity' : d.rel === 'vector_candidate' ? 'vector' : '')).attr('stroke-width', d => d.rel === 'direct_context_for' ? 3 : d.rel === 'entity_link' ? 2 : Math.sqrt(d.weight || 1));
   const edgeLabels = g.append('g').selectAll('text').data(data.links).join('text').attr('class','link-label').text(d => d.relationship_type || d.rel.replace('_candidate','')).style('display', document.getElementById('showEdgeLabels').checked ? null : 'none');
   const node = g.append('g').selectAll('g').data(data.nodes).join('g').attr('class','node').call(drag(sim)).on('click', showDetails);
-  node.append('circle').attr('r', radius).attr('fill', d => colors[d.group] || colors.source).attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .42).attr('stroke', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? '#1d05b9' : d.final_selected ? '#25211f' : '#bdb5ad').attr('stroke-width', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? 2.6 : d.final_selected ? 1.8 : 1);
+  node.append('circle').attr('r', radius).attr('fill', d => colors[d.group] || colors.source).attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .42).attr('stroke', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? '#1800ad' : d.final_selected ? '#26211e' : '#26211e').attr('stroke-width', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? 2.6 : d.final_selected ? 1.8 : 1);
   node.append('text').attr('x', d => radius(d)+4).attr('y', 4).text(d => `${{d.order ? d.order + '. ' : d.candidate_order ? '#' + d.candidate_order + ' ' : ''}}${{d.label || d.id}}`).style('display', document.getElementById('showLabels').checked ? null : 'none').attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .55);
   sim.on('tick', () => {{ link.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y); node.attr('transform', d => `translate(${{d.x}},${{d.y}})`); edgeLabels.attr('x', d => (d.source.x + d.target.x)/2).attr('y', d => (d.source.y + d.target.y)/2); }});
 }}
@@ -549,7 +560,7 @@ document.getElementById('queryForm').addEventListener('submit', event => {{
   const query = document.getElementById('queryInput').value.trim();
   if (query) graphQuery(query);
 }});
-function initLegend() {{ const legend = document.getElementById('legend'); [['query','#1d05b9'], ['Linear/source candidates','#1d05b9'], ['Twenty','#0f766e'], ['identity/entity','#7c3aed'], ['retrieval direct-context edges','#1d05b9'], ['DB entity links: green dashed','#15936b']].forEach(([k,v]) => legend.insertAdjacentHTML('beforeend', `<span class=\"dot\" style=\"background:${{v}}\"></span><span>${{k}}</span>`)); }}
+function initLegend() {{ const legend = document.getElementById('legend'); [['query','#1800ad'], ['Linear/source candidates','#1800ad'], ['Twenty','#f0353b'], ['identity/entity','#f0353b'], ['retrieval direct-context edges','#1800ad'], ['DB entity links','#f0353b']].forEach(([k,v]) => legend.insertAdjacentHTML('beforeend', `<span class=\"dot\" style=\"background:${{v}}\"></span><span>${{k}}</span>`)); }}
 ['hideOutside','showLabels','showEdgeLabels'].forEach(id => document.getElementById(id).addEventListener('change', render));
 window.addEventListener('resize', render); initLegend(); render();
 </script>

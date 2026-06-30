@@ -132,6 +132,13 @@ def test_write_retrieval_debug_artifacts_creates_json_and_html(tmp_path: Path) -
     assert "id=\"showEdgeLabels\" type=\"checkbox\"" in html
     assert "id=\"showEdgeLabels\" type=\"checkbox\" checked" not in html
     assert "weak/noisy" not in html
+    assert "#f3f3f2" in html
+    assert "#1800ad" in html
+    assert "#f0353b" in html
+    assert "#26211e" in html
+    assert "Akzidenz-Grotesk" in html
+    assert "stroke-dasharray" not in html
+    assert "dashed" not in html.casefold()
     assert "/api/retrieval-graph?query=" in html
     assert "d3@7" in html
     assert report["url"] == "http://127.0.0.1:8765/olivia-allen.graph.html"
