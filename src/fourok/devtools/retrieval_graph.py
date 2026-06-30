@@ -475,11 +475,12 @@ def _html(query: str, graph: dict[str, Any]) -> str:
   .controls label {{ display:block; margin:10px 0; font-size:15px; }}
   .legend {{ display:grid; grid-template-columns: 18px 1fr; gap:8px 10px; align-items:center; font-size:15px; }}
   .dot {{ width:14px; height:14px; border-radius:50%; }}
+  .line-swatch {{ width:18px; height:0; border-top:3px solid var(--font-color); }}
   pre {{ white-space:pre-wrap; background:transparent; border:2px solid var(--font-color); border-radius:0; padding:14px; color:var(--font-color); font:12px/1.35 ui-monospace, SFMono-Regular, Menlo, monospace; }}
   .muted {{ color:rgba(38,33,30,.72); font-size:15px; line-height:1.35; }}
   .pill {{ display:inline-block; margin:3px 4px 3px 0; padding:3px 8px; border:1px solid var(--accent-1); border-radius:999px; color:var(--accent-1); font-size:12px; }}
   .node text {{ fill:var(--font-color); paint-order:stroke; stroke:var(--primary); stroke-width:5px; stroke-linejoin:round; font-family:var(--body-font); font-size:12px; font-weight:300; pointer-events:none; }}
-  .link {{ stroke:rgba(38,33,30,.36); stroke-opacity:1; }}
+  .link {{ stroke:var(--accent-1); stroke-opacity:.56; }}
   .link.direct {{ stroke:var(--accent-1); stroke-opacity:.86; }}
   .link.entity {{ stroke:var(--accent-2); stroke-opacity:.78; }}
   .link.vector {{ stroke:var(--accent-1); stroke-opacity:.56; }}
@@ -510,7 +511,7 @@ def _html(query: str, graph: dict[str, Any]) -> str:
 </div>
 <script>
 let graph = {data};
-const colors = {{ query: '#1800ad', linear: '#1800ad', twenty: '#f0353b', identity: '#f0353b', source: '#26211e' }};
+function nodeColor(d) {{ return d.group === 'query' || d.final_selected || d.candidate_order || d.order ? '#1800ad' : '#f0353b'; }}
 const svg = d3.select('#graph');
 const statusEl = document.getElementById('status');
 function visibleData() {{
@@ -535,7 +536,7 @@ function render() {{
   const link = g.append('g').selectAll('line').data(data.links).join('line').attr('class', d => 'link ' + (d.rel === 'direct_context_for' ? 'direct' : d.rel === 'entity_link' ? 'entity' : d.rel === 'vector_candidate' ? 'vector' : '')).attr('stroke-width', d => d.rel === 'direct_context_for' ? 3 : d.rel === 'entity_link' ? 2 : Math.sqrt(d.weight || 1));
   const edgeLabels = g.append('g').selectAll('text').data(data.links).join('text').attr('class','link-label').text(d => d.relationship_type || d.rel.replace('_candidate','')).style('display', document.getElementById('showEdgeLabels').checked ? null : 'none');
   const node = g.append('g').selectAll('g').data(data.nodes).join('g').attr('class','node').call(drag(sim)).on('click', showDetails);
-  node.append('circle').attr('r', radius).attr('fill', d => colors[d.group] || colors.source).attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .42).attr('stroke', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? '#1800ad' : d.final_selected ? '#26211e' : '#26211e').attr('stroke-width', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? 2.6 : d.final_selected ? 1.8 : 1);
+  node.append('circle').attr('r', radius).attr('fill', nodeColor).attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .42).attr('stroke', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? '#1800ad' : d.final_selected ? '#26211e' : '#26211e').attr('stroke-width', d => d.stage.includes('one_hop') || d.stage.includes('direct') ? 2.6 : d.final_selected ? 1.8 : 1);
   node.append('text').attr('x', d => radius(d)+4).attr('y', 4).text(d => `${{d.order ? d.order + '. ' : d.candidate_order ? '#' + d.candidate_order + ' ' : ''}}${{d.label || d.id}}`).style('display', document.getElementById('showLabels').checked ? null : 'none').attr('opacity', d => d.final_selected || d.group === 'query' ? 1 : .55);
   sim.on('tick', () => {{ link.attr('x1', d => d.source.x).attr('y1', d => d.source.y).attr('x2', d => d.target.x).attr('y2', d => d.target.y); node.attr('transform', d => `translate(${{d.x}},${{d.y}})`); edgeLabels.attr('x', d => (d.source.x + d.target.x)/2).attr('y', d => (d.source.y + d.target.y)/2); }});
 }}
@@ -560,7 +561,15 @@ document.getElementById('queryForm').addEventListener('submit', event => {{
   const query = document.getElementById('queryInput').value.trim();
   if (query) graphQuery(query);
 }});
-function initLegend() {{ const legend = document.getElementById('legend'); [['Retrieval focus','#1800ad'], ['Context/entity graph','#f0353b'], ['Other candidates','#26211e']].forEach(([k,v]) => legend.insertAdjacentHTML('beforeend', `<span class=\"dot\" style=\"background:${{v}}\"></span><span>${{k}}</span>`)); }}
+function initLegend() {{
+  const legend = document.getElementById('legend');
+  [
+    ['dot', 'Ranked retrieval node', '#1800ad'],
+    ['dot', 'Outside-rank context node', '#f0353b'],
+    ['line', 'Keyword / semantic search edge', '#1800ad'],
+    ['line', 'Entity-link edge', '#f0353b'],
+  ].forEach(([shape, label, color]) => legend.insertAdjacentHTML('beforeend', `<span class=\"${{shape === 'line' ? 'line-swatch' : 'dot'}}\" style=\"${{shape === 'line' ? 'border-color' : 'background'}}:${{color}}\"></span><span>${{label}}</span>`));
+}}
 ['hideOutside','showLabels','showEdgeLabels'].forEach(id => document.getElementById(id).addEventListener('change', render));
 window.addEventListener('resize', render); initLegend(); render();
 </script>

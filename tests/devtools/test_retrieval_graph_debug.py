@@ -139,9 +139,17 @@ def test_write_retrieval_debug_artifacts_creates_json_and_html(tmp_path: Path) -
     assert "Akzidenz-Grotesk" in html
     assert "stroke-dasharray" not in html
     assert "dashed" not in html.casefold()
-    assert "Retrieval focus" in html
-    assert "Context/entity graph" in html
-    assert "Other candidates" in html
+    assert "Ranked retrieval node" in html
+    assert "Outside-rank context node" in html
+    assert "Keyword / semantic search edge" in html
+    assert "Entity-link edge" in html
+    assert "line-swatch" in html
+    assert "nodeColor" in html
+    assert "d.candidate_order" in html
+    assert "colors =" not in html
+    assert "Retrieval focus" not in html
+    assert "Context/entity graph" not in html
+    assert "Other candidates" not in html
     assert "Linear/source candidates" not in html
     assert "DB entity links" not in html
     assert "#0f766e" not in html
