@@ -203,7 +203,7 @@ def test_google_drive_file_adapter_uses_operator_scope_when_drive_omits_permissi
     ] == ["google_drive:file:buena-progress-update"]
 
 
-def test_google_drive_tap_paginates_file_listing_until_configured_limit() -> None:
+def test_google_drive_tap_paginates_file_listing_until_api_exhausted() -> None:
     calls: list[dict[str, object]] = []
 
     def fake_api(method: str, path: str, params: dict[str, object]) -> dict[str, object] | str:
@@ -238,7 +238,7 @@ def test_google_drive_tap_paginates_file_listing_until_configured_limit() -> Non
         raise AssertionError((method, path, params))
 
     messages = run_google_drive_tap(
-        GoogleDriveTapConfig(access_token="token", limit=150),
+        GoogleDriveTapConfig(access_token="token"),
         api=fake_api,
     )
 
@@ -250,12 +250,12 @@ def test_google_drive_tap_paginates_file_listing_until_configured_limit() -> Non
         assert isinstance(params, dict)
         page_sizes.append(params.get("pageSize"))
         page_tokens.append(params.get("pageToken"))
-    assert page_sizes == [100, 50]
+    assert page_sizes == [100, 100]
     assert page_tokens == [None, "page-2"]
 
 
-def test_google_drive_tap_default_limit_stays_bounded_because_files_are_downloaded() -> None:
-    assert GoogleDriveTapConfig(access_token="token").limit == 100
+def test_google_drive_tap_has_no_workspace_limit_option() -> None:
+    assert not hasattr(GoogleDriveTapConfig(access_token="token"), "limit")
 
 
 def test_committed_meltano_config_wires_google_drive_fixture_job() -> None:
@@ -266,3 +266,4 @@ def test_committed_meltano_config_wires_google_drive_fixture_job() -> None:
     assert "../../tests/fixtures/connectors/singer_google_drive_docs.jsonl" in config
     assert "singer-google-drive-fixture-to-raw" in config
     assert "tap-fourok-google-drive-fixture target-fourok-raw-jsonl" in config
+    assert "GOOGLE_WORKSPACE_LIMIT" not in config

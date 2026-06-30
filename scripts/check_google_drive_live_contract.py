@@ -35,7 +35,6 @@ def check_google_drive_live_contract(artifact_dir: Path) -> dict[str, Any]:
 
     env = effective_env()
     env["TARGET_FOUROK_RAW_JSONL_LANDING_DIR"] = str(landing_dir)
-    env.setdefault("GOOGLE_WORKSPACE_LIMIT", "25")
 
     with stderr_path.open("w", encoding="utf-8") as stderr:
         completed = subprocess.run(

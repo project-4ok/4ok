@@ -16,7 +16,6 @@ DRIVE_API_URL = "https://www.googleapis.com/drive/v3"
 GOOGLE_DOC_MIME_TYPE = "application/vnd.google-apps.document"
 GOOGLE_FOLDER_MIME_TYPE = "application/vnd.google-apps.folder"
 TEXT_MIME_TYPES = {"text/plain", "text/markdown"}
-DEFAULT_GOOGLE_WORKSPACE_LIMIT = 100
 GOOGLE_DRIVE_PAGE_SIZE = 100
 
 
@@ -24,13 +23,10 @@ GOOGLE_DRIVE_PAGE_SIZE = 100
 class GoogleDriveTapConfig:
     access_token: str
     drive_ids: tuple[str, ...] = ()
-    limit: int = DEFAULT_GOOGLE_WORKSPACE_LIMIT
 
     def __post_init__(self) -> None:
         if not self.access_token:
             raise ValueError("Google Drive access token is required")
-        if self.limit <= 0:
-            raise ValueError("GOOGLE_WORKSPACE_LIMIT must be positive")
 
 
 def main() -> None:
@@ -38,9 +34,6 @@ def main() -> None:
         config = GoogleDriveTapConfig(
             access_token=_access_token_from_env(),
             drive_ids=tuple(_split_csv(os.environ.get("GOOGLE_WORKSPACE_DRIVE_IDS", ""))),
-            limit=int(
-                os.environ.get("GOOGLE_WORKSPACE_LIMIT", str(DEFAULT_GOOGLE_WORKSPACE_LIMIT))
-            ),
         )
         for message in run_google_drive_tap(config):
             print(json.dumps(message, sort_keys=True))
@@ -58,7 +51,7 @@ def run_google_drive_tap(
     files = [
         _file_record(file, drive_api)
         for drive_id in (config.drive_ids or ("",))
-        for file in _list_files(drive_api, drive_id=drive_id, limit=config.limit)
+        for file in _list_files(drive_api, drive_id=drive_id)
     ]
 
     messages: list[dict[str, Any]] = [
@@ -143,24 +136,24 @@ def _access_token_from_env() -> str:
     return token
 
 
-def _list_files(api: DriveApi, *, drive_id: str, limit: int) -> list[dict[str, Any]]:
+def _list_files(api: DriveApi, *, drive_id: str) -> list[dict[str, Any]]:
     if not drive_id:
-        return _list_my_drive_files(api, limit=limit)
-    return _list_paged_files(api, drive_id=drive_id, parent_id="", limit=limit)
+        return _list_my_drive_files(api)
+    return _list_paged_files(api, drive_id=drive_id, parent_id="")
 
 
-def _list_my_drive_files(api: DriveApi, *, limit: int) -> list[dict[str, Any]]:
+def _list_my_drive_files(api: DriveApi) -> list[dict[str, Any]]:
     files: list[dict[str, Any]] = []
     folder_paths = {"root": "My Drive"}
     pending_folders = ["root"]
     seen_folders: set[str] = set()
 
-    while pending_folders and len(files) < limit:
+    while pending_folders:
         folder_id = pending_folders.pop(0)
         if folder_id in seen_folders:
             continue
         seen_folders.add(folder_id)
-        children = _list_paged_files(api, drive_id="", parent_id=folder_id, limit=limit)
+        children = _list_paged_files(api, drive_id="", parent_id=folder_id)
         for child in children:
             file_id = _string(child.get("id"))
             mime_type = _string(child.get("mimeType"))
@@ -178,19 +171,15 @@ def _list_my_drive_files(api: DriveApi, *, limit: int) -> list[dict[str, Any]]:
                 f"google_drive:folder:{parent_id}" for parent_id in parents if parent_id != "root"
             ]
             files.append(child)
-            if len(files) >= limit:
-                break
-    return files[:limit]
+    return files
 
 
-def _list_paged_files(
-    api: DriveApi, *, drive_id: str, parent_id: str, limit: int
-) -> list[dict[str, Any]]:
+def _list_paged_files(api: DriveApi, *, drive_id: str, parent_id: str) -> list[dict[str, Any]]:
     files: list[dict[str, Any]] = []
     page_token: str | None = None
-    while len(files) < limit:
+    while True:
         params: dict[str, object] = {
-            "pageSize": min(GOOGLE_DRIVE_PAGE_SIZE, limit - len(files)),
+            "pageSize": GOOGLE_DRIVE_PAGE_SIZE,
             "fields": (
                 "nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,"
                 "webViewLink,trashed,parents,owners(displayName,emailAddress),"
@@ -214,7 +203,7 @@ def _list_paged_files(
         page_token = _string(response.get("nextPageToken")) or None
         if not page_token:
             break
-    return files[:limit]
+    return files
 
 
 def _file_record(file: dict[str, Any], api: DriveApi) -> dict[str, Any]:

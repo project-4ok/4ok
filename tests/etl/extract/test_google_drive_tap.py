@@ -33,7 +33,7 @@ def test_google_drive_tap_emits_files_and_state() -> None:
         raise AssertionError(path)
 
     messages = run_google_drive_tap(
-        GoogleDriveTapConfig(access_token="token", drive_ids=("drive-1",), limit=10),
+        GoogleDriveTapConfig(access_token="token", drive_ids=("drive-1",)),
         api=fake_api,
     )
 
@@ -49,7 +49,7 @@ def test_google_drive_tap_emits_files_and_state() -> None:
         "GET",
         "files",
         {
-            "pageSize": 10,
+            "pageSize": 100,
             "fields": (
                 "nextPageToken,files(id,name,mimeType,createdTime,modifiedTime,"
                 "webViewLink,trashed,parents,owners(displayName,emailAddress),"
@@ -82,7 +82,7 @@ def test_google_drive_tap_output_feeds_existing_source_record_adapter(tmp_path: 
         return "Alpha contract notes"
 
     messages = run_google_drive_tap(
-        GoogleDriveTapConfig(access_token="token", drive_ids=(), limit=10),
+        GoogleDriveTapConfig(access_token="token", drive_ids=()),
         api=fake_api,
     )
     singer_file = tmp_path / "drive.singer.jsonl"
@@ -123,7 +123,7 @@ def test_google_drive_tap_emits_unsupported_image_metadata_without_body_download
         raise AssertionError((method, path, params))
 
     messages = run_google_drive_tap(
-        GoogleDriveTapConfig(access_token="token", drive_ids=(), limit=10),
+        GoogleDriveTapConfig(access_token="token", drive_ids=()),
         api=fake_api,
     )
 
@@ -185,7 +185,7 @@ def test_google_drive_tap_discovers_my_drive_recursively_and_exports_meet_transc
         raise AssertionError((method, path, params))
 
     messages = run_google_drive_tap(
-        GoogleDriveTapConfig(access_token="token", limit=10),
+        GoogleDriveTapConfig(access_token="token"),
         api=fake_api,
     )
 
@@ -238,7 +238,7 @@ def test_google_drive_tap_keeps_metadata_only_file_when_content_unavailable() ->
         raise AssertionError((method, path, params))
 
     messages = run_google_drive_tap(
-        GoogleDriveTapConfig(access_token="token", limit=10),
+        GoogleDriveTapConfig(access_token="token"),
         api=fake_api,
     )
 

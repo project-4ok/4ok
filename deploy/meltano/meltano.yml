@@ -104,9 +104,6 @@ plugins:
           sensitive: true
         - name: drive_ids
           env: GOOGLE_WORKSPACE_DRIVE_IDS
-        - name: limit
-          env: GOOGLE_WORKSPACE_LIMIT
-
     - name: tap-slack
       variant: meltanolabs
       pip_url: git+https://github.com/MeltanoLabs/tap-slack.git@v0.4.1
