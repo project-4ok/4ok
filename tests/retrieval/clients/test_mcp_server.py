@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import ClassVar
 
 import pytest
+from sqlalchemy import create_engine, text
 
 from fourok.etl.extract.source_records import SourceRecord
 from fourok.governance import GovernedContext, SearchContextResponse, SourceChange
@@ -113,13 +114,46 @@ class FakeContext:
 
         return Response()
 
+    def inspect_source(
+        self,
+        source_ref: str,
+        *,
+        retrieval_event_id: str | None = None,
+        rank: int | None = None,
+        principal: PrincipalContext | None = None,
+    ) -> dict[str, object]:
+        assert source_ref == "slack:message:1"
+        assert retrieval_event_id == "retrieval-query:abc"
+        assert rank == 1
+        assert principal == PrincipalContext.local_default()
+        return {
+            "status": "ok",
+            "source_ref": source_ref,
+            "source_system": "slack",
+            "record_type": "message",
+            "title": "Refund escalation",
+            "text": "Customer refund escalation requires support follow-up.",
+            "inspection_event_id": "retrieval-inspection:def",
+        }
+
 
 def test_mcp_tool_schemas_are_discoverable_without_stdio_server() -> None:
     tools = {tool["name"]: tool for tool in mcp_retrieval.tool_schemas()}
 
-    assert set(tools) == {"fourok.retrieve", "fourok.status", "fourok.onboard"}
+    assert set(tools) == {
+        "fourok.retrieve",
+        "fourok.open",
+        "fourok.status",
+        "fourok.onboard",
+    }
     assert tools["fourok.retrieve"]["input_schema"]["required"] == ["query"]
     assert set(tools["fourok.retrieve"]["input_schema"]["properties"]) == {"query"}
+    assert tools["fourok.open"]["input_schema"]["required"] == ["source_ref"]
+    assert set(tools["fourok.open"]["input_schema"]["properties"]) == {
+        "source_ref",
+        "retrieval_event_id",
+        "rank",
+    }
     assert tools["fourok.status"]["input_schema"]["properties"] == {}
     assert tools["fourok.onboard"]["input_schema"]["properties"] == {}
 
@@ -170,6 +204,7 @@ async def test_fastmcp_server_registers_public_tool_names() -> None:
 
     assert [tool.name for tool in tools] == [
         "fourok.retrieve",
+        "fourok.open",
         "fourok.status",
         "fourok.onboard",
     ]
@@ -232,6 +267,26 @@ def test_search_handler_rejects_empty_query_before_opening_state() -> None:
         mcp_retrieval.search_fourok(query=" ", context_factory=FakeContext)
 
 
+def test_open_handler_returns_source_and_logs_organic_signal() -> None:
+    response = mcp_retrieval.open(
+        source_ref="slack:message:1",
+        retrieval_event_id="retrieval-query:abc",
+        rank=1,
+        state="state.sqlite",
+        context_factory=FakeContext,
+    )
+
+    assert response == {
+        "status": "ok",
+        "source_ref": "slack:message:1",
+        "source_system": "slack",
+        "record_type": "message",
+        "title": "Refund escalation",
+        "text": "Customer refund escalation requires support follow-up.",
+        "inspection_event_id": "retrieval-inspection:def",
+    }
+
+
 @pytest.mark.anyio
 async def test_mcp_search_tool_returns_retrieval_contract(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_search_fourok(**kwargs):
@@ -254,6 +309,43 @@ async def test_mcp_search_tool_returns_retrieval_contract(monkeypatch: pytest.Mo
         "status": "ok",
         "results": [{"source_ref": "linear:issue:1"}],
         "context_block": "fourok RETRIEVAL FOR AGENTS\n",
+    }
+
+
+@pytest.mark.anyio
+async def test_mcp_open_tool_returns_source_context(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    def fake_open(**kwargs):
+        assert kwargs == {
+            "source_ref": "linear:issue:1",
+            "retrieval_event_id": "retrieval-query:abc",
+            "rank": 2,
+        }
+        return {
+            "status": "ok",
+            "source_ref": "linear:issue:1",
+            "text": "Expanded source context.",
+            "inspection_event_id": "retrieval-inspection:def",
+        }
+
+    monkeypatch.setattr(mcp_retrieval, "open", fake_open)
+    server = mcp_retrieval.build_mcp_server()
+
+    _, response = await server.call_tool(
+        "fourok.open",
+        {
+            "source_ref": "linear:issue:1",
+            "retrieval_event_id": "retrieval-query:abc",
+            "rank": 2,
+        },
+    )
+
+    assert response == {
+        "status": "ok",
+        "source_ref": "linear:issue:1",
+        "text": "Expanded source context.",
+        "inspection_event_id": "retrieval-inspection:def",
     }
 
 
@@ -351,3 +443,61 @@ def test_operator_status_tool_counts_only_active_imported_source_records(
         "twenty": {"organization": 1},
     }
     assert response["retrieval_records"]["total"] == 3
+
+
+def test_open_persists_retrieval_inspection_event(tmp_path: Path) -> None:
+    state_path = tmp_path / "fourok.sqlite"
+    GovernedContext(state_path)
+    engine = create_engine(f"sqlite:///{state_path}")
+    with engine.begin() as connection:
+        connection.execute(
+            text(
+                """
+                insert into source_records (
+                    source_ref, source_system, source_id, record_type, title, retrieval_text,
+                    author_ref, occurred_at, updated_at, source_url, thread_ref,
+                    permission_refs, permission_snapshot_status, attachment_refs, identity_refs,
+                    lifecycle_state, checksum, version, metadata_json, raw_ref
+                ) values (
+                    'linear:issue:organic-signal', 'linear', 'organic-signal', 'work_item',
+                    'Organic signal issue',
+                    'This source was useful enough for an agent to inspect.',
+                    '', '', '', '', '', '[]', 'current', '[]', '[]', 'active', '', '', '{}', ''
+                )
+                """
+            )
+        )
+
+    response = mcp_retrieval.open(
+        source_ref="linear:issue:organic-signal",
+        retrieval_event_id="retrieval-query:organic",
+        rank=3,
+        state=str(state_path),
+    )
+
+    assert response["status"] == "ok"
+    assert response["source_ref"] == "linear:issue:organic-signal"
+    assert response["title"] == "Organic signal issue"
+    assert "useful enough" in str(response["text"])
+    assert str(response["inspection_event_id"]).startswith("retrieval-inspection:")
+
+    with engine.connect() as connection:
+        row = (
+            connection.execute(
+                text(
+                    """
+                select retrieval_query_event_id, source_ref, rank, source_system, record_type
+                from retrieval_inspection_events
+                """
+                )
+            )
+            .mappings()
+            .one()
+        )
+    assert dict(row) == {
+        "retrieval_query_event_id": "retrieval-query:organic",
+        "source_ref": "linear:issue:organic-signal",
+        "rank": 3,
+        "source_system": "linear",
+        "record_type": "work_item",
+    }

@@ -47,6 +47,7 @@ from fourok.retrieval.augmentation import (
     retrieve_augmentation,
 )
 from fourok.retrieval.evidence_pack import build_evidence_pack
+from fourok.retrieval.inspection import inspect_source as inspect_retrieval_source
 from fourok.retrieval.search import SearchResult, snippet_for, source_record_search_rows
 from fourok.retrieval.vector_search import ChunkVectorIndex
 from fourok.storage.config import RawStoreConfig, RetrievalConfig
@@ -188,6 +189,23 @@ class GovernedContext:
             token_budget=token_budget,
             candidate_limit=candidate_limit,
             retrievers=retrievers,
+        )
+
+    def inspect_source(
+        self,
+        source_ref: str,
+        *,
+        retrieval_event_id: str | None = None,
+        rank: int | None = None,
+        principal: PrincipalContext | None = None,
+    ) -> dict[str, object]:
+        return inspect_retrieval_source(
+            self._engine,
+            self._source_records,
+            source_ref,
+            retrieval_event_id=retrieval_event_id,
+            rank=rank,
+            principal=principal or PrincipalContext.local_default(),
         )
 
     def build_vector_index(self) -> ChunkVectorIndex:

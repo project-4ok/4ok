@@ -80,6 +80,21 @@ def retrieve_block(
     )
 
 
+def open(
+    source_ref: str,
+    *,
+    retrieval_event_id: str | None = None,
+    rank: int | None = None,
+    state: Path | str | None = None,
+    database_url: str | None = None,
+) -> dict[str, object]:
+    return RetrievalAPI(state=state, database_url=database_url).open(
+        source_ref,
+        retrieval_event_id=retrieval_event_id,
+        rank=rank,
+    )
+
+
 def ask_fixture(
     *,
     messages: list[EmailMessage],

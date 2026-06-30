@@ -121,6 +121,35 @@ def add_search_commands(subparsers, *, public: bool = False) -> None:
         help=argparse.SUPPRESS if public else "Comma-separated retrievers to use: keyword,vector.",
     )
 
+    open_parser = subparsers.add_parser(
+        "open",
+        help="Open one retrieved source and log the inspection signal.",
+        description="Open one retrieved source and log the inspection signal.",
+    )
+    open_parser.add_argument("source_ref")
+    open_parser.add_argument(
+        "--retrieval-event-id",
+        help="Optional retrieval event id from the retrieve call that returned this source.",
+    )
+    open_parser.add_argument(
+        "--rank",
+        type=int,
+        help="Optional one-based rank of the source in the original retrieve results.",
+    )
+    open_parser.add_argument(
+        "--state",
+        type=Path,
+        default=DEFAULT_STATE,
+        help=argparse.SUPPRESS if public else None,
+    )
+    open_parser.add_argument(
+        "--database-url",
+        default=os.environ.get("FOUROK_DATABASE_URL"),
+        help=argparse.SUPPRESS
+        if public
+        else "SQLAlchemy database URL. Defaults to SQLite --state when unset.",
+    )
+
     ask_parser = subparsers.add_parser(
         "ask",
         help="Run the human-with-agent governed context workflow.",
@@ -263,6 +292,21 @@ def dispatch_search_commands(args: argparse.Namespace) -> bool:
                 print(block, end="")
         except ValueError as exc:
             raise SystemExit(str(exc)) from exc
+        return True
+
+    if args.command == "open":
+        database_url = _retrieval_database_url(args, database_url)
+        try:
+            response = retrieval_client.open(
+                args.source_ref,
+                retrieval_event_id=args.retrieval_event_id,
+                rank=args.rank,
+                state=args.state,
+                database_url=database_url,
+            )
+        except ValueError as exc:
+            raise SystemExit(str(exc)) from exc
+        print(json.dumps(response, indent=2))
         return True
 
     if args.command == "ask":

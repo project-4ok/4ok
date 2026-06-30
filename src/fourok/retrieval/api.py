@@ -120,6 +120,23 @@ class RetrievalAPI:
         )
         return response.context_block
 
+    def open(
+        self,
+        source_ref: str,
+        *,
+        retrieval_event_id: str | None = None,
+        rank: int | None = None,
+    ) -> dict[str, object]:
+        normalized_ref = source_ref.strip()
+        if not normalized_ref:
+            raise ValueError("source_ref is required")
+        return self._context().inspect_source(
+            normalized_ref,
+            retrieval_event_id=retrieval_event_id,
+            rank=rank,
+            principal=PrincipalContext.local_default(),
+        )
+
     def search_fixture(
         self,
         messages: list[EmailMessage],

@@ -16,9 +16,7 @@ def tool_schemas() -> list[dict[str, object]]:
     return [
         {
             "name": "fourok.retrieve",
-            "description": (
-                "Search fourok and return an LLM-ready retrieval context pack."
-            ),
+            "description": ("Search fourok and return an LLM-ready retrieval context pack."),
             "input_schema": {
                 "type": "object",
                 "required": ["query"],
@@ -26,6 +24,35 @@ def tool_schemas() -> list[dict[str, object]]:
                     "query": {
                         "type": "string",
                         "description": "Question or topic to retrieve source-backed context for.",
+                    },
+                },
+            },
+        },
+        {
+            "name": "fourok.open",
+            "description": (
+                "Open one retrieved source and log the inspection as an organic "
+                "relevance signal."
+            ),
+            "input_schema": {
+                "type": "object",
+                "required": ["source_ref"],
+                "properties": {
+                    "source_ref": {
+                        "type": "string",
+                        "description": "Stable source_ref from a fourok.retrieve result.",
+                    },
+                    "retrieval_event_id": {
+                        "type": "string",
+                        "description": (
+                            "Optional retrieval event id from the search that returned this source."
+                        ),
+                    },
+                    "rank": {
+                        "type": "integer",
+                        "description": (
+                            "Optional one-based rank of the source in the original result list."
+                        ),
                     },
                 },
             },
@@ -95,6 +122,51 @@ def search_fourok(
         return response
 
 
+def open(
+    source_ref: str,
+    *,
+    retrieval_event_id: str | None = None,
+    rank: int | None = None,
+    state: str | Path | None = None,
+    database_url: str | None = None,
+    config: str | Path | None = None,
+    context_factory: ContextFactory = GovernedContext,
+) -> dict[str, object]:
+    with critical_span(
+        "fourok.mcp.open",
+        attributes={"fourok.mcp.tool": "fourok.open"},
+        status_attribute="fourok.mcp.status",
+    ) as span:
+        normalized_ref = source_ref.strip()
+        if not normalized_ref:
+            raise ValueError("source_ref is required")
+        set_safe_span_attributes(
+            span,
+            {
+                "fourok.source_ref.length": len(normalized_ref),
+                "fourok.search.result_rank": rank or 0,
+            },
+        )
+        response = mcp_client.open(
+            normalized_ref,
+            retrieval_event_id=retrieval_event_id,
+            rank=rank,
+            state=state,
+            database_url=database_url,
+            config=config,
+            context_factory=context_factory,
+        )
+        set_safe_span_attributes(
+            span,
+            {
+                "fourok.mcp.status": str(response.get("status") or ""),
+                "fourok.source.system": str(response.get("source_system") or ""),
+                "fourok.source.record_type": str(response.get("record_type") or ""),
+            },
+        )
+        return response
+
+
 def operator_status(
     *,
     state: str | Path | None = None,
@@ -149,6 +221,19 @@ def build_mcp_server(
     ) -> dict[str, object]:
         """Search fourok and return an LLM-ready retrieval context pack."""
         return search_fourok(query=query)
+
+    @mcp.tool(name="fourok.open")
+    def open_tool(
+        source_ref: str,
+        retrieval_event_id: str | None = None,
+        rank: int | None = None,
+    ) -> dict[str, object]:
+        """Open one retrieved source and log the inspection as an organic relevance signal."""
+        return open(
+            source_ref=source_ref,
+            retrieval_event_id=retrieval_event_id,
+            rank=rank,
+        )
 
     @mcp.tool(name="fourok.status")
     def status_tool() -> dict[str, object]:
