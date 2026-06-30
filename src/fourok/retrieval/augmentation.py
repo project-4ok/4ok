@@ -3,12 +3,16 @@ from __future__ import annotations
 import json
 import math
 import re
+import sys
 import time
 import uuid
+from collections.abc import Iterator
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from datetime import UTC, datetime
-from typing import Literal
+from typing import Literal, Protocol, cast
 
+from opentelemetry import trace
 from sqlalchemy import bindparam, inspect, select, text
 from sqlalchemy.engine import Engine
 
@@ -18,6 +22,10 @@ from fourok.retrieval.vector_search import ChunkVectorIndex
 
 RetrieverName = Literal["keyword", "vector"]
 DEFAULT_RETRIEVAL_TOKEN_BUDGET = 2000
+
+
+class _AttributeSpan(Protocol):
+    def set_attribute(self, key: str, value: object) -> None: ...
 
 
 @dataclass(frozen=True)
@@ -43,6 +51,7 @@ class RetrievalAugmentationResponse:
     token_budget: int = DEFAULT_RETRIEVAL_TOKEN_BUDGET
     estimated_tokens: int = 0
     candidate_count: int = 0
+    retrieval_event_id: str = ""
 
     @property
     def context_block(self) -> str:
@@ -64,13 +73,16 @@ class RetrievalAugmentationResponse:
                     "retrievers": list(result.retrievers),
                     "permission_refs": list(result.permission_refs),
                     "rerank_reasons": list(result.rerank_reasons),
+                    "rank": index,
+                    "retrieval_event_id": self.retrieval_event_id,
                 }
-                for result in self.results
+                for index, result in enumerate(self.results, start=1)
             ],
             "limitations": self.limitations,
             "token_budget": self.token_budget,
             "estimated_tokens": self.estimated_tokens,
             "candidate_count": self.candidate_count,
+            "retrieval_event_id": self.retrieval_event_id,
         }
 
 
@@ -90,6 +102,14 @@ def retrieve_augmentation(
     retriever_set = ",".join(retrievers)
     keyword_count = 0
     vector_count = 0
+
+    root_span_context = _retrieval_stage_span(
+        "fourok.retrieve",
+        query=query,
+        candidate_limit=candidate_limit,
+        retriever_set=retriever_set,
+    )
+    root_span = root_span_context.__enter__()
 
     try:
         if token_budget < 1:
@@ -112,61 +132,114 @@ def retrieve_augmentation(
                 returned_results=0,
                 duration_ms=_elapsed_ms(started),
             )
+            root_span.set_attribute("fourok.retrieve.status", "succeeded")
+            root_span.set_attribute("fourok.retrieve.returned_results", 0)
+            root_span.set_attribute("fourok.retrieve.candidate_count", 0)
             return response
 
         candidates_by_key: dict[tuple[str, int], dict[str, object]] = {}
         limitations: list[str] = []
 
         if "keyword" in retrievers:
-            keyword_rows = source_record_search_rows(
-                engine,
-                source_records,
-                retrieval_records,
-                query,
-                limit=candidate_limit,
-                exclude_source_refs=set(),
-            )
-            keyword_count = len(keyword_rows)
-            _merge_ranked_rows(
-                candidates_by_key,
-                _metadata_by_source_ref(
-                    engine, source_records, [row["source_ref"] for row in keyword_rows]
-                ),
-                keyword_rows,
+            with _retrieval_stage_span(
+                "fourok.retrieve.keyword",
                 query=query,
-                retriever="keyword",
-            )
-
-        if "vector" in retrievers:
-            vector_rows = _vector_rows(engine, query, limit=candidate_limit)
-            vector_count = len(vector_rows)
-            if vector_rows:
+                candidate_limit=candidate_limit,
+                retriever_set=retriever_set,
+            ) as span:
+                keyword_rows = source_record_search_rows(
+                    engine,
+                    source_records,
+                    retrieval_records,
+                    query,
+                    limit=candidate_limit,
+                    exclude_source_refs=set(),
+                )
+                keyword_count = len(keyword_rows)
+                span.set_attribute("fourok.retrieve.keyword_candidates", keyword_count)
                 _merge_ranked_rows(
                     candidates_by_key,
                     _metadata_by_source_ref(
-                        engine, source_records, [row["source_ref"] for row in vector_rows]
+                        engine, source_records, [row["source_ref"] for row in keyword_rows]
                     ),
-                    vector_rows,
+                    keyword_rows,
                     query=query,
-                    retriever="vector",
+                    retriever="keyword",
                 )
-            else:
-                limitations.append("Semantic/vector candidates were unavailable or empty.")
+                span.set_attribute("fourok.retrieve.candidate_count", len(candidates_by_key))
+
+        if "vector" in retrievers:
+            with _retrieval_stage_span(
+                "fourok.retrieve.vector",
+                query=query,
+                candidate_limit=candidate_limit,
+                retriever_set=retriever_set,
+            ) as span:
+                vector_rows = _vector_rows(engine, query, limit=candidate_limit)
+                vector_count = len(vector_rows)
+                span.set_attribute("fourok.retrieve.vector_candidates", vector_count)
+                if vector_rows:
+                    _merge_ranked_rows(
+                        candidates_by_key,
+                        _metadata_by_source_ref(
+                            engine, source_records, [row["source_ref"] for row in vector_rows]
+                        ),
+                        vector_rows,
+                        query=query,
+                        retriever="vector",
+                    )
+                else:
+                    limitations.append("Semantic/vector candidates were unavailable or empty.")
+                span.set_attribute("fourok.retrieve.candidate_count", len(candidates_by_key))
 
         pre_rerank_count = len(candidates_by_key)
         distinct_sources = len({source_ref for source_ref, _unit_index in candidates_by_key})
-        _expand_candidates_with_direct_links(
-            engine,
-            source_records,
-            retrieval_records,
-            candidates_by_key,
+        with _retrieval_stage_span(
+            "fourok.retrieve.direct_link_expand",
             query=query,
-            canonical_objects=canonical_objects,
-            entity_links=entity_links,
-        )
-        _apply_graph_link_metrics(engine, candidates_by_key, entity_links=entity_links)
-        ranked_results = _rank_and_diversify(candidates_by_key, query=query)
-        results = _select_results_for_token_budget(ranked_results, token_budget=token_budget)
+            candidate_limit=candidate_limit,
+            retriever_set=retriever_set,
+        ) as span:
+            seed_count = len(candidates_by_key)
+            _expand_candidates_with_direct_links(
+                engine,
+                source_records,
+                retrieval_records,
+                candidates_by_key,
+                query=query,
+                canonical_objects=canonical_objects,
+                entity_links=entity_links,
+            )
+            span.set_attribute("fourok.retrieve.seed_candidates", seed_count)
+            span.set_attribute(
+                "fourok.retrieve.direct_link_candidates_added", len(candidates_by_key) - seed_count
+            )
+            span.set_attribute("fourok.retrieve.candidate_count", len(candidates_by_key))
+        with _retrieval_stage_span(
+            "fourok.retrieve.graph_link_metrics",
+            query=query,
+            candidate_limit=candidate_limit,
+            retriever_set=retriever_set,
+        ) as span:
+            _apply_graph_link_metrics(engine, candidates_by_key, entity_links=entity_links)
+            span.set_attribute("fourok.retrieve.candidate_count", len(candidates_by_key))
+        with _retrieval_stage_span(
+            "fourok.retrieve.rerank",
+            query=query,
+            candidate_limit=candidate_limit,
+            retriever_set=retriever_set,
+        ) as span:
+            ranked_results = _rank_and_diversify(candidates_by_key, query=query)
+            span.set_attribute("fourok.retrieve.ranked_results", len(ranked_results))
+        with _retrieval_stage_span(
+            "fourok.retrieve.token_pack",
+            query=query,
+            candidate_limit=candidate_limit,
+            retriever_set=retriever_set,
+        ) as span:
+            results = _select_results_for_token_budget(ranked_results, token_budget=token_budget)
+            span.set_attribute("fourok.retrieve.returned_results", len(results))
+            span.set_attribute("fourok.retrieve.token_budget", token_budget)
         searched = " and ".join(name for name in retrievers)
         if results:
             limitations.append(f"Searched {searched} candidates.")
@@ -187,7 +260,7 @@ def retrieve_augmentation(
             estimated_tokens=_estimated_result_tokens(results),
             candidate_count=len(ranked_results),
         )
-        _record_retrieval_query_event(
+        retrieval_event_id = _record_retrieval_query_event(
             engine,
             status="succeeded",
             retriever_set=retriever_set,
@@ -200,8 +273,21 @@ def retrieve_augmentation(
             returned_results=len(results),
             duration_ms=_elapsed_ms(started),
         )
-        return response
-    except Exception:
+        root_span.set_attribute("fourok.retrieve.status", "succeeded")
+        root_span.set_attribute("fourok.retrieve.returned_results", len(results))
+        root_span.set_attribute("fourok.retrieve.candidate_count", len(ranked_results))
+        return RetrievalAugmentationResponse(
+            status=response.status,
+            results=response.results,
+            limitations=response.limitations,
+            token_budget=response.token_budget,
+            estimated_tokens=response.estimated_tokens,
+            candidate_count=response.candidate_count,
+            retrieval_event_id=retrieval_event_id,
+        )
+    except Exception as exc:
+        root_span.set_attribute("fourok.retrieve.status", "failed")
+        root_span.set_attribute("fourok.error.class", type(exc).__name__)
         _record_retrieval_query_event(
             engine,
             status="failed",
@@ -216,6 +302,8 @@ def retrieve_augmentation(
             duration_ms=_elapsed_ms(started),
         )
         raise
+    finally:
+        root_span_context.__exit__(*sys.exc_info())
 
 
 def render_augmentation_block(response: RetrievalAugmentationResponse) -> str:
@@ -310,44 +398,56 @@ def _expand_candidates_with_direct_links(
 ) -> None:
     if not candidates_by_key:
         return
-    seed_rows = list(candidates_by_key.values())
+    seed_rows = [row for row in candidates_by_key.values() if _has_substantive_snippet(row)]
+    seed_refs = [str(seed["source_ref"]) for seed in seed_rows]
+    context_refs_by_seed = _direct_context_source_ref_map(
+        engine,
+        source_records,
+        seed_refs,
+        canonical_objects=canonical_objects,
+        entity_links=entity_links,
+    )
+    linked_specs: dict[str, dict[str, object]] = {}
+    existing_source_refs = {str(source_ref) for source_ref, _unit_index in candidates_by_key}
     for seed in seed_rows:
         seed_ref = str(seed["source_ref"])
-        for linked_ref in _direct_context_source_refs(
-            engine,
-            source_records,
-            seed_ref,
-            canonical_objects=canonical_objects,
-            entity_links=entity_links,
-        ):
+        seed_score = max(float(seed.get("score", 0.0) or 0.0) * 0.5, 0.000001)
+        for linked_ref in context_refs_by_seed.get(seed_ref, ()):
             if linked_ref == seed_ref:
                 continue
-            row = _candidate_row_for_source_ref(
-                engine,
-                source_records,
-                retrieval_records,
+            if linked_ref in existing_source_refs:
+                for key, existing in candidates_by_key.items():
+                    if str(key[0]) != linked_ref:
+                        continue
+                    existing["score"] = max(float(existing.get("score", 0.0) or 0.0), seed_score)
+                    existing_retrievers = existing["retrievers"]
+                    assert isinstance(existing_retrievers, set)
+                    existing_retrievers.add("direct-link")
+                    _append_rerank_reason(existing, f"direct link from {seed_ref}")
+                continue
+            spec = linked_specs.setdefault(
                 linked_ref,
-                query=query,
-                score=max(float(seed.get("score", 0.0) or 0.0) * 0.5, 0.000001),
-                retriever="direct-link",
-                reason=f"direct link from {seed_ref}",
+                {"score": seed_score, "seed_refs": []},
             )
-            if row is None:
-                continue
-            key = (str(row["source_ref"]), int(row["unit_index"]))
-            existing = candidates_by_key.get(key)
-            if existing is None and not _has_substantive_snippet(row):
-                continue
-            if existing is None:
-                candidates_by_key[key] = row
-                continue
-            existing["score"] = max(
-                float(existing.get("score", 0.0) or 0.0), float(row["score"])
-            )
-            existing_retrievers = existing["retrievers"]
-            assert isinstance(existing_retrievers, set)
-            existing_retrievers.add("direct-link")
-            _append_rerank_reason(existing, str(row["rerank_reasons"][0]))
+            spec["score"] = max(float(spec["score"]), seed_score)
+            seed_ref_list = spec["seed_refs"]
+            assert isinstance(seed_ref_list, list)
+            seed_ref_list.append(seed_ref)
+    candidate_rows = _candidate_rows_for_source_refs(
+        engine,
+        source_records,
+        retrieval_records,
+        sorted(linked_specs),
+        query=query,
+    )
+    for linked_ref, row in candidate_rows.items():
+        spec = linked_specs[linked_ref]
+        seed_refs_for_reason = tuple(str(ref) for ref in spec["seed_refs"])
+        row["score"] = float(spec["score"])
+        row["retrievers"] = {"direct-link"}
+        row["rerank_reasons"] = (_direct_link_reason(seed_refs_for_reason),)
+        key = (str(row["source_ref"]), int(row["unit_index"]))
+        candidates_by_key[key] = row
 
 
 def _apply_graph_link_metrics(
@@ -365,7 +465,7 @@ def _apply_graph_link_metrics(
     )
     for (source_ref, _unit_index), candidate in candidates_by_key.items():
         link_count = counts.get(source_ref, 0)
-        if link_count <= 0 or not _has_substantive_snippet(candidate):
+        if link_count <= 0:
             continue
         candidate["graph_link_count"] = link_count
         candidate["score"] = (
@@ -546,6 +646,194 @@ def _expand_ranked_results(
             expanded.append(candidate)
             emitted_refs.add(source_ref)
     return expanded
+
+
+def _direct_context_source_ref_map(
+    engine: Engine,
+    source_records,
+    seed_refs: list[str],
+    *,
+    canonical_objects=None,
+    entity_links=None,
+) -> dict[str, list[str]]:
+    if not seed_refs:
+        return {}
+    refs_by_seed = {seed_ref: [] for seed_ref in seed_refs}
+    _add_thread_context_source_refs(engine, source_records, seed_refs, refs_by_seed)
+    _add_canonical_context_source_refs(
+        engine,
+        seed_refs,
+        refs_by_seed,
+        canonical_objects=canonical_objects,
+        entity_links=entity_links,
+    )
+    deduped_by_seed: dict[str, list[str]] = {}
+    for seed_ref, refs in refs_by_seed.items():
+        seen = {seed_ref}
+        deduped: list[str] = []
+        for ref in refs:
+            if not ref or ref in seen:
+                continue
+            deduped.append(ref)
+            seen.add(ref)
+        deduped_by_seed[seed_ref] = deduped
+    return deduped_by_seed
+
+
+def _add_thread_context_source_refs(
+    engine: Engine,
+    source_records,
+    seed_refs: list[str],
+    refs_by_seed: dict[str, list[str]],
+) -> None:
+    seed_statement = select(source_records.c.source_ref, source_records.c.thread_ref).where(
+        source_records.c.source_ref.in_(bindparam("source_refs", expanding=True))
+    )
+    with engine.connect() as connection:
+        seed_rows = [
+            dict(row)
+            for row in connection.execute(seed_statement, {"source_refs": seed_refs}).mappings()
+            if row["thread_ref"]
+        ]
+        thread_refs = sorted({str(row["thread_ref"]) for row in seed_rows})
+        if not thread_refs:
+            return
+        thread_statement = (
+            select(source_records.c.source_ref, source_records.c.thread_ref)
+            .where(source_records.c.thread_ref.in_(bindparam("thread_refs", expanding=True)))
+            .where(source_records.c.lifecycle_state == "active")
+            .order_by(
+                source_records.c.thread_ref,
+                source_records.c.occurred_at.desc(),
+                source_records.c.source_ref,
+            )
+        )
+        rows_by_thread: dict[str, list[str]] = {}
+        for row in connection.execute(thread_statement, {"thread_refs": thread_refs}).mappings():
+            rows_by_thread.setdefault(str(row["thread_ref"]), []).append(str(row["source_ref"]))
+    for seed in seed_rows:
+        seed_ref = str(seed["source_ref"])
+        thread_ref = str(seed["thread_ref"])
+        thread_context_refs = [ref for ref in rows_by_thread.get(thread_ref, ()) if ref != seed_ref]
+        refs_by_seed[seed_ref].extend(thread_context_refs[:3])
+
+
+def _add_canonical_context_source_refs(
+    engine: Engine,
+    seed_refs: list[str],
+    refs_by_seed: dict[str, list[str]],
+    *,
+    canonical_objects=None,
+    entity_links=None,
+) -> None:
+    if canonical_objects is None or entity_links is None:
+        return
+    outgoing_statement = (
+        select(entity_links.c.source_ref, entity_links.c.object_ref)
+        .where(entity_links.c.source_ref.in_(bindparam("source_refs", expanding=True)))
+        .where(entity_links.c.status.in_(["linked", "accepted"]))
+    )
+    incoming_statement = (
+        select(entity_links.c.object_ref, entity_links.c.source_ref)
+        .where(entity_links.c.object_ref.in_(bindparam("source_refs", expanding=True)))
+        .where(entity_links.c.status.in_(["linked", "accepted"]))
+    )
+    with engine.connect() as connection:
+        outgoing_rows = [
+            dict(row)
+            for row in connection.execute(outgoing_statement, {"source_refs": seed_refs}).mappings()
+            if row["object_ref"]
+        ]
+        for row in connection.execute(incoming_statement, {"source_refs": seed_refs}).mappings():
+            object_ref = str(row["object_ref"])
+            refs_by_seed[object_ref].append(str(row["source_ref"]))
+        object_refs = sorted({str(row["object_ref"]) for row in outgoing_rows})
+        source_refs_by_object: dict[str, tuple[str, ...]] = {}
+        if object_refs:
+            object_statement = select(
+                canonical_objects.c.object_ref,
+                canonical_objects.c.source_refs,
+            ).where(
+                canonical_objects.c.object_ref.in_(
+                    bindparam("object_refs", expanding=True)
+                )
+            )
+            rows = connection.execute(object_statement, {"object_refs": object_refs}).mappings()
+            for row in rows:
+                object_ref = str(row["object_ref"])
+                source_refs_by_object[object_ref] = _json_string_tuple(str(row["source_refs"])) or (
+                    object_ref,
+                )
+    for row in outgoing_rows:
+        seed_ref = str(row["source_ref"])
+        object_ref = str(row["object_ref"])
+        refs_by_seed[seed_ref].extend(source_refs_by_object.get(object_ref, (object_ref,)))
+
+
+def _candidate_rows_for_source_refs(
+    engine: Engine,
+    source_records,
+    retrieval_records,
+    source_refs: list[str],
+    *,
+    query: str,
+) -> dict[str, dict[str, object]]:
+    if not source_refs:
+        return {}
+    statement = (
+        select(
+            source_records.c.source_ref,
+            source_records.c.source_system,
+            source_records.c.record_type,
+            source_records.c.title,
+            source_records.c.occurred_at,
+            source_records.c.permission_refs,
+            source_records.c.retrieval_text,
+            retrieval_records.c.prepared_text,
+            retrieval_records.c.unit_index,
+        )
+        .select_from(
+            source_records.outerjoin(
+                retrieval_records,
+                (source_records.c.source_ref == retrieval_records.c.source_ref)
+                & (retrieval_records.c.status == "current")
+                & (retrieval_records.c.unit_index == 0),
+            )
+        )
+        .where(source_records.c.source_ref.in_(bindparam("source_refs", expanding=True)))
+        .where(source_records.c.lifecycle_state == "active")
+    )
+    rows_by_ref: dict[str, dict[str, object]] = {}
+    with engine.connect() as connection:
+        rows = connection.execute(statement, {"source_refs": source_refs}).mappings()
+        for row in rows:
+            source_ref = str(row["source_ref"])
+            title = str(row["title"])
+            text_value = str(row["retrieval_text"] or row["prepared_text"] or "")
+            rows_by_ref[source_ref] = {
+                "source_ref": source_ref,
+                "source_system": str(row["source_system"]),
+                "record_type": str(row["record_type"]),
+                "title": title,
+                "occurred_at": str(row["occurred_at"]),
+                "permission_refs": _json_string_tuple(str(row["permission_refs"])),
+                "snippet": _evidence_snippet(text_value, title, query, source_ref),
+                "score": 0.0,
+                "retrievers": set(),
+                "rerank_reasons": (),
+                "unit_index": int(row["unit_index"] or 0),
+            }
+    return rows_by_ref
+
+
+def _direct_link_reason(seed_refs: tuple[str, ...]) -> str:
+    unique_seed_refs = tuple(dict.fromkeys(seed_refs))
+    if len(unique_seed_refs) == 1:
+        return f"direct link from {unique_seed_refs[0]}"
+    preview = ", ".join(unique_seed_refs[:3])
+    if len(unique_seed_refs) > 3:
+        preview += ", ..."
+    return f"direct links from {len(unique_seed_refs)} candidates: {preview}"
 
 
 def _direct_context_source_refs(
@@ -858,6 +1146,23 @@ def _metadata_by_source_ref_from_table_name(
         }
 
 
+@contextmanager
+def _retrieval_stage_span(
+    name: str,
+    *,
+    query: str,
+    candidate_limit: int,
+    retriever_set: str,
+) -> Iterator[_AttributeSpan]:
+    tracer = trace.get_tracer(__name__)
+    with tracer.start_as_current_span(name) as span:
+        attribute_span = cast(_AttributeSpan, span)
+        attribute_span.set_attribute("fourok.retrieve.query_length", len(query))
+        attribute_span.set_attribute("fourok.retrieve.candidate_limit", candidate_limit)
+        attribute_span.set_attribute("fourok.retrieve.retriever_set", retriever_set)
+        yield attribute_span
+
+
 def _elapsed_ms(started: float) -> float:
     return round((time.perf_counter() - started) * 1000, 3)
 
@@ -931,7 +1236,8 @@ def _record_retrieval_query_event(
     distinct_sources: int,
     returned_results: int,
     duration_ms: float,
-) -> None:
+) -> str:
+    event_id = f"retrieval-query:{uuid.uuid4()}"
     try:
         with engine.begin() as connection:
             connection.execute(
@@ -969,7 +1275,7 @@ def _record_retrieval_query_event(
                     """
                 ),
                 {
-                    "event_id": f"retrieval-query:{uuid.uuid4()}",
+                    "event_id": event_id,
                     "occurred_at": datetime.now(UTC).isoformat(),
                     "status": status,
                     "retriever_set": retriever_set,
@@ -985,7 +1291,8 @@ def _record_retrieval_query_event(
             )
     except Exception:
         # Retrieval observability must never break user-facing retrieval.
-        return
+        return ""
+    return event_id
 
 
 def _snippet_without_title_prefix(text_value: str, title: str, source_ref: str = "") -> str:

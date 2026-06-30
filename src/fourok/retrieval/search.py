@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 
 from sqlalchemy import (
@@ -62,7 +63,7 @@ def source_record_search_rows(
     if limit < 1:
         return []
     if engine.dialect.name == "postgresql":
-        return _postgres_source_record_search_rows(
+        rows = _postgres_source_record_search_rows(
             engine,
             source_records,
             retrieval_records,
@@ -70,14 +71,30 @@ def source_record_search_rows(
             limit=limit,
             exclude_source_refs=exclude_source_refs or set(),
         )
-    return _python_source_record_search_rows(
-        engine,
-        source_records,
-        retrieval_records,
-        query,
-        limit=limit,
-        exclude_source_refs=exclude_source_refs or set(),
+    else:
+        rows = _python_source_record_search_rows(
+            engine,
+            source_records,
+            retrieval_records,
+            query,
+            limit=limit,
+            exclude_source_refs=exclude_source_refs or set(),
+        )
+    if len(rows) >= limit:
+        return rows
+    existing_keys = {(row["source_ref"], row.get("unit_index", "0")) for row in rows}
+    rows.extend(
+        _fuzzy_source_record_search_rows(
+            engine,
+            source_records,
+            retrieval_records,
+            query,
+            limit=limit - len(rows),
+            exclude_source_refs=exclude_source_refs or set(),
+            existing_keys=existing_keys,
+        )
     )
+    return rows
 
 
 def _python_source_record_search_rows(
@@ -115,6 +132,58 @@ def _python_source_record_search_rows(
     scored_rows = [
         (score, row) for row in rows if (score := _retrieval_record_match_score(row, terms)) > 0
     ]
+    scored_rows.sort(
+        key=lambda item: (
+            -item[0],
+            str(item[1]["occurred_at"]),
+            str(item[1]["source_ref"]),
+            int(item[1]["unit_index"]),
+        )
+    )
+    return [_retrieval_record_row_to_search_row(row) for _, row in scored_rows[:limit]]
+
+
+def _fuzzy_source_record_search_rows(
+    engine: Engine,
+    source_records: Table,
+    retrieval_records: Table,
+    query: str,
+    *,
+    limit: int,
+    exclude_source_refs: set[str],
+    existing_keys: set[tuple[str, str]],
+) -> list[dict[str, str]]:
+    terms = query_terms(query)
+    statement = (
+        select(
+            source_records.c.source_ref,
+            source_records.c.title,
+            source_records.c.occurred_at,
+            retrieval_records.c.prepared_text,
+            retrieval_records.c.unit_index,
+        )
+        .select_from(
+            retrieval_records.join(
+                source_records,
+                retrieval_records.c.source_ref == source_records.c.source_ref,
+            )
+        )
+        .where(retrieval_records.c.status == "current")
+        .where(source_records.c.lifecycle_state == "active")
+    )
+    if exclude_source_refs:
+        statement = statement.where(source_records.c.source_ref.not_in(exclude_source_refs))
+    with engine.connect() as connection:
+        rows = [dict(row) for row in connection.execute(statement).mappings()]
+
+    scored_rows = []
+    for row in rows:
+        key = (str(row["source_ref"]), str(row.get("unit_index", 0) or 0))
+        if key in existing_keys:
+            continue
+        score = _fuzzy_retrieval_record_match_score(row, terms)
+        if score > 0:
+            scored_rows.append((score, row))
     scored_rows.sort(
         key=lambda item: (
             -item[0],
@@ -168,7 +237,10 @@ def postgres_source_record_search_statement(
         literal(" "),
         source_records.c.source_ref,
     )
-    document = func.to_tsvector(english_config, body)
+    normalized_body = func.regexp_replace(
+        body, literal("[^[:alnum:]_]+"), literal(" "), literal("g")
+    )
+    document = func.to_tsvector(english_config, normalized_body)
     parsed_query = func.plainto_tsquery(english_config, query)
     rank = func.ts_rank(document, parsed_query).label("rank")
     statement = (
@@ -250,6 +322,51 @@ def snippet_for(text: str, query: str, *, window: int = 160) -> str:
 def _match_score(subject: str, body: str, terms: list[str]) -> int:
     haystack = f"{subject} {body}".lower()
     return sum(haystack.count(term) for term in terms)
+
+
+def _fuzzy_retrieval_record_match_score(row: dict[str, object], terms: list[str]) -> int:
+    title_score = _fuzzy_match_score(str(row["title"]), terms) * 5
+    ref_score = _fuzzy_match_score(str(row["source_ref"]), terms) * 4
+    body_score = _fuzzy_match_score(str(row["prepared_text"]), terms)
+    return title_score + ref_score + body_score
+
+
+def _fuzzy_match_score(value: str, terms: list[str]) -> int:
+    tokens = re.findall(r"[a-z0-9]+", value.casefold())
+    score = 0
+    for term in terms:
+        if len(term) < 4:
+            continue
+        for token in tokens:
+            if token == term:
+                score += 4
+            elif len(token) >= 4 and _is_one_edit_away(token, term):
+                score += 2
+            elif token.startswith(term) or term.startswith(token):
+                score += 1
+    return score
+
+
+def _is_one_edit_away(left: str, right: str) -> bool:
+    if abs(len(left) - len(right)) > 1:
+        return False
+    if left == right:
+        return True
+    if len(left) == len(right):
+        return sum(a != b for a, b in zip(left, right, strict=True)) <= 1
+    if len(left) < len(right):
+        left, right = right, left
+    i = j = edits = 0
+    while i < len(left) and j < len(right):
+        if left[i] == right[j]:
+            i += 1
+            j += 1
+            continue
+        edits += 1
+        if edits > 1:
+            return False
+        i += 1
+    return True
 
 
 def _retrieval_record_match_score(row: dict[str, object], terms: list[str]) -> int:

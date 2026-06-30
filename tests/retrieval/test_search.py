@@ -4,8 +4,12 @@ from sqlalchemy import MetaData
 from sqlalchemy.dialects import postgresql
 
 from fourok.etl.extract.email_parser import load_email_dir
+from fourok.etl.extract.source_records import SourceRecord
 from fourok.governance import GovernedContext
-from fourok.retrieval.search import postgres_source_record_search_statement
+from fourok.retrieval.search import (
+    postgres_source_record_search_statement,
+    source_record_search_rows,
+)
 from fourok.storage.models import RetrievalRecordRow, SourceRecordRow, table_for_model
 
 FIXTURES = Path(__file__).parents[1] / "fixtures" / "emails"
@@ -72,6 +76,8 @@ def test_postgres_source_record_search_statement_uses_ranked_retrieval_unit_matc
     )
 
     assert "to_tsvector" in compiled
+    assert "regexp_replace" in compiled
+    assert "[^[:alnum:]_]+" in compiled
     assert "plainto_tsquery" in compiled
     assert "@@" in compiled
     assert "ts_rank" in compiled
@@ -81,3 +87,29 @@ def test_postgres_source_record_search_statement_uses_ranked_retrieval_unit_matc
     assert "source_records.lifecycle_state = 'active'" in compiled
     assert "DESC, source_records.occurred_at, source_records.source_ref" in compiled
     assert "LIMIT 3" in compiled
+
+
+def test_source_record_search_tolerates_one_character_name_typo() -> None:
+    context = GovernedContext()
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="twenty:person:olivia",
+                source_system="twenty-live",
+                source_id="olivia",
+                record_type="person",
+                title="Olivia Allen",
+                body="Olivia Allen is a customer contact.",
+            )
+        ]
+    )
+
+    results = source_record_search_rows(
+        context._engine,
+        context._source_records,
+        context._retrieval_records,
+        "oliva",
+        limit=5,
+    )
+
+    assert [row["source_ref"] for row in results] == ["twenty:person:olivia"]

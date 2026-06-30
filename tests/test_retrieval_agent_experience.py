@@ -155,3 +155,52 @@ def test_default_reranker_demotes_tool_noise_and_boosts_current_work_items() -> 
     assert ranked[0]["rerank_score"] > ranked[1]["rerank_score"]
     assert "boost_linear_work_item_for_current_priority_query" in ranked[0]["rerank_reasons"]
     assert "penalize_openviking_tool_noise" in ranked[1]["rerank_reasons"]
+
+
+def test_reranker_boosts_person_title_token_match_over_loose_work_item_match() -> None:
+    rows = [
+        {
+            "source_ref": "linear:issue:yc-video",
+            "source_system": "linear",
+            "record_type": "work_item",
+            "title": "Y Combinator team video",
+            "snippet": "Olivia should review the team video before the deadline.",
+            "occurred_at": "2026-04-13T07:42:10Z",
+            "score": 0.033,
+            "retrievers": {"keyword"},
+            "unit_index": 0,
+            "permission_refs": (),
+            "rerank_reasons": (),
+        },
+        {
+            "source_ref": "linear:user:simon",
+            "source_system": "linear",
+            "record_type": "person",
+            "title": "Simon van Laak",
+            "snippet": "employee",
+            "occurred_at": "2026-04-14T07:42:10Z",
+            "score": 0.053,
+            "retrievers": {"direct-link"},
+            "unit_index": 0,
+            "permission_refs": (),
+            "rerank_reasons": ("direct link from linear:issue:yc-video",),
+        },
+        {
+            "source_ref": "twenty:person:olivia",
+            "source_system": "twenty",
+            "record_type": "person",
+            "title": "Olivia Allen",
+            "snippet": "olivia.allen@example.test",
+            "occurred_at": "2026-04-12T07:42:10Z",
+            "score": 0.029,
+            "retrievers": {"keyword", "vector"},
+            "unit_index": 0,
+            "permission_refs": (),
+            "rerank_reasons": (),
+        },
+    ]
+
+    ranked = RetrievalReranker(default_rerank_rules()).rerank(rows, query="oliva")
+
+    assert ranked[0]["source_ref"] == "twenty:person:olivia"
+    assert "boost_person_title_token_match" in ranked[0]["rerank_reasons"]

@@ -15,6 +15,30 @@ from fourok.governance import GovernedContext
 from fourok.retrieval.augmentation import _source_date_label
 
 
+class _FakeRetrievalSpan:
+    def __init__(self, name: str, spans: list[dict[str, object]]) -> None:
+        self._name = name
+        self._spans = spans
+        self._attributes: dict[str, object] = {}
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        self._spans.append({"name": self._name, "attributes": self._attributes})
+
+    def set_attribute(self, key: str, value: object) -> None:
+        self._attributes[key] = value
+
+
+class _FakeRetrievalTracer:
+    def __init__(self, spans: list[dict[str, object]]) -> None:
+        self._spans = spans
+
+    def start_as_current_span(self, name: str) -> _FakeRetrievalSpan:
+        return _FakeRetrievalSpan(name, self._spans)
+
+
 def _seed_state(state: Path) -> None:
     context = GovernedContext(state)
     context.ingest_source_records(
@@ -93,6 +117,54 @@ def test_retrieve_loads_embedding_env_from_dotenv_before_retrieval(
 
     assert json.loads(output)["status"] == "ok"
     assert observed == {"provider": "openai", "dimensions": 256}
+
+
+def test_retrieve_emits_stage_spans_for_tempo(monkeypatch, tmp_path: Path) -> None:
+    spans: list[dict[str, object]] = []
+    context = GovernedContext(tmp_path / "state.sqlite")
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:issue:olivia",
+                source_system="linear-live",
+                source_id="olivia",
+                record_type="issue",
+                title="Olivia rollout owner",
+                body="Olivia owns the rollout follow-up and launch checklist.",
+                occurred_at="2026-06-10T12:00:00+00:00",
+            )
+        ]
+    )
+    monkeypatch.setattr(
+        "fourok.retrieval.augmentation.trace.get_tracer",
+        lambda _name: _FakeRetrievalTracer(spans),
+    )
+
+    response = context.retrieve_augmentation(
+        "olivia rollout", candidate_limit=5, retrievers=("keyword",)
+    )
+
+    span_by_name = {str(span["name"]): span["attributes"] for span in spans}
+    assert response.results
+    assert {
+        "fourok.retrieve",
+        "fourok.retrieve.keyword",
+        "fourok.retrieve.direct_link_expand",
+        "fourok.retrieve.graph_link_metrics",
+        "fourok.retrieve.rerank",
+        "fourok.retrieve.token_pack",
+    }.issubset(span_by_name)
+    assert span_by_name["fourok.retrieve.keyword"]["fourok.retrieve.query_length"] == len(
+        "olivia rollout"
+    )
+    assert span_by_name["fourok.retrieve.keyword"]["fourok.retrieve.keyword_candidates"] == 1
+    assert (
+        span_by_name["fourok.retrieve.direct_link_expand"]["fourok.retrieve.seed_candidates"]
+        == 1
+    )
+    assert span_by_name["fourok.retrieve.token_pack"]["fourok.retrieve.returned_results"] == len(
+        response.results
+    )
 
 
 def test_retrieve_defaults_to_token_budget_not_item_limit(
@@ -654,6 +726,252 @@ def test_retrieve_expands_one_hop_links_before_reranking(
     )
     assert "why_relevant: direct link from linear:issue:atlas-seed" in output
     assert "graph_link_count=9" in output
+
+
+def test_retrieve_batches_duplicate_direct_link_candidate_fetches(
+    monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:issue:olivia-alpha",
+                source_system="linear",
+                source_id="olivia-alpha",
+                record_type="work_item",
+                title="Olivia alpha launch",
+                body="olivia shared launch planning alpha",
+                occurred_at="2026-06-20T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:issue:olivia-beta",
+                source_system="linear",
+                source_id="olivia-beta",
+                record_type="work_item",
+                title="Olivia beta launch",
+                body="olivia shared launch planning beta",
+                occurred_at="2026-06-21T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:user:olivia",
+                source_system="linear",
+                source_id="olivia",
+                record_type="person",
+                title="Olivia Allen",
+                body="employee",
+                occurred_at="2026-06-19T12:00:00+00:00",
+            ),
+        ]
+    )
+    store_canonical_objects(
+        context._engine,
+        context._canonical_objects,
+        objects=[
+            {
+                "object_ref": "linear:user:olivia",
+                "object_type": "Person",
+                "title": "Olivia Allen",
+                "source_refs": ("linear:user:olivia",),
+                "metadata": {},
+                "lifecycle_state": "active",
+            }
+        ],
+    )
+    store_entity_links(
+        context._engine,
+        context._entity_links,
+        links=[
+            {
+                "link_ref": f"linear:issue:olivia-{name}->linear:user:olivia",
+                "source_ref": f"linear:issue:olivia-{name}",
+                "object_ref": "linear:user:olivia",
+                "relationship_type": "assignee",
+                "confidence": 1.0,
+                "evidence": {},
+                "reason": "fixture",
+                "status": "linked",
+            }
+            for name in ("alpha", "beta")
+        ],
+    )
+    candidate_fetches: list[str] = []
+
+    def fail_if_old_per_edge_fetch_is_used(*args, **kwargs):
+        candidate_fetches.append(str(args[3]))
+        raise AssertionError("direct-link candidates should be fetched in one batch")
+
+    monkeypatch.setattr(
+        "fourok.retrieval.augmentation._candidate_row_for_source_ref",
+        fail_if_old_per_edge_fetch_is_used,
+    )
+
+    response = context.retrieve_augmentation("olivia launch", retrievers=("keyword",))
+
+    assert candidate_fetches == []
+    olivia = [result for result in response.results if result.source_ref == "linear:user:olivia"]
+    assert olivia
+    reasons = set(olivia[0].rerank_reasons)
+    assert "direct link from linear:issue:olivia-alpha" in reasons
+    assert "direct link from linear:issue:olivia-beta" in reasons
+
+
+def test_retrieve_keeps_direct_link_identity_evidence(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    monkeypatch.setattr(
+        "fourok.etl.load.source_changes.entity_links_from_source_records", lambda _records: []
+    )
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:issue:launch",
+                source_system="linear-live",
+                source_id="launch",
+                record_type="work_item",
+                title="Launch evidence",
+                body="Launch evidence needs a directly linked owner.",
+                occurred_at="2026-06-10T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:user:olivia",
+                source_system="linear-live",
+                source_id="olivia",
+                record_type="person",
+                title="olivia.allen@4ok.tech",
+                body="olivia.allen@4ok.tech employee",
+                occurred_at="2026-06-10T12:00:00+00:00",
+            ),
+        ]
+    )
+    store_canonical_objects(
+        context._engine,
+        context._canonical_objects,
+        objects=[
+            {
+                "object_ref": "linear:user:olivia",
+                "object_type": "Person",
+                "title": "olivia.allen@4ok.tech",
+                "source_refs": ("linear:user:olivia",),
+                "metadata": {},
+                "lifecycle_state": "active",
+            }
+        ],
+    )
+    store_entity_links(
+        context._engine,
+        context._entity_links,
+        links=[
+            {
+                "link_ref": "linear:issue:launch->linear:user:olivia",
+                "source_ref": "linear:issue:launch",
+                "object_ref": "linear:user:olivia",
+                "relationship_type": "assignee",
+                "confidence": 1.0,
+                "evidence": {},
+                "reason": "fixture",
+                "status": "linked",
+            }
+        ],
+    )
+
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "launch evidence",
+            "--state",
+            str(state),
+            "--json",
+            "--token-budget",
+            "4000",
+        ],
+    )
+
+    main()
+
+    response = json.loads(capsys.readouterr().out)
+    direct_identity = next(
+        result for result in response["results"] if result["source_ref"] == "linear:user:olivia"
+    )
+    assert "direct-link" in direct_identity["retrievers"]
+    assert direct_identity["title"] == "olivia.allen@4ok.tech"
+    assert direct_identity["snippet"] == "employee"
+    assert direct_identity["rerank_reasons"] == [
+        "direct link from linear:issue:launch",
+        "graph_link_count=1",
+    ]
+
+
+def test_retrieve_does_not_fan_out_from_weak_identity_seed(
+    capsys, monkeypatch, tmp_path: Path
+) -> None:
+    state = tmp_path / "state.sqlite"
+    monkeypatch.setattr(
+        "fourok.etl.load.source_changes.entity_links_from_source_records", lambda _records: []
+    )
+    context = GovernedContext(state)
+    context.ingest_source_records(
+        [
+            SourceRecord(
+                source_ref="linear:user:olivia",
+                source_system="linear-live",
+                source_id="olivia",
+                record_type="person",
+                title="olivia.allen@4ok.tech",
+                body="olivia.allen@4ok.tech employee",
+                occurred_at="2026-06-10T12:00:00+00:00",
+            ),
+            SourceRecord(
+                source_ref="linear:issue:unrelated",
+                source_system="linear-live",
+                source_id="unrelated",
+                record_type="work_item",
+                title="Internal storage cleanup",
+                body="Unrelated work linked only through the employee identity node.",
+                occurred_at="2026-06-10T12:00:00+00:00",
+            ),
+        ]
+    )
+    store_entity_links(
+        context._engine,
+        context._entity_links,
+        links=[
+            {
+                "link_ref": "linear:issue:unrelated->linear:user:olivia",
+                "source_ref": "linear:issue:unrelated",
+                "object_ref": "linear:user:olivia",
+                "relationship_type": "assignee",
+                "confidence": 1.0,
+                "evidence": {},
+                "reason": "fixture",
+                "status": "linked",
+            }
+        ],
+    )
+    monkeypatch.setattr(
+        "sys.argv",
+        [
+            "fourok",
+            "retrieve",
+            "olivia",
+            "--state",
+            str(state),
+            "--json",
+            "--token-budget",
+            "4000",
+        ],
+    )
+
+    main()
+
+    response = json.loads(capsys.readouterr().out)
+    source_refs = {result["source_ref"] for result in response["results"]}
+    assert "linear:user:olivia" in source_refs
+    assert "linear:issue:unrelated" not in source_refs
 
 
 def test_retrieve_uses_graph_link_count_as_general_rerank_signal(
