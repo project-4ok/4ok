@@ -936,9 +936,14 @@ def test_retrieve_block_renders_related_follow_up_hints(
 
     output = capsys.readouterr().out
     assert "You could also be interested in:" in output
-    assert "related lead, not evidence" in output
     assert "Budget approval comment" in output
-    assert "follow_up_query: Budget approval comment" in output
+    assert "source_ref: linear:comment:atlas-budget" in output
+    assert "related lead, not evidence" not in output
+    assert "related_source_ref:" not in output
+    assert "reason:" not in output
+    assert "source_type:" not in output
+    assert "follow_up_query:" not in output
+    assert "strength:" not in output
 
 
 def test_retrieve_uses_graph_link_count_as_general_rerank_signal(

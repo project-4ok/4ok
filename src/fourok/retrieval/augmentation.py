@@ -830,13 +830,8 @@ def _result_card_lines(index: int, result: RetrievalCandidate) -> list[str]:
 
 def _follow_up_hint_lines(index: int, hint: RelatedFollowUpHint) -> list[str]:
     return [
-        f"({index}) {hint.topic} — related lead, not evidence",
+        f"({index}) {hint.topic}",
         f"source_ref: {hint.source_ref}",
-        f"related_source_ref: {hint.related_source_ref}",
-        f"reason: {hint.reason}",
-        f"source_type: {hint.source_system}/{hint.record_type}",
-        f"follow_up_query: {hint.suggested_follow_up_query}",
-        f"strength: {hint.strength:.3f}",
         "",
     ]
 
