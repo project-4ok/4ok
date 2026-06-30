@@ -978,6 +978,7 @@ def test_retrieve_block_renders_people_buckets_as_compact_hints(
 
     output = capsys.readouterr().out
     assert "People:" in output
+    assert output.index("People:") < output.index("[1]")
     assert "Possible query matches:" in output
     assert "- Olivia Allen (matched_name) source_ref: linear:user:olivia" in output
     assert "Related people hints:" in output

@@ -386,10 +386,10 @@ def render_augmentation_block(response: RetrievalAugmentationResponse) -> str:
             f"Budget: {response.estimated_tokens}/{response.token_budget} estimated tokens"
         )
         lines.append("")
-        for index, result in enumerate(response.results, start=1):
-            lines.extend(_result_card_lines(index, result))
         if response.people.possible_query_matches or response.people.related_people:
             lines.extend(_people_bucket_lines(response.people))
+        for index, result in enumerate(response.results, start=1):
+            lines.extend(_result_card_lines(index, result))
         if response.you_could_also_be_interested_in:
             lines.append("You could also be interested in:")
             for index, hint in enumerate(response.you_could_also_be_interested_in, start=1):
