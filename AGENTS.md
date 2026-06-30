@@ -271,7 +271,10 @@ Never commit:
 - project-local scratch directories
 - raw third-party datasets unless explicitly approved
 
-Small synthetic fixtures are OK when clearly fake and useful for tests.
+Small synthetic fixtures are OK when clearly fake and useful for tests. Do not
+put real or realistic PII in text fixtures; use clearly fake placeholders such
+as `person-a@example.invalid`, `555-0100`, or `Example Person` when tests need
+identity-like strings.
 
 ## Docs
 
